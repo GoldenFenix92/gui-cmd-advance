@@ -1,4 +1,5 @@
 import json
+import re
 import customtkinter as ctk
 import cmd_executor
 import os
@@ -89,11 +90,16 @@ class App(ctk.CTk):
         self.output_textbox.grid(row=1, column=0, columnspan=2, padx=10, pady=10, sticky="nsew")
         self.output_textbox.configure(state="disabled")
 
+        
+        self.progressbar = ctk.CTkProgressBar(self.right_frame)
+        self.progressbar.grid(row=2, column=0, columnspan=2, padx=10, pady=(0, 10), sticky="ew")
+        self.progressbar.set(0)
+
         self.export_btn = ctk.CTkButton(self.right_frame, text="Exportar", width=100, command=self.export_output)
-        self.export_btn.grid(row=2, column=0, padx=10, pady=(0, 10), sticky="sw")
+        self.export_btn.grid(row=3, column=0, padx=10, pady=(0, 10), sticky="sw")
 
         self.clear_btn = ctk.CTkButton(self.right_frame, text="Limpiar", width=100, fg_color="transparent", border_width=1, text_color=("#24292F", "#C9D1D9"), command=self.clear_output)
-        self.clear_btn.grid(row=2, column=1, padx=10, pady=(0, 10), sticky="se")
+        self.clear_btn.grid(row=3, column=1, padx=10, pady=(0, 10), sticky="se")
 
         self.on_category_change(self.cat_var.get())
 
@@ -233,6 +239,8 @@ class App(ctk.CTk):
         self.execute_external(self.preview_var.get())
 
     def execute_external(self, command_str):
+        if hasattr(self, 'progressbar'):
+            self.progressbar.set(0)
         self.append_output(f"\n> {command_str}\n")
         self.is_running = True
         self.execute_btn.configure(text="Detener ejecución", fg_color="red", hover_color="#8B0000")
@@ -253,9 +261,43 @@ class App(ctk.CTk):
 
     def append_output(self, text):
         def _append():
+            nonlocal text
             self.output_textbox.configure(state="normal")
-            self.output_textbox.insert("end", text)
-            self.output_textbox.see("end")
+            
+            if not hasattr(self, '_last_was_cr'):
+                self._last_was_cr = False
+                
+            # Limpiar lineas normales de Windows
+            if text.endswith('\r\n'):
+                text = text[:-2] + '\n'
+                
+            if self._last_was_cr:
+                if text == '\n':
+                    self._last_was_cr = False
+                    self.output_textbox.insert("end", "\n")
+                    self.output_textbox.see("end")
+                    self.output_textbox.configure(state="disabled")
+                    return
+                else:
+                    self.output_textbox.delete("end-1c linestart", "end-1c")
+                    self._last_was_cr = False
+
+            if text.endswith('\r'):
+                self._last_was_cr = True
+                text = text[:-1]
+                
+            if text:
+                self.output_textbox.insert("end", text)
+                self.output_textbox.see("end")
+                
+                import re
+                match = re.search(r'(\d+)%', text)
+                if match and hasattr(self, 'progressbar'):
+                    try:
+                        self.progressbar.set(int(match.group(1)) / 100.0)
+                    except:
+                        pass
+                        
             self.output_textbox.configure(state="disabled")
         self.after(0, _append)
 

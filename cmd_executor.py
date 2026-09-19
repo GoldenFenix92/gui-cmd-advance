@@ -13,14 +13,25 @@ class CommandRunner:
                     command_string,
                     stdout=subprocess.PIPE,
                     stderr=subprocess.STDOUT,
-                    text=True,
                     shell=True,
-                    bufsize=1
+                    bufsize=0
                 )
                 
-                for line in self.process.stdout:
-                    if line:
-                        output_callback(line)
+                buffer = bytearray()
+                while True:
+                    b = self.process.stdout.read(1)
+                    if not b:
+                        if buffer:
+                            output_callback(buffer.decode('mbcs', 'ignore'))
+                        break
+                    
+                    if b == b'\x00':
+                        continue
+                        
+                    buffer.extend(b)
+                    if b in [b'\n', b'\r']:
+                        output_callback(buffer.decode('mbcs', 'ignore'))
+                        buffer.clear()
                         
                 self.process.wait()
                 if self.process.returncode != 0 and self.process.returncode is not None:
@@ -43,7 +54,6 @@ class CommandRunner:
     def stop_command(self):
         if self.process:
             try:
-                # taskkill /F (force) /T (tree) /PID ...
                 subprocess.run(["taskkill", "/F", "/T", "/PID", str(self.process.pid)], capture_output=True)
             except Exception as e:
                 pass

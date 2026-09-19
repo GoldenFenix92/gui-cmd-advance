@@ -13,11 +13,11 @@ This file tracks the commands that are planned, in progress, and completed for t
 
 ## Sistema (System)
 
-- [ ] sfc /scannow
-- [ ] chkdsk
-- [ ] systeminfo
-- [ ] tasklist
-- [ ] taskkill
+- [x] sfc /scannow
+- [x] chkdsk
+- [x] systeminfo
+- [x] tasklist
+- [x] taskkill
 
 ## Archivos (Files)
 

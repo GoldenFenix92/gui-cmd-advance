@@ -118,6 +118,93 @@
                     ]
                 }
             ]
+        },
+        {
+            "name": "Sistema",
+            "commands": [
+                {
+                    "name": "sfc",
+                    "description": "Comprueba y repara archivos de sistema de Windows dañados.",
+                    "command": "sfc",
+                    "args": [
+                        {
+                            "name": "Escanear ahora (/scannow)",
+                            "flag": "/scannow",
+                            "type": "checkbox",
+                            "description": "Examina la integridad de todos los archivos de sistema protegidos y repara los archivos con problemas."
+                        }
+                    ]
+                },
+                {
+                    "name": "chkdsk",
+                    "description": "Comprueba el sistema de archivos y los metadatos del volumen en busca de errores.",
+                    "command": "chkdsk",
+                    "args": [
+                        {
+                            "name": "Unidad (Ej: C:)",
+                            "flag": "",
+                            "type": "entry",
+                            "description": "Especifica la letra de la unidad a comprobar (por ejemplo, C: o D:)."
+                        },
+                        {
+                            "name": "Reparar errores (/f)",
+                            "flag": "/f",
+                            "type": "checkbox",
+                            "description": "Corrige los errores encontrados en el disco."
+                        },
+                        {
+                            "name": "Recuperar sectores (/r)",
+                            "flag": "/r",
+                            "type": "checkbox",
+                            "description": "Encuentra sectores defectuosos y recupera la información legible (implica /f)."
+                        }
+                    ]
+                },
+                {
+                    "name": "systeminfo",
+                    "description": "Muestra información detallada sobre la configuración del equipo y el sistema operativo.",
+                    "command": "systeminfo",
+                    "args": []
+                },
+                {
+                    "name": "tasklist",
+                    "description": "Muestra una lista de todas las tareas y procesos en ejecución.",
+                    "command": "tasklist",
+                    "args": [
+                        {
+                            "name": "Formato detallado (/v)",
+                            "flag": "/v",
+                            "type": "checkbox",
+                            "description": "Muestra información de tareas en formato detallado."
+                        }
+                    ]
+                },
+                {
+                    "name": "taskkill",
+                    "description": "Termina uno o más procesos o tareas.",
+                    "command": "taskkill",
+                    "args": [
+                        {
+                            "name": "Por nombre de imagen (/IM)",
+                            "flag": "/IM",
+                            "type": "entry",
+                            "description": "Especifica el nombre de la imagen del proceso a terminar (ej. notepad.exe)."
+                        },
+                        {
+                            "name": "Por ID de proceso (/PID)",
+                            "flag": "/PID",
+                            "type": "entry",
+                            "description": "Especifica el PID (Process ID) del proceso a terminar."
+                        },
+                        {
+                            "name": "Forzar cierre (/F)",
+                            "flag": "/F",
+                            "type": "checkbox",
+                            "description": "Fuerza la terminación del proceso (útil si el programa no responde)."
+                        }
+                    ]
+                }
+            ]
         }
     ]
 }
