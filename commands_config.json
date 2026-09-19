@@ -1,0 +1,34 @@
+{
+    "categories": [
+        {
+            "name": "Redes",
+            "commands": [
+                {
+                    "name": "ipconfig",
+                    "description": "Muestra la configuración de red actual.",
+                    "command": "ipconfig",
+                    "args": [
+                        {
+                            "name": "Todo (All)",
+                            "flag": "/all",
+                            "type": "checkbox",
+                            "description": "Muestra la configuración completa."
+                        },
+                        {
+                            "name": "Renovar (Renew)",
+                            "flag": "/renew",
+                            "type": "checkbox",
+                            "description": "Renueva la dirección IPv4."
+                        },
+                        {
+                            "name": "Liberar (Release)",
+                            "flag": "/release",
+                            "type": "checkbox",
+                            "description": "Libera la dirección IPv4."
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}
