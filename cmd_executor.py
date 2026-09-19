@@ -1,40 +1,57 @@
 import subprocess
 import threading
+import os
 
-def execute_command_async(command_list, output_callback, finished_callback):
-    """
-    Ejecuta un comando de forma asíncrona y envía la salida a un callback.
-    :param command_list: Lista con el comando y sus argumentos.
-    :param output_callback: Función que recibe cada línea de salida.
-    :param finished_callback: Función que se llama cuando el comando termina.
-    """
-    def run_process():
-        try:
-            # shell=True permite usar comandos internos de cmd (como dir, echo)
-            process = subprocess.Popen(
-                command_list,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                text=True,
-                shell=True,
-                bufsize=1
-            )
-            
-            for line in process.stdout:
-                if line:
-                    output_callback(line)
-                    
-            process.wait()
-            output_callback(f"\n--- Comando finalizado con código {process.returncode} ---")
-            
-        except Exception as e:
-            output_callback(f"\nError al ejecutar el comando: {str(e)}")
-            
-        finally:
-            if finished_callback:
-                finished_callback()
+class CommandRunner:
+    def __init__(self):
+        self.process = None
+
+    def execute_command_async(self, command_string, output_callback, finished_callback):
+        def run_process():
+            try:
+                self.process = subprocess.Popen(
+                    command_string,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    text=True,
+                    shell=True,
+                    bufsize=1
+                )
                 
-    # Ejecutar en un hilo separado para no bloquear la GUI
-    thread = threading.Thread(target=run_process)
-    thread.daemon = True
-    thread.start()
+                for line in self.process.stdout:
+                    if line:
+                        output_callback(line)
+                        
+                self.process.wait()
+                if self.process.returncode != 0 and self.process.returncode is not None:
+                    output_callback(f"\n--- Comando finalizado o detenido (código {self.process.returncode}) ---")
+                else:
+                    output_callback(f"\n--- Comando finalizado con éxito ---")
+                
+            except Exception as e:
+                output_callback(f"\nError al ejecutar el comando: {str(e)}")
+                
+            finally:
+                self.process = None
+                if finished_callback:
+                    finished_callback()
+                    
+        thread = threading.Thread(target=run_process)
+        thread.daemon = True
+        thread.start()
+
+    def stop_command(self):
+        if self.process:
+            try:
+                # taskkill /F (force) /T (tree) /PID ...
+                subprocess.run(["taskkill", "/F", "/T", "/PID", str(self.process.pid)], capture_output=True)
+            except Exception as e:
+                pass
+
+_runner = CommandRunner()
+
+def execute_command_async(command_string, output_callback, finished_callback):
+    _runner.execute_command_async(command_string, output_callback, finished_callback)
+
+def stop_command():
+    _runner.stop_command()
