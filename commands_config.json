@@ -12,19 +12,108 @@
                             "name": "Todo (All)",
                             "flag": "/all",
                             "type": "checkbox",
-                            "description": "Muestra la configuración completa."
+                            "description": "Muestra la configuración completa de todos los adaptadores de red."
                         },
                         {
                             "name": "Renovar (Renew)",
                             "flag": "/renew",
                             "type": "checkbox",
-                            "description": "Renueva la dirección IPv4."
+                            "description": "Renueva la dirección IPv4 para el adaptador especificado (o todos si no se especifica)."
                         },
                         {
                             "name": "Liberar (Release)",
                             "flag": "/release",
                             "type": "checkbox",
-                            "description": "Libera la dirección IPv4."
+                            "description": "Libera la dirección IPv4 actual, desconectando el equipo de la red."
+                        }
+                    ]
+                },
+                {
+                    "name": "ping",
+                    "description": "Envía paquetes ICMP a un host para comprobar la conectividad de red.",
+                    "command": "ping",
+                    "args": [
+                        {
+                            "name": "Destino (IP/Dominio)",
+                            "flag": "",
+                            "type": "entry",
+                            "description": "Escribe la dirección IP o el dominio (ej. 8.8.8.8 o google.com)."
+                        },
+                        {
+                            "name": "Ping Continuo (-t)",
+                            "flag": "-t",
+                            "type": "checkbox",
+                            "description": "Hace ping al host especificado hasta que se detenga manualmente."
+                        }
+                    ]
+                },
+                {
+                    "name": "tracert",
+                    "description": "Rastrea la ruta (los saltos) que toman los paquetes para llegar a un destino.",
+                    "command": "tracert",
+                    "args": [
+                        {
+                            "name": "Destino (IP/Dominio)",
+                            "flag": "",
+                            "type": "entry",
+                            "description": "Escribe la dirección IP o el dominio destino."
+                        },
+                        {
+                            "name": "Sin resolver nombres (-d)",
+                            "flag": "-d",
+                            "type": "checkbox",
+                            "description": "No convierte direcciones en nombres de host (hace el comando más rápido)."
+                        }
+                    ]
+                },
+                {
+                    "name": "netstat",
+                    "description": "Muestra estadísticas del protocolo y conexiones de red TCP/IP actuales.",
+                    "command": "netstat",
+                    "args": [
+                        {
+                            "name": "Todas las conexiones (-a)",
+                            "flag": "-a",
+                            "type": "checkbox",
+                            "description": "Muestra todas las conexiones y puertos de escucha."
+                        },
+                        {
+                            "name": "Numérico (-n)",
+                            "flag": "-n",
+                            "type": "checkbox",
+                            "description": "Muestra direcciones y números de puerto en formato numérico (sin resolver nombres)."
+                        },
+                        {
+                            "name": "Mostrar PID (-o)",
+                            "flag": "-o",
+                            "type": "checkbox",
+                            "description": "Muestra el ID de proceso (PID) asociado a cada conexión."
+                        }
+                    ]
+                },
+                {
+                    "name": "getmac",
+                    "description": "Muestra la dirección MAC de los adaptadores de red del sistema.",
+                    "command": "getmac",
+                    "args": [
+                        {
+                            "name": "Detallado (/v)",
+                            "flag": "/v",
+                            "type": "checkbox",
+                            "description": "Muestra información detallada de todos los adaptadores."
+                        }
+                    ]
+                },
+                {
+                    "name": "arp",
+                    "description": "Muestra y modifica las tablas de traducción de direcciones IP a físicas (MAC).",
+                    "command": "arp",
+                    "args": [
+                        {
+                            "name": "Mostrar tabla (-a)",
+                            "flag": "-a",
+                            "type": "checkbox",
+                            "description": "Muestra la tabla de caché ARP actual con todas las interfaces."
                         }
                     ]
                 }

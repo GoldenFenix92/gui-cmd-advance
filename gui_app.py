@@ -3,6 +3,7 @@ import customtkinter as ctk
 import cmd_executor
 import os
 from tkinter import filedialog
+from tkinter import messagebox
 
 # Cargar el tema de GitHub creado
 try:
@@ -22,8 +23,6 @@ class App(ctk.CTk):
 
         # Configurar grid layout general para mejor distribución al maximizar
         self.grid_rowconfigure(0, weight=1)
-        # Columna 0: Panel de control (peso 1)
-        # Columna 1: Consola (peso 2, toma más espacio al estirar)
         self.grid_columnconfigure(0, weight=1)
         self.grid_columnconfigure(1, weight=3)
 
@@ -33,14 +32,14 @@ class App(ctk.CTk):
         # ---------- FRAME IZQUIERDO: Panel de Control ----------
         self.left_frame = ctk.CTkFrame(self)
         self.left_frame.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
-        # El área de los checkboxes se expandirá
+        # El área de los checkboxes/opciones se expandirá
         self.left_frame.grid_rowconfigure(5, weight=1)
         self.left_frame.grid_columnconfigure(0, weight=1)
 
         # Header: Switch de Tema
         self.theme_switch = ctk.CTkSwitch(self.left_frame, text="Modo Oscuro", command=self.toggle_theme)
         self.theme_switch.grid(row=0, column=0, padx=15, pady=15, sticky="nw")
-        self.theme_switch.select() # Porque empezamos en Dark
+        self.theme_switch.select()
 
         # Label Categoría
         self.lbl_cat = ctk.CTkLabel(self.left_frame, text="Categoría:", font=("Arial", 12, "bold"))
@@ -52,20 +51,26 @@ class App(ctk.CTk):
         self.cat_menu = ctk.CTkOptionMenu(self.left_frame, values=categories, variable=self.cat_var, command=self.on_category_change)
         self.cat_menu.grid(row=2, column=0, padx=15, pady=5, sticky="ew")
 
-        # Label Comando
-        self.lbl_cmd = ctk.CTkLabel(self.left_frame, text="Comando:", font=("Arial", 12, "bold"))
-        self.lbl_cmd.grid(row=3, column=0, padx=15, pady=(10, 0), sticky="w")
+        # Frame Comando (Label + Info Button)
+        self.cmd_label_frame = ctk.CTkFrame(self.left_frame, fg_color="transparent")
+        self.cmd_label_frame.grid(row=3, column=0, padx=15, pady=(10, 0), sticky="ew")
+        
+        self.lbl_cmd = ctk.CTkLabel(self.cmd_label_frame, text="Comando:", font=("Arial", 12, "bold"))
+        self.lbl_cmd.pack(side="left")
+
+        self.cmd_info_btn = ctk.CTkButton(self.cmd_label_frame, text="ℹ", width=25, height=25, command=self.show_command_info)
+        self.cmd_info_btn.pack(side="right")
 
         # Dropdown Comandos
         self.cmd_var = ctk.StringVar(value="")
         self.cmd_menu = ctk.CTkOptionMenu(self.left_frame, variable=self.cmd_var, command=self.on_command_change)
         self.cmd_menu.grid(row=4, column=0, padx=15, pady=5, sticky="ew")
 
-        # Área para Checkboxes (Argumentos)
+        # Área para Opciones Dinámicas
         self.args_frame = ctk.CTkScrollableFrame(self.left_frame, fg_color="transparent")
         self.args_frame.grid(row=5, column=0, padx=10, pady=10, sticky="nsew")
         
-        # Diccionario para guardar variables de los checkboxes actuales
+        # Diccionario para guardar variables de UI
         self.current_args_vars = {}
 
         # Botón Ejecutar
@@ -125,6 +130,15 @@ class App(ctk.CTk):
                     return cmd
         return None
 
+    def show_command_info(self):
+        cmd_data = self.get_command_data(self.cmd_var.get())
+        if cmd_data:
+            desc = cmd_data.get("description", "Sin descripción.")
+            messagebox.showinfo(f"Info de Comando: {cmd_data.get('name')}", desc)
+
+    def show_arg_info(self, arg_name, arg_desc):
+        messagebox.showinfo(f"Info: {arg_name}", arg_desc)
+
     def on_category_change(self, selected_category):
         cat_data = self.get_category_data(selected_category)
         if cat_data:
@@ -142,39 +156,59 @@ class App(ctk.CTk):
             self.on_command_change("")
 
     def on_command_change(self, selected_command):
-        # Limpiar checkboxes anteriores
+        # Limpiar opciones anteriores
         for widget in self.args_frame.winfo_children():
             widget.destroy()
         self.current_args_vars.clear()
 
         cmd_data = self.get_command_data(selected_command)
         if cmd_data:
-            # Mostrar descripción del comando
-            desc = cmd_data.get("description", "")
-            if desc:
-                lbl_desc = ctk.CTkLabel(self.args_frame, text=desc, font=("Arial", 11, "italic"), text_color="gray", wraplength=250, justify="left")
-                lbl_desc.pack(anchor="w", pady=(0, 10))
-
-            # Generar Checkboxes
             args = cmd_data.get("args", [])
             for arg in args:
-                if arg.get("type") == "checkbox":
-                    var = ctk.StringVar(value="")
+                arg_name = arg.get("name")
+                arg_type = arg.get("type")
+                arg_flag = arg.get("flag", "")
+                arg_desc = arg.get("description", "Sin descripción.")
+                
+                # Frame individual para cada argumento y su botón info
+                row_frame = ctk.CTkFrame(self.args_frame, fg_color="transparent")
+                row_frame.pack(fill="x", pady=4)
+                
+                # Variable de UI
+                var = ctk.StringVar(value="")
+                
+                if arg_type == "checkbox":
                     chk = ctk.CTkCheckBox(
-                        self.args_frame, 
-                        text=arg.get("name"), 
+                        row_frame, 
+                        text=arg_name, 
                         variable=var, 
-                        onvalue=arg.get("flag"), 
+                        onvalue=arg_flag, 
                         offvalue=""
                     )
-                    chk.pack(anchor="w", pady=4)
-                    self.current_args_vars[arg.get("name")] = var
+                    chk.pack(side="left", padx=(0, 10))
+                
+                elif arg_type == "entry":
+                    lbl = ctk.CTkLabel(row_frame, text=f"{arg_name}:")
+                    lbl.pack(side="left", padx=(0, 5))
                     
-                    # Tooltip/Descripción opcional para el argumento
-                    arg_desc = arg.get("description", "")
-                    if arg_desc:
-                        lbl_arg_desc = ctk.CTkLabel(self.args_frame, text=f"  ↳ {arg_desc}", font=("Arial", 10), text_color="gray")
-                        lbl_arg_desc.pack(anchor="w", pady=(0, 6))
+                    ent = ctk.CTkEntry(row_frame, textvariable=var, placeholder_text="Escribir...")
+                    ent.pack(side="left", fill="x", expand=True, padx=(0, 10))
+                
+                # Guardar variable y flag
+                self.current_args_vars[arg_name] = {"var": var, "type": arg_type, "flag": arg_flag}
+                
+                # Botón info de argumento
+                btn_info = ctk.CTkButton(
+                    row_frame, 
+                    text="ℹ", 
+                    width=25, 
+                    height=25, 
+                    fg_color="transparent", 
+                    border_width=1,
+                    text_color=("black", "white"),
+                    command=lambda n=arg_name, d=arg_desc: self.show_arg_info(n, d)
+                )
+                btn_info.pack(side="right")
 
     def run_command(self):
         selected_command = self.cmd_var.get()
@@ -188,21 +222,27 @@ class App(ctk.CTk):
         cmd_base = cmd_data.get("command")
         command_list = [cmd_base]
         
-        # Añadir argumentos seleccionados
-        for arg_name, var in self.current_args_vars.items():
-            val = var.get()
+        # Añadir argumentos
+        for arg_name, arg_data in self.current_args_vars.items():
+            val = arg_data["var"].get().strip()
+            arg_type = arg_data["type"]
+            arg_flag = arg_data["flag"]
+            
             if val:
-                command_list.append(val)
+                if arg_type == "checkbox":
+                    command_list.append(val)
+                elif arg_type == "entry":
+                    if arg_flag:
+                        command_list.append(arg_flag)
+                    command_list.append(val)
         
         full_command_str = " ".join(command_list)
         self.append_output(f"\n> {full_command_str}\n")
         self.execute_btn.configure(state="disabled", text="Ejecutando...")
         
-        # Callback cuando termina
         def on_finish():
             self.execute_btn.configure(state="normal", text="Ejecutar Comando")
 
-        # Ejecutar asincrónicamente
         cmd_executor.execute_command_async(
             command_list=full_command_str,
             output_callback=self.append_output,
@@ -223,10 +263,9 @@ class App(ctk.CTk):
         self.output_textbox.configure(state="disabled")
 
     def export_output(self):
-        # Obtener el texto actual de la consola
         content = self.output_textbox.get("1.0", "end-1c")
         if not content.strip():
-            return # No hay nada que exportar
+            return
             
         file_path = filedialog.asksaveasfilename(
             defaultextension=".txt",
