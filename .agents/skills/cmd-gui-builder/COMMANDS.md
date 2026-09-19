@@ -13,7 +13,8 @@ This file tracks the commands that are planned, in progress, and completed for t
 
 ## Sistema (System)
 
-- [x] sfc /scannow
+- [x] sfc
+- [x] dism
 - [x] chkdsk
 - [x] systeminfo
 - [x] tasklist

@@ -132,6 +132,41 @@
                             "flag": "/scannow",
                             "type": "checkbox",
                             "description": "Examina la integridad de todos los archivos de sistema protegidos y repara los archivos con problemas."
+                        },
+                        {
+                            "name": "Solo verificar (/verifyonly)",
+                            "flag": "/verifyonly",
+                            "type": "checkbox",
+                            "description": "Examina la integridad sin realizar reparaciones."
+                        }
+                    ]
+                },
+                {
+                    "name": "dism",
+                    "description": "Repara la imagen de Windows. Complemento ideal de SFC.",
+                    "command": "DISM /Online /Cleanup-Image",
+                    "args": [
+                        {
+                            "name": "Acción",
+                            "type": "radio_group",
+                            "options": [
+                                {"name": "Reparar (RestoreHealth)", "flag": "/RestoreHealth"},
+                                {"name": "Escanear (ScanHealth)", "flag": "/ScanHealth"},
+                                {"name": "Chequear (CheckHealth)", "flag": "/CheckHealth"}
+                            ],
+                            "description": "Selecciona el nivel de reparación de la imagen."
+                        },
+                        {
+                            "name": "Archivo de origen (.wim/.esd)",
+                            "flag": "/Source:",
+                            "type": "file_entry",
+                            "description": "Selecciona un archivo de origen si Windows Update falla. (Ej: install.wim)"
+                        },
+                        {
+                            "name": "Evitar Windows Update (/LimitAccess)",
+                            "flag": "/LimitAccess",
+                            "type": "checkbox",
+                            "description": "Evita el uso de Windows Update como origen de reparación."
                         }
                     ]
                 },
@@ -141,10 +176,10 @@
                     "command": "chkdsk",
                     "args": [
                         {
-                            "name": "Unidad (Ej: C:)",
+                            "name": "Unidad",
                             "flag": "",
-                            "type": "entry",
-                            "description": "Especifica la letra de la unidad a comprobar (por ejemplo, C: o D:)."
+                            "type": "drive_dropdown",
+                            "description": "Especifica la unidad a comprobar."
                         },
                         {
                             "name": "Reparar errores (/f)",
@@ -302,6 +337,12 @@
                                 {"name": "Copiar incluyendo vacíos (/e)", "flag": "/e"}
                             ],
                             "description": "Elige si deseas copiar subdirectorios y cómo tratar los vacíos."
+                        },
+                        {
+                            "name": "Archivos ocultos y de sistema (/h)",
+                            "flag": "/h",
+                            "type": "checkbox",
+                            "description": "Copia archivos ocultos y de sistema."
                         }
                     ]
                 }

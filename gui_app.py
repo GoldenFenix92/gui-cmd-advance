@@ -19,11 +19,11 @@ class App(ctk.CTk):
         super().__init__()
 
         self.title("CMD GUI Advance")
-        self.geometry("900x600")
+        self.geometry("1000x650")
 
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(0, weight=1)
-        self.grid_columnconfigure(1, weight=3)
+        self.grid_columnconfigure(1, weight=2)
 
         self.commands_config = self.load_config()
         self.is_running = False
@@ -110,6 +110,33 @@ class App(ctk.CTk):
         except Exception as e:
             return {"categories": []}
 
+    def get_windows_drives(self):
+        import subprocess
+        drives = []
+        try:
+            output = subprocess.check_output(
+                ["wmic", "logicaldisk", "get", "caption,volumename", "/format:csv"],
+                creationflags=subprocess.CREATE_NO_WINDOW
+            ).decode('mbcs', errors='ignore').strip().split('\n')
+            for line in output[2:]:
+                if line.strip():
+                    parts = line.strip().split(',')
+                    if len(parts) >= 2:
+                        caption = parts[1].strip()
+                        vol = parts[2].strip() if len(parts) > 2 else ""
+                        drives.append(f"{caption} ({vol})" if vol else caption)
+        except:
+            pass
+        if not drives:
+            import string
+            from ctypes import windll
+            bitmask = windll.kernel32.GetLogicalDrives()
+            for letter in string.ascii_uppercase:
+                if bitmask & 1:
+                    drives.append(f"{letter}:")
+                bitmask >>= 1
+        return drives if drives else ["C:"]
+
     def toggle_theme(self):
         if self.theme_switch.get() == 1:
             ctk.set_appearance_mode("Dark")
@@ -179,7 +206,7 @@ class App(ctk.CTk):
                 if arg_type == "checkbox":
                     chk = ctk.CTkCheckBox(row_frame, text=arg_name, variable=var, onvalue=arg_flag, offvalue="")
                     chk.pack(side="left", padx=(0, 10))
-                elif arg_type in ["entry", "directory_entry"]:
+                elif arg_type in ["entry", "directory_entry", "file_entry"]:
                     lbl = ctk.CTkLabel(row_frame, text=f"{arg_name}:")
                     lbl.pack(side="left", padx=(0, 5))
                     ent = ctk.CTkEntry(row_frame, textvariable=var, placeholder_text="Escribir...")
@@ -193,15 +220,26 @@ class App(ctk.CTk):
                                 if " " in folder and not folder.startswith('"'):
                                     folder = f'"{folder}"'
                                 v.set(folder)
-                        btn_browse = ctk.CTkButton(row_frame, text="Examinar...", width=80, command=browse_folder)
+                        btn_browse = ctk.CTkButton(row_frame, text="Examinar", width=80, command=browse_folder)
                         btn_browse.pack(side="left", padx=(0, 10))
+                        
+                    elif arg_type == "file_entry":
+                        def browse_file(v=var):
+                            file_path = filedialog.askopenfilename()
+                            if file_path:
+                                file_path = file_path.replace("/", "\\")
+                                if " " in file_path and not file_path.startswith('"'):
+                                    file_path = f'"{file_path}"'
+                                v.set(file_path)
+                        btn_browse_f = ctk.CTkButton(row_frame, text="Examinar", width=80, command=browse_file)
+                        btn_browse_f.pack(side="left", padx=(0, 10))
                         
                 elif arg_type == "radio_group":
                     lbl = ctk.CTkLabel(row_frame, text=f"{arg_name}:")
-                    lbl.pack(side="left", anchor="n", padx=(0, 5))
+                    lbl.pack(side="top", anchor="w", padx=(0, 5))
                     
                     rb_frame = ctk.CTkFrame(row_frame, fg_color="transparent")
-                    rb_frame.pack(side="left", fill="both", expand=True)
+                    rb_frame.pack(side="top", fill="x", expand=True, padx=(10, 0))
                     
                     options = arg.get("options", [])
                     for opt in options:
@@ -209,6 +247,15 @@ class App(ctk.CTk):
                         opt_flag = opt.get("flag", "")
                         rb = ctk.CTkRadioButton(rb_frame, text=opt_name, variable=var, value=opt_flag)
                         rb.pack(side="top", anchor="w", pady=(0, 5))
+                        
+                elif arg_type == "drive_dropdown":
+                    lbl = ctk.CTkLabel(row_frame, text=f"{arg_name}:")
+                    lbl.pack(side="left", padx=(0, 5))
+                    drives = self.get_windows_drives()
+                    if drives:
+                        var.set(drives[0])
+                    dropdown = ctk.CTkOptionMenu(row_frame, variable=var, values=drives)
+                    dropdown.pack(side="left", fill="x", expand=True, padx=(0, 10))
                 
                 self.current_args_vars[arg_name] = {"var": var, "type": arg_type, "flag": arg_flag}
                 
@@ -236,12 +283,17 @@ class App(ctk.CTk):
             if val:
                 if arg_data["type"] in ["checkbox", "radio_group"]:
                     command_list.append(val)
-                elif arg_data["type"] in ["entry", "directory_entry"]:
-                    if arg_data["type"] == "directory_entry":
+                elif arg_data["type"] in ["entry", "directory_entry", "file_entry"]:
+                    if arg_data["type"] in ["directory_entry", "file_entry"]:
                         val = val.replace("/", "\\")
                     if arg_data["flag"]:
                         command_list.append(arg_data["flag"])
                     command_list.append(val)
+                elif arg_data["type"] == "drive_dropdown":
+                    drive = val.split(" ")[0]
+                    if arg_data["flag"]:
+                        command_list.append(arg_data["flag"])
+                    command_list.append(drive)
         
         full_command_str = " ".join(command_list)
         self.preview_var.set(full_command_str)
