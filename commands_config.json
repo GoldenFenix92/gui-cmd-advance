@@ -205,6 +205,107 @@
                     ]
                 }
             ]
+        },
+        {
+            "name": "Archivos",
+            "commands": [
+                {
+                    "name": "dir",
+                    "description": "Muestra una lista de archivos y subdirectorios en un directorio.",
+                    "command": "dir",
+                    "args": [
+                        {
+                            "name": "Ruta",
+                            "flag": "",
+                            "type": "directory_entry",
+                            "description": "Ruta del directorio a listar."
+                        },
+                        {
+                            "name": "Subdirectorios (/s)",
+                            "flag": "/s",
+                            "type": "checkbox",
+                            "description": "Muestra archivos en el directorio especificado y todos sus subdirectorios."
+                        }
+                    ]
+                },
+                {
+                    "name": "tree",
+                    "description": "Muestra la estructura de directorios de una ruta.",
+                    "command": "tree",
+                    "args": [
+                        {
+                            "name": "Ruta",
+                            "flag": "",
+                            "type": "directory_entry",
+                            "description": "Ruta a visualizar."
+                        },
+                        {
+                            "name": "Mostrar archivos (/f)",
+                            "flag": "/f",
+                            "type": "checkbox",
+                            "description": "Muestra los nombres de los archivos en cada carpeta."
+                        }
+                    ]
+                },
+                {
+                    "name": "robocopy",
+                    "description": "Copia archivos y árboles de directorios de forma robusta.",
+                    "command": "robocopy",
+                    "args": [
+                        {
+                            "name": "Origen",
+                            "flag": "",
+                            "type": "directory_entry",
+                            "description": "Directorio de origen."
+                        },
+                        {
+                            "name": "Destino",
+                            "flag": "",
+                            "type": "directory_entry",
+                            "description": "Directorio de destino."
+                        },
+                        {
+                            "name": "Subdirectorios",
+                            "type": "radio_group",
+                            "options": [
+                                {"name": "No copiar", "flag": ""},
+                                {"name": "Copiar excluyendo vacíos (/s)", "flag": "/s"},
+                                {"name": "Copiar incluyendo vacíos (/e)", "flag": "/e"}
+                            ],
+                            "description": "Elige si deseas copiar subdirectorios y cómo tratar los vacíos."
+                        }
+                    ]
+                },
+                {
+                    "name": "xcopy",
+                    "description": "Copia archivos y árboles de directorios.",
+                    "command": "xcopy",
+                    "args": [
+                        {
+                            "name": "Origen",
+                            "flag": "",
+                            "type": "directory_entry",
+                            "description": "Ruta del archivo o directorio a copiar."
+                        },
+                        {
+                            "name": "Destino",
+                            "flag": "",
+                            "type": "directory_entry",
+                            "description": "Directorio de destino."
+                        },
+                        {
+                            "name": "Subdirectorios",
+                            "type": "radio_group",
+                            "options": [
+                                {"name": "No copiar", "flag": ""},
+                                {"name": "Copiar excluyendo vacíos (/s)", "flag": "/s"},
+                                {"name": "Copiar incluyendo vacíos (/e)", "flag": "/e"}
+                            ],
+                            "description": "Elige si deseas copiar subdirectorios y cómo tratar los vacíos."
+                        }
+                    ]
+                }
+            ]
         }
     ]
 }

@@ -179,11 +179,36 @@ class App(ctk.CTk):
                 if arg_type == "checkbox":
                     chk = ctk.CTkCheckBox(row_frame, text=arg_name, variable=var, onvalue=arg_flag, offvalue="")
                     chk.pack(side="left", padx=(0, 10))
-                elif arg_type == "entry":
+                elif arg_type in ["entry", "directory_entry"]:
                     lbl = ctk.CTkLabel(row_frame, text=f"{arg_name}:")
                     lbl.pack(side="left", padx=(0, 5))
                     ent = ctk.CTkEntry(row_frame, textvariable=var, placeholder_text="Escribir...")
                     ent.pack(side="left", fill="x", expand=True, padx=(0, 10))
+                    
+                    if arg_type == "directory_entry":
+                        def browse_folder(v=var):
+                            folder = filedialog.askdirectory()
+                            if folder:
+                                folder = folder.replace("/", "\\")
+                                if " " in folder and not folder.startswith('"'):
+                                    folder = f'"{folder}"'
+                                v.set(folder)
+                        btn_browse = ctk.CTkButton(row_frame, text="Examinar...", width=80, command=browse_folder)
+                        btn_browse.pack(side="left", padx=(0, 10))
+                        
+                elif arg_type == "radio_group":
+                    lbl = ctk.CTkLabel(row_frame, text=f"{arg_name}:")
+                    lbl.pack(side="left", anchor="n", padx=(0, 5))
+                    
+                    rb_frame = ctk.CTkFrame(row_frame, fg_color="transparent")
+                    rb_frame.pack(side="left", fill="both", expand=True)
+                    
+                    options = arg.get("options", [])
+                    for opt in options:
+                        opt_name = opt.get("name")
+                        opt_flag = opt.get("flag", "")
+                        rb = ctk.CTkRadioButton(rb_frame, text=opt_name, variable=var, value=opt_flag)
+                        rb.pack(side="top", anchor="w", pady=(0, 5))
                 
                 self.current_args_vars[arg_name] = {"var": var, "type": arg_type, "flag": arg_flag}
                 
@@ -209,9 +234,11 @@ class App(ctk.CTk):
         for arg_name, arg_data in self.current_args_vars.items():
             val = arg_data["var"].get().strip()
             if val:
-                if arg_data["type"] == "checkbox":
+                if arg_data["type"] in ["checkbox", "radio_group"]:
                     command_list.append(val)
-                elif arg_data["type"] == "entry":
+                elif arg_data["type"] in ["entry", "directory_entry"]:
+                    if arg_data["type"] == "directory_entry":
+                        val = val.replace("/", "\\")
                     if arg_data["flag"]:
                         command_list.append(arg_data["flag"])
                     command_list.append(val)

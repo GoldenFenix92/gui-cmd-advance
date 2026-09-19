@@ -21,9 +21,9 @@ This file tracks the commands that are planned, in progress, and completed for t
 
 ## Archivos (Files)
 
-- [ ] dir
-- [ ] tree
-- [ ] robocopy
-- [ ] xcopy
+- [x] dir
+- [x] tree
+- [x] robocopy
+- [x] xcopy
 
 _(Add more categories and commands as needed)_
