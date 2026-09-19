@@ -70,8 +70,14 @@ class App(ctk.CTk):
         
         self.current_args_vars = {}
 
-        self.execute_btn = ctk.CTkButton(self.left_frame, text="Ejecutar Comando", command=self.toggle_execution)
-        self.execute_btn.grid(row=6, column=0, padx=15, pady=15, sticky="ew")
+        self.btn_frame = ctk.CTkFrame(self.left_frame, fg_color="transparent")
+        self.btn_frame.grid(row=6, column=0, padx=15, pady=15, sticky="ew")
+
+        self.execute_btn = ctk.CTkButton(self.btn_frame, text="Ejecutar Comando", command=self.toggle_execution)
+        self.execute_btn.pack(side="left", fill="x", expand=True, padx=(0, 5))
+        
+        self.fav_btn = ctk.CTkButton(self.btn_frame, text="⭐", width=40, command=self.save_favorite, fg_color="#F39C12", hover_color="#D68910")
+        self.fav_btn.pack(side="right")
 
         # ---------- FRAME DERECHO: Consola y Exportar ----------
         self.right_frame = ctk.CTkFrame(self)
@@ -90,13 +96,28 @@ class App(ctk.CTk):
         self.output_textbox.grid(row=1, column=0, columnspan=2, padx=10, pady=10, sticky="nsew")
         self.output_textbox.configure(state="disabled")
 
-        
         self.progressbar = ctk.CTkProgressBar(self.right_frame)
         self.progressbar.grid(row=2, column=0, columnspan=2, padx=10, pady=(0, 10), sticky="ew")
         self.progressbar.set(0)
 
+        # Export Button
         self.export_btn = ctk.CTkButton(self.right_frame, text="Exportar", width=100, command=self.export_output)
-        self.export_btn.grid(row=3, column=0, padx=10, pady=(0, 10), sticky="sw")
+        self.export_btn.grid(row=3, column=0, padx=10, pady=(0, 5), sticky="sw")
+        
+        # Dashboard (Status Bar)
+        self.status_bar = ctk.CTkFrame(self.right_frame, height=25, fg_color="transparent")
+        self.status_bar.grid(row=4, column=0, columnspan=2, sticky="ew")
+        self.lbl_status = ctk.CTkLabel(self.status_bar, text="Iniciando sistema...", font=("Consolas", 12, "bold"), text_color="#A9A9A9")
+        self.lbl_status.pack(side="right", padx=10)
+        
+        # Configurar tags de sintaxis
+        self.output_textbox.tag_config("error", foreground="#FF4C4C")
+        self.output_textbox.tag_config("success", foreground="#4CFF4C")
+        self.output_textbox.tag_config("ip", foreground="#42A5F5")
+        self.output_textbox.tag_config("path", foreground="#FFCA28")
+        self.output_textbox.tag_config("highlight", foreground="#FF4081")
+
+        self.update_status_dashboard()
 
         self.clear_btn = ctk.CTkButton(self.right_frame, text="Limpiar", width=100, fg_color="transparent", border_width=1, text_color=("#24292F", "#C9D1D9"), command=self.clear_output)
         self.clear_btn.grid(row=3, column=1, padx=10, pady=(0, 10), sticky="se")
@@ -104,11 +125,35 @@ class App(ctk.CTk):
         self.on_category_change(self.cat_var.get())
 
     def load_config(self):
+        config = {"categories": []}
         try:
             with open("commands_config.json", "r", encoding="utf-8") as f:
-                return json.load(f)
+                config = json.load(f)
         except Exception as e:
-            return {"categories": []}
+            pass
+            
+        try:
+            with open("favorites.json", "r", encoding="utf-8") as f:
+                favs = json.load(f)
+                if favs:
+                    config["categories"].insert(0, {
+                        "name": "⭐ Favoritos",
+                        "commands": favs
+                    })
+        except:
+            pass
+            
+        return config
+
+    def update_status_dashboard(self):
+        import psutil
+        try:
+            cpu = psutil.cpu_percent(interval=None)
+            ram = psutil.virtual_memory().percent
+            self.lbl_status.configure(text=f"💻 CPU: {cpu}%   |   🧠 RAM: {ram}%")
+        except:
+            self.lbl_status.configure(text="💻 CPU: --%   |   🧠 RAM: --%")
+        self.after(2000, self.update_status_dashboard)
 
     def get_windows_drives(self):
         import subprocess
@@ -184,6 +229,11 @@ class App(ctk.CTk):
             self.on_command_change("")
 
     def on_command_change(self, selected_command):
+        if self.cat_var.get() == "⭐ Favoritos":
+            self.fav_btn.configure(text="🗑️", fg_color="#E74C3C", hover_color="#C0392B", command=self.remove_favorite)
+        else:
+            self.fav_btn.configure(text="⭐", fg_color="#F39C12", hover_color="#D68910", command=self.save_favorite)
+            
         for widget in self.args_frame.winfo_children():
             widget.destroy()
         self.current_args_vars.clear()
@@ -200,7 +250,7 @@ class App(ctk.CTk):
                 row_frame = ctk.CTkFrame(self.args_frame, fg_color="transparent")
                 row_frame.pack(fill="x", pady=4)
                 
-                var = ctk.StringVar(value="")
+                var = ctk.StringVar(value=arg.get("value", ""))
                 var.trace_add("write", lambda *args: self.update_preview())
                 
                 if arg_type == "checkbox":
@@ -312,6 +362,75 @@ class App(ctk.CTk):
         else:
             self.run_command()
 
+    def remove_favorite(self):
+        cmd_name = self.cmd_var.get()
+        favs = []
+        try:
+            if os.path.exists("favorites.json"):
+                with open("favorites.json", "r", encoding="utf-8") as f:
+                    favs = json.load(f)
+        except:
+            return
+            
+        new_favs = [f for f in favs if f.get("name") != cmd_name]
+        
+        with open("favorites.json", "w", encoding="utf-8") as f:
+            json.dump(new_favs, f, indent=4)
+            
+        self.output_textbox.configure(state="normal")
+        self.output_textbox.insert("end", f"\n[!] Comando '{cmd_name}' eliminado de Favoritos.\n(Reinicia la app para actualizar la lista)\n", "error")
+        self.output_textbox.see("end")
+        self.output_textbox.configure(state="disabled")
+
+    def save_favorite(self):
+        cmd_data = self.get_command_data(self.cmd_var.get())
+        if not cmd_data: return
+        
+        import copy
+        fav_cmd = copy.deepcopy(cmd_data)
+        
+        for arg in fav_cmd.get("args", []):
+            arg_name = arg.get("name")
+            if arg_name in self.current_args_vars:
+                arg["value"] = self.current_args_vars[arg_name]["var"].get()
+                
+        favs = []
+        try:
+            if os.path.exists("favorites.json"):
+                with open("favorites.json", "r", encoding="utf-8") as f:
+                    favs = json.load(f)
+        except:
+            pass
+            
+        base_name = f"{fav_cmd['name']} (Fav)"
+        fav_name = base_name
+        counter = 1
+        
+        # Check for exact duplicates or generate a unique name
+        while any(f.get("name") == fav_name for f in favs):
+            existing = next((f for f in favs if f.get("name") == fav_name), None)
+            if existing:
+                # Compare args
+                if existing.get("args") == fav_cmd.get("args"):
+                    self.output_textbox.configure(state="normal")
+                    self.output_textbox.insert("end", "\n[!] Este comando con los mismos parámetros ya existe en Favoritos.\n", "error")
+                    self.output_textbox.see("end")
+                    self.output_textbox.configure(state="disabled")
+                    return
+            counter += 1
+            fav_name = f"{base_name} {counter}"
+            
+        fav_cmd["name"] = fav_name
+            
+        favs.append(fav_cmd)
+        with open("favorites.json", "w", encoding="utf-8") as f:
+            json.dump(favs, f, indent=4)
+            
+        self.output_textbox.configure(state="normal")
+        self.output_textbox.insert("end", f"\n[⭐] Comando '{fav_name}' guardado en Favoritos.\n(Reinicia la app para verlo en la lista)\n", "success")
+        self.output_textbox.see("end")
+        self.output_textbox.configure(state="disabled")
+
     def run_command(self):
         if not self.preview_var.get():
             return
@@ -366,10 +485,31 @@ class App(ctk.CTk):
                 text = text[:-1]
                 
             if text:
-                self.output_textbox.insert("end", text)
+                pattern = re.compile(r'(\b\d{1,3}(?:\.\d{1,3}){3}\b)|(\b(?:error|failed|denied|fallo|denegado|acceso denegado)\b)|(\b(?:success|exitoso|completado|100%|correcto)\b)|([A-Za-z]:\\[^\s]*)', re.IGNORECASE)
+                
+                last_end = 0
+                for match in pattern.finditer(text):
+                    start, end = match.span()
+                    if start > last_end:
+                        self.output_textbox.insert("end", text[last_end:start])
+                    
+                    matched_text = match.group(0)
+                    if match.group(1): # IP
+                        self.output_textbox.insert("end", matched_text, "ip")
+                    elif match.group(2): # Error
+                        self.output_textbox.insert("end", matched_text, "error")
+                    elif match.group(3): # Success
+                        self.output_textbox.insert("end", matched_text, "success")
+                    elif match.group(4): # Path
+                        self.output_textbox.insert("end", matched_text, "path")
+                        
+                    last_end = end
+                
+                if last_end < len(text):
+                    self.output_textbox.insert("end", text[last_end:])
+
                 self.output_textbox.see("end")
                 
-                import re
                 match = re.search(r'(\d+)%', text)
                 if match and hasattr(self, 'progressbar'):
                     try:
@@ -388,7 +528,36 @@ class App(ctk.CTk):
     def export_output(self):
         content = self.output_textbox.get("1.0", "end-1c")
         if not content.strip(): return
-        file_path = filedialog.asksaveasfilename(defaultextension=".txt", title="Exportar Consola")
+        file_path = filedialog.asksaveasfilename(defaultextension=".html", filetypes=[("HTML Report", "*.html"), ("Text file", "*.txt")], title="Exportar Consola")
         if file_path:
-            with open(file_path, "w", encoding="utf-8") as f: f.write(content)
-            self.append_output(f"\n[!] Exportado a: {file_path}\n")
+            with open(file_path, "w", encoding="utf-8") as f:
+                if file_path.endswith(".html"):
+                    import datetime
+                    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    html_content = f"""<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Reporte de Ejecución - CMD GUI Advance</title>
+    <style>
+        body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #1e1e1e; color: #d4d4d4; padding: 20px; }}
+        .header {{ border-bottom: 2px solid #007acc; padding-bottom: 10px; margin-bottom: 20px; }}
+        .console {{ background-color: #000000; padding: 15px; border-radius: 8px; font-family: Consolas, monospace; white-space: pre-wrap; overflow-x: auto; color: #00ff00; }}
+        h1 {{ margin: 0; color: #ffffff; }}
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📋 Reporte de Ejecución</h1>
+        <p><strong>Fecha:</strong> {timestamp}</p>
+    </div>
+    <div class="console">{content}</div>
+</body>
+</html>"""
+                    f.write(html_content)
+                else:
+                    f.write(content)
+            self.output_textbox.configure(state="normal")
+            self.output_textbox.insert("end", f"\n[!] Exportado a: {file_path}\n", "success")
+            self.output_textbox.see("end")
+            self.output_textbox.configure(state="disabled")

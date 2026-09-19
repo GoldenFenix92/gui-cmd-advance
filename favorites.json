@@ -1,0 +1,85 @@
+[
+    {
+        "name": "ipconfig (Fav)",
+        "description": "Muestra la configuraci\u00f3n de red actual.",
+        "command": "ipconfig",
+        "args": [
+            {
+                "name": "Todo (All)",
+                "flag": "/all",
+                "type": "checkbox",
+                "description": "Muestra la configuraci\u00f3n completa de todos los adaptadores de red.",
+                "value": ""
+            },
+            {
+                "name": "Renovar (Renew)",
+                "flag": "/renew",
+                "type": "checkbox",
+                "description": "Renueva la direcci\u00f3n IPv4 para el adaptador especificado (o todos si no se especifica).",
+                "value": ""
+            },
+            {
+                "name": "Liberar (Release)",
+                "flag": "/release",
+                "type": "checkbox",
+                "description": "Libera la direcci\u00f3n IPv4 actual, desconectando el equipo de la red.",
+                "value": ""
+            }
+        ]
+    },
+    {
+        "name": "tasklist (Fav)",
+        "description": "Muestra una lista de todas las tareas y procesos en ejecuci\u00f3n.",
+        "command": "tasklist",
+        "args": [
+            {
+                "name": "Formato detallado (/v)",
+                "flag": "/v",
+                "type": "checkbox",
+                "description": "Muestra informaci\u00f3n de tareas en formato detallado.",
+                "value": ""
+            }
+        ]
+    },
+    {
+        "name": "robocopy (Fav)",
+        "description": "Copia archivos y \u00e1rboles de directorios de forma robusta.",
+        "command": "robocopy",
+        "args": [
+            {
+                "name": "Origen",
+                "flag": "",
+                "type": "directory_entry",
+                "description": "Directorio de origen.",
+                "value": ""
+            },
+            {
+                "name": "Destino",
+                "flag": "",
+                "type": "directory_entry",
+                "description": "Directorio de destino.",
+                "value": ""
+            },
+            {
+                "name": "Subdirectorios",
+                "type": "radio_group",
+                "options": [
+                    {
+                        "name": "No copiar",
+                        "flag": ""
+                    },
+                    {
+                        "name": "Copiar excluyendo vac\u00edos (/s)",
+                        "flag": "/s"
+                    },
+                    {
+                        "name": "Copiar incluyendo vac\u00edos (/e)",
+                        "flag": "/e"
+                    }
+                ],
+                "description": "Elige si deseas copiar subdirectorios y c\u00f3mo tratar los vac\u00edos.",
+                "value": ""
+            }
+        ]
+    }
+]
