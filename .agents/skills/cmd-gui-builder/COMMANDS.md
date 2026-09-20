@@ -52,6 +52,16 @@ This file tracks the commands that are planned, in progress, and completed for t
 - [x] robocopy
 - [x] xcopy
 
+## Almacenamiento (Storage)
+
+- [x] Get-PhysicalDisk
+- [x] Get-Disk
+- [x] Get-Volume
+- [x] Initialize-Disk
+- [x] New-Partition & Format
+- [x] Clear-Disk (Formateo Completo)
+- [x] wmic diskdrive
+
 _(Add more categories and commands as needed)_
 
 ## Mejoras Premium (Enterprise)

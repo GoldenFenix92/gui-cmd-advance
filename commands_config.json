@@ -347,6 +347,196 @@
                     ]
                 }
             ]
+        },
+        {
+            "name": "Almacenamiento",
+            "commands": [
+                {
+                    "name": "Get-PhysicalDisk",
+                    "description": "Lista todos los discos físicos conectados, mostrando su salud y estado operativo.",
+                    "command": "powershell -Command \"Get-PhysicalDisk | Format-Table -AutoSize\"",
+                    "args": []
+                },
+                {
+                    "name": "Get-Disk",
+                    "description": "Muestra información lógica de los discos, incluyendo estilo de partición (MBR/GPT) y estado.",
+                    "command": "powershell -Command \"Get-Disk | Format-Table -AutoSize\"",
+                    "args": []
+                },
+                {
+                    "name": "Get-Volume",
+                    "description": "Lista todos los volúmenes, su letra de unidad, sistema de archivos y salud.",
+                    "command": "powershell -Command \"Get-Volume | Format-Table -AutoSize\"",
+                    "args": []
+                },
+                {
+                    "name": "Initialize-Disk",
+                    "description": "Inicializa un disco en estado 'Desconocido' o 'Sin inicializar'.",
+                    "command": "powershell -Command \"& {param($num) if($null -eq $num){ Write-Host 'Error: Ingresa el numero de disco.'; exit } $d = Get-Disk -Number $num -ErrorAction SilentlyContinue; if($null -eq $d){ Write-Host 'Disco no encontrado.'; exit } if($d.IsSystem -or $d.IsBoot){ Write-Host 'ADVERTENCIA EXTREMA: Esta unidad contiene el sistema operativo. Operacion CANCELADA por seguridad.'; exit } if($d.PartitionStyle -ne 'RAW' -and $d.PartitionStyle -ne 'Unknown'){ Write-Host 'El disco ya esta inicializado (' $d.PartitionStyle ').'; exit } try { Initialize-Disk -Number $num -PartitionStyle GPT -ErrorAction Stop; Write-Host 'Disco inicializado como GPT.' } catch { Write-Host 'Error al inicializar:' $_.Exception.Message } }\"",
+                    "args": [
+                        {
+                            "name": "Número de Disco",
+                            "flag": "-num",
+                            "type": "disk_dropdown",
+                            "description": "Selecciona el número de disco a inicializar."
+                        }
+                    ]
+                },
+                {
+                    "name": "New-Partition & Format",
+                    "description": "Crea una nueva partición usando todo el espacio disponible y formatea como NTFS.",
+                    "command": "powershell -Command \"& {param($num) if($null -eq $num){ Write-Host 'Error: Ingresa el numero de disco.'; exit } $d = Get-Disk -Number $num -ErrorAction SilentlyContinue; if($null -eq $d){ Write-Host 'Disco no encontrado.'; exit } if($d.IsSystem -or $d.IsBoot){ Write-Host 'ADVERTENCIA EXTREMA: Esta unidad contiene el sistema operativo. Operacion CANCELADA por seguridad.'; exit } try { New-Partition -DiskNumber $num -UseMaximumSize -AssignDriveLetter -ErrorAction Stop | Format-Volume -FileSystem NTFS -Confirm:$false -ErrorAction Stop; Write-Host 'Particion creada y formateada con exito.' } catch { Write-Host 'Error:' $_.Exception.Message } }\"",
+                    "args": [
+                        {
+                            "name": "Número de Disco",
+                            "flag": "-num",
+                            "type": "disk_dropdown",
+                            "description": "Selecciona el número de disco donde crear la partición."
+                        }
+                    ]
+                },
+                {
+                    "name": "Clear-Disk (Formateo Completo)",
+                    "description": "¡PRECAUCIÓN! Borra ABSOLUTAMENTE TODO el contenido y particiones del disco seleccionado. Úsalo bajo tu propio riesgo.",
+                    "command": "powershell -Command \"& {param($num) if($null -eq $num){ Write-Host 'Error: Ingresa el numero de disco.'; exit } $d = Get-Disk -Number $num -ErrorAction SilentlyContinue; if($null -eq $d){ Write-Host 'Disco no encontrado.'; exit } if($d.IsSystem -or $d.IsBoot){ Write-Host 'ADVERTENCIA EXTREMA: Esta unidad contiene el sistema operativo. Operacion CANCELADA por seguridad.'; exit } try { Clear-Disk -Number $num -RemoveData -Confirm:$false -ErrorAction Stop; Write-Host 'Disco limpiado completamente.' } catch { Write-Host 'Error al limpiar:' $_.Exception.Message } }\"",
+                    "args": [
+                        {
+                            "name": "Número de Disco",
+                            "flag": "-num",
+                            "type": "disk_dropdown",
+                            "description": "Selecciona el disco a borrar COMPLETAMENTE."
+                        }
+                    ]
+                },
+                {
+                    "name": "Info Discos Físicos",
+                    "description": "Muestra información de hardware de las unidades de disco físicas usando Get-CimInstance (reemplaza WMIC).",
+                    "command": "powershell -Command \"Get-CimInstance Win32_DiskDrive | Select-Object Index, Model, Name, Size, Status | Format-Table -AutoSize\"",
+                    "args": []
+                },
+                {
+                    "name": "Explorar Disco (Abrir Carpeta)",
+                    "description": "Abre el disco seleccionado en el Explorador de Archivos (si tiene letra asignada).",
+                    "command": "powershell -Command \"& {param($num) $v = Get-Partition -DiskNumber $num -ErrorAction SilentlyContinue | Where-Object DriveLetter | Select-Object -First 1 -ExpandProperty DriveLetter; if($v){ explorer.exe ($v + ':\\'); Write-Host 'Explorador abierto en' ($v + ':\\') } else { Write-Host 'Error: Este disco no tiene una letra asignada o particion visible.' } }\"",
+                    "args": [
+                        {
+                            "name": "Número de Disco",
+                            "flag": "-num",
+                            "type": "disk_dropdown",
+                            "description": "Selecciona el disco a explorar."
+                        }
+                    ]
+                },
+                {
+                    "name": "Asignar Letra (Montar)",
+                    "description": "Busca la primera partición sin letra del disco y le asigna la siguiente letra disponible.",
+                    "command": "powershell -Command \"& {param($num) $p = Get-Partition -DiskNumber $num -ErrorAction SilentlyContinue | Where-Object { -not $_.DriveLetter -and $_.Type -ne 'Reserved' -and $_.Type -ne 'System' -and $_.Type -ne 'Recovery' } | Select-Object -First 1; if($p){ try{ Add-PartitionAccessPath -InputObject $p -AssignDriveLetter -ErrorAction Stop; Write-Host 'Letra asignada con exito.' }catch{ Write-Host 'Error:' $_.Exception.Message } } else { Write-Host 'No se encontro una particion valida sin letra en este disco.' } }\"",
+                    "args": [
+                        {
+                            "name": "Número de Disco",
+                            "flag": "-num",
+                            "type": "disk_dropdown",
+                            "description": "Selecciona el disco al cual asignarle letra."
+                        }
+                    ]
+                },
+                {
+                    "name": "Quitar Letra (Desmontar)",
+                    "description": "Remueve la letra de unidad del disco, haciéndolo invisible al Explorador (los datos no se borran).",
+                    "command": "powershell -Command \"& {param($num) $d = Get-Disk -Number $num -ErrorAction SilentlyContinue; if($null -eq $d){ exit }; if($d.IsSystem -or $d.IsBoot){ Write-Host 'ADVERTENCIA: No se puede desmontar la unidad del sistema.'; exit } $p = Get-Partition -DiskNumber $num -ErrorAction SilentlyContinue | Where-Object DriveLetter; if($p){ $p | ForEach-Object { try{ Remove-PartitionAccessPath -InputObject $_ -AccessPath ($_.DriveLetter + ':\\') -ErrorAction Stop }catch{} }; Write-Host 'Letra(s) removida(s) con exito.' } else { Write-Host 'El disco no tiene letras asignadas.' } }\"",
+                    "args": [
+                        {
+                            "name": "Número de Disco",
+                            "flag": "-num",
+                            "type": "disk_dropdown",
+                            "description": "Selecciona el disco a desmontar."
+                        }
+                    ]
+                },
+                {
+                    "name": "Desconectar Disco (Offline)",
+                    "description": "Pone el disco en estado Fuera de Línea (Offline) para el sistema operativo.",
+                    "command": "powershell -Command \"& {param($num) $d = Get-Disk -Number $num -ErrorAction SilentlyContinue; if($null -eq $d){ exit } if($d.IsSystem -or $d.IsBoot){ Write-Host 'ADVERTENCIA: No se puede desconectar el disco del sistema.'; exit } try { Set-Disk -Number $num -IsOffline $true -ErrorAction Stop; Write-Host 'Disco puesto Fuera de Linea (Offline).' }catch{ Write-Host 'Error:' $_.Exception.Message } }\"",
+                    "args": [
+                        {
+                            "name": "Número de Disco",
+                            "flag": "-num",
+                            "type": "disk_dropdown",
+                            "description": "Selecciona el disco a desconectar."
+                        }
+                    ]
+                },
+                {
+                    "name": "Conectar Disco (Online)",
+                    "description": "Pone el disco en estado En Línea (Online).",
+                    "command": "powershell -Command \"& {param($num) try { Set-Disk -Number $num -IsOffline $false -ErrorAction Stop; Write-Host 'Disco puesto En Linea (Online).' }catch{ Write-Host 'Error:' $_.Exception.Message } }\"",
+                    "args": [
+                        {
+                            "name": "Número de Disco",
+                            "flag": "-num",
+                            "type": "disk_dropdown",
+                            "description": "Selecciona el disco a conectar."
+                        }
+                    ]
+                },
+                {
+                    "name": "Expulsar Unidad Seguramente",
+                    "description": "Desmonta y expulsa de forma segura un dispositivo de almacenamiento masivo USB (equivalente a Quitar hardware con seguridad).",
+                    "command": "powershell -Command \"& {param($letra) $letra = $letra.Trim(':') + ':'; $shell = New-Object -comObject Shell.Application; $item = $shell.Namespace(17).ParseName($letra); if($null -eq $item){ Write-Host 'No se pudo encontrar la unidad ' $letra; exit } $item.InvokeVerb('Eject'); Write-Host 'Señal de expulsion enviada para' $letra '(Si es USB se podra retirar con seguridad).' }\"",
+                    "args": [
+                        {
+                            "name": "Unidad (Letra)",
+                            "flag": "-letra",
+                            "type": "drive_dropdown",
+                            "description": "Selecciona la unidad a expulsar."
+                        }
+                    ]
+                },
+                {
+                    "name": "Formatear Disco (Avanzado estilo Rufus)",
+                    "description": "Herramienta todo-en-uno que limpia, inicializa, particiona y formatea un disco en un solo paso. TODO EL CONTENIDO SERA BORRADO.",
+                    "command": "powershell -Command \"& {param($num, $style='GPT', $fs='NTFS', $label='NuevoVol', [switch]$quick) $d = Get-Disk -Number $num -ErrorAction SilentlyContinue; if($null -eq $d){ Write-Host 'Disco no encontrado.'; exit }; if($d.IsSystem -or $d.IsBoot){ Write-Host 'ADVERTENCIA EXTREMA: Unidad de sistema. OPERACION DENEGADA.'; exit } try { Clear-Disk -Number $num -RemoveData -Confirm:$false -ErrorAction Stop; Initialize-Disk -Number $num -PartitionStyle $style -ErrorAction Stop; $part = New-Partition -DiskNumber $num -UseMaximumSize -AssignDriveLetter -ErrorAction Stop; $formatArgs = @{ FileSystem = $fs; NewFileSystemLabel = $label; Confirm = $false; ErrorAction = 'Stop' }; if($quick){ $formatArgs.Full = $false }else{ $formatArgs.Full = $true }; $part | Format-Volume @formatArgs | Out-Null; Write-Host 'Formateo avanzado exitoso.' } catch { Write-Host 'Error:' $_.Exception.Message } }\"",
+                    "args": [
+                        {
+                            "name": "Disco a formatear",
+                            "flag": "-num",
+                            "type": "disk_dropdown",
+                            "description": "Selecciona el disco físico (se borrarán todas sus particiones)."
+                        },
+                        {
+                            "name": "Esquema de Partición",
+                            "type": "radio_group",
+                            "options": [
+                                {"name": "GPT (UEFI - Moderno)", "flag": "-style GPT"},
+                                {"name": "MBR (BIOS - Legacy)", "flag": "-style MBR"}
+                            ],
+                            "description": "Esquema de partición del disco (GPT es el estándar actual)."
+                        },
+                        {
+                            "name": "Sistema de Archivos",
+                            "type": "radio_group",
+                            "options": [
+                                {"name": "NTFS", "flag": "-fs NTFS"},
+                                {"name": "FAT32", "flag": "-fs FAT32"},
+                                {"name": "exFAT", "flag": "-fs exFAT"}
+                            ],
+                            "description": "Formato del volumen. NTFS recomendado para Windows, exFAT/FAT32 para USB."
+                        },
+                        {
+                            "name": "Etiqueta (Nombre)",
+                            "flag": "-label",
+                            "type": "entry",
+                            "description": "El nombre visible que tendrá la unidad (sin espacios o usa guiones)."
+                        },
+                        {
+                            "name": "Formato Rápido",
+                            "flag": "-quick",
+                            "type": "checkbox",
+                            "description": "Realiza un formateo rápido en lugar de escribir ceros en todo el disco."
+                        }
+                    ]
+                }
+            ]
         }
     ]
 }

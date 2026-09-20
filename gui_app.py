@@ -76,7 +76,7 @@ class App(ctk.CTk):
         self.execute_btn = ctk.CTkButton(self.btn_frame, text="Ejecutar Comando", command=self.toggle_execution)
         self.execute_btn.pack(side="left", fill="x", expand=True, padx=(0, 5))
         
-        self.fav_btn = ctk.CTkButton(self.btn_frame, text="⭐", width=40, command=self.save_favorite, fg_color="#F39C12", hover_color="#D68910")
+        self.fav_btn = ctk.CTkButton(self.btn_frame, text="⭐", width=40, font=("Segoe UI Emoji", 15), anchor="center", command=self.save_favorite, fg_color="#F39C12", hover_color="#D68910")
         self.fav_btn.pack(side="right")
 
         # ---------- FRAME DERECHO: Consola y Exportar ----------
@@ -160,16 +160,12 @@ class App(ctk.CTk):
         drives = []
         try:
             output = subprocess.check_output(
-                ["wmic", "logicaldisk", "get", "caption,volumename", "/format:csv"],
+                ["powershell", "-Command", "Get-CimInstance Win32_LogicalDisk | Where-Object DriveType -eq 3 | ForEach-Object { $_.DeviceID + ' (' + $_.VolumeName + ')' }"],
                 creationflags=subprocess.CREATE_NO_WINDOW
             ).decode('mbcs', errors='ignore').strip().split('\n')
-            for line in output[2:]:
+            for line in output:
                 if line.strip():
-                    parts = line.strip().split(',')
-                    if len(parts) >= 2:
-                        caption = parts[1].strip()
-                        vol = parts[2].strip() if len(parts) > 2 else ""
-                        drives.append(f"{caption} ({vol})" if vol else caption)
+                    drives.append(line.strip())
         except:
             pass
         if not drives:
@@ -181,6 +177,24 @@ class App(ctk.CTk):
                     drives.append(f"{letter}:")
                 bitmask >>= 1
         return drives if drives else ["C:"]
+
+    def get_physical_disks(self):
+        import subprocess
+        disks = []
+        try:
+            cmd = "Get-PhysicalDisk | ForEach-Object { $num = $_.DeviceId; $friendly = $_.FriendlyName; $vStr=''; try{ $v=Get-Partition -DiskNumber $num -ErrorAction SilentlyContinue | Where-Object DriveLetter | Select-Object -ExpandProperty DriveLetter; if($v){$vStr = ' (' + ($v -join ', ') + ':)'} }catch{}; $num + ' - ' + $friendly + $vStr }"
+            output = subprocess.check_output(
+                ["powershell", "-Command", cmd],
+                creationflags=subprocess.CREATE_NO_WINDOW
+            ).decode('mbcs', errors='ignore').strip().split('\n')
+            for line in output:
+                if line.strip():
+                    disks.append(line.strip())
+        except:
+            pass
+        if not disks:
+            disks = ["0", "1", "2"]
+        return disks
 
     def toggle_theme(self):
         if self.theme_switch.get() == 1:
@@ -230,9 +244,9 @@ class App(ctk.CTk):
 
     def on_command_change(self, selected_command):
         if self.cat_var.get() == "⭐ Favoritos":
-            self.fav_btn.configure(text="🗑️", fg_color="#E74C3C", hover_color="#C0392B", command=self.remove_favorite)
+            self.fav_btn.configure(text="🗑️", font=("Segoe UI Emoji", 15), anchor="center", fg_color="#E74C3C", hover_color="#C0392B", command=self.remove_favorite)
         else:
-            self.fav_btn.configure(text="⭐", fg_color="#F39C12", hover_color="#D68910", command=self.save_favorite)
+            self.fav_btn.configure(text="⭐", font=("Segoe UI Emoji", 15), anchor="center", fg_color="#F39C12", hover_color="#D68910", command=self.save_favorite)
             
         for widget in self.args_frame.winfo_children():
             widget.destroy()
@@ -306,6 +320,15 @@ class App(ctk.CTk):
                         var.set(drives[0])
                     dropdown = ctk.CTkOptionMenu(row_frame, variable=var, values=drives)
                     dropdown.pack(side="left", fill="x", expand=True, padx=(0, 10))
+                    
+                elif arg_type == "disk_dropdown":
+                    lbl = ctk.CTkLabel(row_frame, text=f"{arg_name}:")
+                    lbl.pack(side="left", padx=(0, 5))
+                    pdisks = self.get_physical_disks()
+                    if pdisks:
+                        var.set(pdisks[0])
+                    dropdown = ctk.CTkOptionMenu(row_frame, variable=var, values=pdisks)
+                    dropdown.pack(side="left", fill="x", expand=True, padx=(0, 10))
                 
                 self.current_args_vars[arg_name] = {"var": var, "type": arg_type, "flag": arg_flag}
                 
@@ -336,10 +359,12 @@ class App(ctk.CTk):
                 elif arg_data["type"] in ["entry", "directory_entry", "file_entry"]:
                     if arg_data["type"] in ["directory_entry", "file_entry"]:
                         val = val.replace("/", "\\")
+                    if " " in val and not val.startswith('"'):
+                        val = f'"{val}"'
                     if arg_data["flag"]:
                         command_list.append(arg_data["flag"])
                     command_list.append(val)
-                elif arg_data["type"] == "drive_dropdown":
+                elif arg_data["type"] in ["drive_dropdown", "disk_dropdown"]:
                     drive = val.split(" ")[0]
                     if arg_data["flag"]:
                         command_list.append(arg_data["flag"])
