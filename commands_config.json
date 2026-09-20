@@ -537,6 +537,82 @@
                     ]
                 }
             ]
+        },
+        {
+            "name": "Recuperación de Datos",
+            "commands": [
+                {
+                    "name": "CHKDSK (Reparar Sistema de Archivos)",
+                    "description": "Busca y repara errores lógicos en el sistema de archivos. NO funciona en discos RAW.",
+                    "command": "powershell -Command \"& {param($letra, [switch]$reparar, [switch]$forzar) $d = $letra.Trim(':') + ':'; $cmd = 'chkdsk ' + $d; if($reparar){ $cmd += ' /r' }; if($forzar){ $cmd += ' /x' }; Write-Host 'Ejecutando:' $cmd; Invoke-Expression $cmd }\"",
+                    "args": [
+                        {
+                            "name": "Unidad (Letra)",
+                            "flag": "-letra",
+                            "type": "drive_dropdown",
+                            "description": "Selecciona la letra de la unidad a reparar."
+                        },
+                        {
+                            "name": "Reparar Sectores (/r)",
+                            "flag": "-reparar",
+                            "type": "checkbox",
+                            "description": "Localiza sectores defectuosos y recupera la información legible (puede tardar horas)."
+                        },
+                        {
+                            "name": "Forzar Desmontaje (/x)",
+                            "flag": "-forzar",
+                            "type": "checkbox",
+                            "description": "Fuerza el desmontaje del volumen previamente si es necesario."
+                        }
+                    ]
+                },
+                {
+                    "name": "Windows File Recovery (WINFR)",
+                    "description": "Herramienta oficial de Microsoft para recuperar archivos borrados o en discos formateados/RAW. Si no está instalada, te invitará a descargarla.",
+                    "command": "powershell -Command \"& {param($origen, $destino, $modo='/regular', $filtro) $o = $origen.Trim(':') + ':'; if($null -eq $destino -or $destino -eq ''){ Write-Host 'Error: Debes elegir una carpeta de destino.'; exit }; if(!(Get-Command winfr -ErrorAction SilentlyContinue)){ Write-Host 'WINFR no esta instalado. Abriendo Microsoft Store...'; Start-Process 'ms-windows-store://pdp/?ProductId=9N26S50LN705'; exit }; $cmd = 'winfr ' + $o + ' \\\"' + $destino + '\\\" ' + $modo; if($filtro){ $cmd += ' /n \\\"' + $filtro + '\\\"' }; Write-Host 'Ejecutando:' $cmd; Invoke-Expression $cmd }\"",
+                    "args": [
+                        {
+                            "name": "Unidad Origen (Corrupta)",
+                            "flag": "-origen",
+                            "type": "drive_dropdown",
+                            "description": "La unidad de donde quieres recuperar los datos."
+                        },
+                        {
+                            "name": "Carpeta Destino (Segura)",
+                            "flag": "-destino",
+                            "type": "directory_entry",
+                            "description": "IMPORTANTE: Elige una carpeta en OTRO disco distinto al de origen."
+                        },
+                        {
+                            "name": "Modo de Búsqueda",
+                            "type": "radio_group",
+                            "options": [
+                                {"name": "Regular (Borrado reciente)", "flag": "-modo /regular"},
+                                {"name": "Extensivo (RAW/Corrupto/Formateado)", "flag": "-modo /extensive"}
+                            ],
+                            "description": "El modo Extensivo busca firmas de archivos, ideal para discos RAW."
+                        },
+                        {
+                            "name": "Filtro (Opcional)",
+                            "flag": "-filtro",
+                            "type": "entry",
+                            "description": "Ejemplo: *.pdf o *.jpg para buscar solo esos archivos. Déjalo vacío para todo."
+                        }
+                    ]
+                },
+                {
+                    "name": "PhotoRec Open Source (Descargar y Abrir)",
+                    "description": "Descarga y ejecuta temporalmente QPhotoRec (interfaz gráfica), el estándar de oro libre en recuperación de discos RAW.",
+                    "command": "powershell -Command \"& { $url='https://www.cgsecurity.org/testdisk-7.2.win.zip'; $zip='C:\\Windows\\Temp\\testdisk.zip'; $dest='C:\\Windows\\Temp\\testdisk_app'; if(!(Test-Path $dest\\testdisk-7.2\\qphotorec_win.exe)){ Write-Host 'Descargando PhotoRec 7.2 (Aprox 26MB)...'; Invoke-WebRequest -Uri $url -OutFile $zip; Write-Host 'Extrayendo...'; Expand-Archive -Path $zip -DestinationPath $dest -Force; Remove-Item $zip -Force -ErrorAction SilentlyContinue } Write-Host 'Abriendo QPhotoRec...'; Start-Process -FilePath \\\"$dest\\testdisk-7.2\\qphotorec_win.exe\\\" }\"",
+                    "args": []
+                },
+                {
+                    "name": "PhotoRec Open Source (Desinstalar)",
+                    "description": "Elimina los archivos temporales descargados de PhotoRec de tu PC.",
+                    "command": "powershell -Command \"& { $dest='C:\\Windows\\Temp\\testdisk_app'; if(Test-Path $dest){ Remove-Item -Path $dest -Recurse -Force; Write-Host 'PhotoRec ha sido eliminado del sistema exitosamente.' } else { Write-Host 'PhotoRec no se encuentra en el sistema.' } }\"",
+                    "args": []
+                }
+            ]
         }
     ]
 }
