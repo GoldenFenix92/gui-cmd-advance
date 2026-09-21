@@ -544,7 +544,7 @@
                 {
                     "name": "CHKDSK (Reparar Sistema de Archivos)",
                     "description": "Busca y repara errores lógicos en el sistema de archivos. NO funciona en discos RAW.",
-                    "command": "powershell -Command \"& {param($letra, [switch]$reparar, [switch]$forzar) $d = $letra.Trim(':') + ':'; $cmd = 'chkdsk ' + $d; if($reparar){ $cmd += ' /r' }; if($forzar){ $cmd += ' /x' }; Write-Host 'Ejecutando:' $cmd; Invoke-Expression $cmd }\"",
+                    "command": "powershell -Command \"& {param($letra, [switch]$reparar, [switch]$forzar) $d = $letra.Trim(':') + ':'; $argList = $d; if($reparar){ $argList += ' /r' }; if($forzar){ $argList += ' /x' }; Write-Host 'Abriendo consola de CHKDSK para interactuar (se mostrara progreso en ventana nueva)...'; Start-Process chkdsk -ArgumentList $argList -Wait; Write-Host 'Proceso finalizado.' }\"",
                     "args": [
                         {
                             "name": "Unidad (Letra)",
@@ -569,7 +569,7 @@
                 {
                     "name": "Windows File Recovery (WINFR)",
                     "description": "Herramienta oficial de Microsoft para recuperar archivos borrados o en discos formateados/RAW. Si no está instalada, te invitará a descargarla.",
-                    "command": "powershell -Command \"& {param($origen, $destino, $modo='/regular', $filtro) $o = $origen.Trim(':') + ':'; if($null -eq $destino -or $destino -eq ''){ Write-Host 'Error: Debes elegir una carpeta de destino.'; exit }; if(!(Get-Command winfr -ErrorAction SilentlyContinue)){ Write-Host 'WINFR no esta instalado. Abriendo Microsoft Store...'; Start-Process 'ms-windows-store://pdp/?ProductId=9N26S50LN705'; exit }; $cmd = 'winfr ' + $o + ' \\\"' + $destino + '\\\" ' + $modo; if($filtro){ $cmd += ' /n \\\"' + $filtro + '\\\"' }; Write-Host 'Ejecutando:' $cmd; Invoke-Expression $cmd }\"",
+                    "command": "powershell -Command \"& {param($origen, $destino, $modo='/regular', $filtro) $o = $origen.Trim(':') + ':'; if($null -eq $destino -or $destino -eq ''){ Write-Host 'Error: Debes elegir una carpeta de destino.'; exit }; if(!(Get-Command winfr -ErrorAction SilentlyContinue)){ Write-Host 'WINFR no esta instalado. Abriendo Microsoft Store...'; Start-Process 'ms-windows-store://pdp/?ProductId=9N26S50LN705'; exit }; $argList = $o + ' \\\"' + $destino + '\\\" ' + $modo; if($filtro){ $argList += ' /n \\\"' + $filtro + '\\\"' }; Write-Host 'Abriendo consola de WINFR para ver la barra de progreso y confirmar comandos (Presiona Y cuando lo pida)...'; Start-Process winfr -ArgumentList $argList -Wait; Write-Host 'Proceso finalizado.' }\"",
                     "args": [
                         {
                             "name": "Unidad Origen (Corrupta)",

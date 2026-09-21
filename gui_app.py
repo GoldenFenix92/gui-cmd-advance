@@ -160,7 +160,7 @@ class App(ctk.CTk):
         drives = []
         try:
             output = subprocess.check_output(
-                ["powershell", "-Command", "Get-CimInstance Win32_LogicalDisk | Where-Object DriveType -eq 3 | ForEach-Object { $_.DeviceID + ' (' + $_.VolumeName + ')' }"],
+                ["powershell", "-Command", "Get-CimInstance Win32_LogicalDisk | Where-Object DriveType -eq 3 | ForEach-Object { $n = $_.VolumeName; if(-not $n){ $n = $_.Description }; $_.DeviceID + ' (' + $n + ')' }"],
                 creationflags=subprocess.CREATE_NO_WINDOW
             ).decode('mbcs', errors='ignore').strip().split('\n')
             for line in output:
