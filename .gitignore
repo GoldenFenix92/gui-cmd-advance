@@ -17,3 +17,6 @@ venv.bak/
 *.swo
 
 
+
+# ffmpeg binary
+ffmpeg.exe

@@ -150,9 +150,18 @@
                             "name": "Acción",
                             "type": "radio_group",
                             "options": [
-                                {"name": "Reparar (RestoreHealth)", "flag": "/RestoreHealth"},
-                                {"name": "Escanear (ScanHealth)", "flag": "/ScanHealth"},
-                                {"name": "Chequear (CheckHealth)", "flag": "/CheckHealth"}
+                                {
+                                    "name": "Reparar (RestoreHealth)",
+                                    "flag": "/RestoreHealth"
+                                },
+                                {
+                                    "name": "Escanear (ScanHealth)",
+                                    "flag": "/ScanHealth"
+                                },
+                                {
+                                    "name": "Chequear (CheckHealth)",
+                                    "flag": "/CheckHealth"
+                                }
                             ],
                             "description": "Selecciona el nivel de reparación de la imagen."
                         },
@@ -303,9 +312,18 @@
                             "name": "Subdirectorios",
                             "type": "radio_group",
                             "options": [
-                                {"name": "No copiar", "flag": ""},
-                                {"name": "Copiar excluyendo vacíos (/s)", "flag": "/s"},
-                                {"name": "Copiar incluyendo vacíos (/e)", "flag": "/e"}
+                                {
+                                    "name": "No copiar",
+                                    "flag": ""
+                                },
+                                {
+                                    "name": "Copiar excluyendo vacíos (/s)",
+                                    "flag": "/s"
+                                },
+                                {
+                                    "name": "Copiar incluyendo vacíos (/e)",
+                                    "flag": "/e"
+                                }
                             ],
                             "description": "Elige si deseas copiar subdirectorios y cómo tratar los vacíos."
                         }
@@ -332,9 +350,18 @@
                             "name": "Subdirectorios",
                             "type": "radio_group",
                             "options": [
-                                {"name": "No copiar", "flag": ""},
-                                {"name": "Copiar excluyendo vacíos (/s)", "flag": "/s"},
-                                {"name": "Copiar incluyendo vacíos (/e)", "flag": "/e"}
+                                {
+                                    "name": "No copiar",
+                                    "flag": ""
+                                },
+                                {
+                                    "name": "Copiar excluyendo vacíos (/s)",
+                                    "flag": "/s"
+                                },
+                                {
+                                    "name": "Copiar incluyendo vacíos (/e)",
+                                    "flag": "/e"
+                                }
                             ],
                             "description": "Elige si deseas copiar subdirectorios y cómo tratar los vacíos."
                         },
@@ -507,8 +534,14 @@
                             "name": "Esquema de Partición",
                             "type": "radio_group",
                             "options": [
-                                {"name": "GPT (UEFI - Moderno)", "flag": "-style GPT"},
-                                {"name": "MBR (BIOS - Legacy)", "flag": "-style MBR"}
+                                {
+                                    "name": "GPT (UEFI - Moderno)",
+                                    "flag": "-style GPT"
+                                },
+                                {
+                                    "name": "MBR (BIOS - Legacy)",
+                                    "flag": "-style MBR"
+                                }
                             ],
                             "description": "Esquema de partición del disco (GPT es el estándar actual)."
                         },
@@ -516,9 +549,18 @@
                             "name": "Sistema de Archivos",
                             "type": "radio_group",
                             "options": [
-                                {"name": "NTFS", "flag": "-fs NTFS"},
-                                {"name": "FAT32", "flag": "-fs FAT32"},
-                                {"name": "exFAT", "flag": "-fs exFAT"}
+                                {
+                                    "name": "NTFS",
+                                    "flag": "-fs NTFS"
+                                },
+                                {
+                                    "name": "FAT32",
+                                    "flag": "-fs FAT32"
+                                },
+                                {
+                                    "name": "exFAT",
+                                    "flag": "-fs exFAT"
+                                }
                             ],
                             "description": "Formato del volumen. NTFS recomendado para Windows, exFAT/FAT32 para USB."
                         },
@@ -587,8 +629,14 @@
                             "name": "Modo de Búsqueda",
                             "type": "radio_group",
                             "options": [
-                                {"name": "Regular (Borrado reciente)", "flag": "-modo /regular"},
-                                {"name": "Extensivo (RAW/Corrupto/Formateado)", "flag": "-modo /extensive"}
+                                {
+                                    "name": "Regular (Borrado reciente)",
+                                    "flag": "-modo /regular"
+                                },
+                                {
+                                    "name": "Extensivo (RAW/Corrupto/Formateado)",
+                                    "flag": "-modo /extensive"
+                                }
                             ],
                             "description": "El modo Extensivo busca firmas de archivos, ideal para discos RAW."
                         },
@@ -611,6 +659,81 @@
                     "description": "Elimina los archivos temporales descargados de PhotoRec de tu PC.",
                     "command": "powershell -Command \"& { $dest='C:\\Windows\\Temp\\testdisk_app'; if(Test-Path $dest){ Remove-Item -Path $dest -Recurse -Force; Write-Host 'PhotoRec ha sido eliminado del sistema exitosamente.' } else { Write-Host 'PhotoRec no se encuentra en el sistema.' } }\"",
                     "args": []
+                }
+            ]
+        },
+        {
+            "name": "Multimedia",
+            "commands": [
+                {
+                    "name": "Compresor de Multimedia",
+                    "description": "Comprime imagenes y videos (requiere FFmpeg y Pillow). Soporta seleccion de archivo o carpeta.",
+                    "command": "python compressor.py",
+                    "args": [
+                        {
+                            "name": "Seleccionar Carpeta (Lote)",
+                            "flag": "--input",
+                            "type": "directory_entry",
+                            "description": "Comprime todos los medios dentro de esta carpeta."
+                        },
+                        {
+                            "name": "Seleccionar Archivo (Individual)",
+                            "flag": "--input",
+                            "type": "file_entry",
+                            "description": "Usa esto si prefieres seleccionar solo un archivo especifico (sobrescribe la seleccion de carpeta)."
+                        },
+                        {
+                            "name": "Salida (Carpeta opcional)",
+                            "flag": "--output",
+                            "type": "directory_entry",
+                            "description": "Carpeta destino. Si se deja vacio, se usa la misma ruta origen."
+                        },
+                        {
+                            "name": "Sufijo de archivo",
+                            "flag": "--suffix",
+                            "type": "entry",
+                            "value": "_comprimido",
+                            "description": "Texto para anadir al original."
+                        },
+                        {
+                            "name": "Compresion de Video",
+                            "type": "radio_group",
+                            "options": [
+                                {
+                                    "name": "CRF 23 (Balanceado)",
+                                    "flag": "--crf 23"
+                                },
+                                {
+                                    "name": "CRF 28 (Max. Compresion)",
+                                    "flag": "--crf 28"
+                                },
+                                {
+                                    "name": "CRF 18 (Alta Calidad)",
+                                    "flag": "--crf 18"
+                                }
+                            ],
+                            "description": "Ajuste de video (FFmpeg)."
+                        },
+                        {
+                            "name": "Compresion de Imagen",
+                            "type": "radio_group",
+                            "options": [
+                                {
+                                    "name": "Calidad 75% (Balanceado)",
+                                    "flag": "--quality 75"
+                                },
+                                {
+                                    "name": "Calidad 50% (Max. Compresion)",
+                                    "flag": "--quality 50"
+                                },
+                                {
+                                    "name": "Calidad 90% (Alta Calidad)",
+                                    "flag": "--quality 90"
+                                }
+                            ],
+                            "description": "Ajuste de imagen."
+                        }
+                    ]
                 }
             ]
         }

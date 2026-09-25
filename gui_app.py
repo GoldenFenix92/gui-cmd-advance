@@ -19,7 +19,7 @@ class App(ctk.CTk):
         super().__init__()
 
         self.title("CMD GUI Advance")
-        self.geometry("1000x650")
+        self.geometry("1400x800")
 
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(0, weight=1)
@@ -96,9 +96,16 @@ class App(ctk.CTk):
         self.output_textbox.grid(row=1, column=0, columnspan=2, padx=10, pady=10, sticky="nsew")
         self.output_textbox.configure(state="disabled")
 
-        self.progressbar = ctk.CTkProgressBar(self.right_frame)
-        self.progressbar.grid(row=2, column=0, columnspan=2, padx=10, pady=(0, 10), sticky="ew")
+        self.progress_frame = ctk.CTkFrame(self.right_frame, fg_color="transparent")
+        self.progress_frame.grid(row=2, column=0, columnspan=2, padx=10, pady=(0, 10), sticky="ew")
+        self.progress_frame.grid_columnconfigure(0, weight=1)
+        
+        self.progressbar = ctk.CTkProgressBar(self.progress_frame)
+        self.progressbar.grid(row=0, column=0, sticky="ew")
         self.progressbar.set(0)
+        
+        self.lbl_progress = ctk.CTkLabel(self.progress_frame, text="0%", width=40, font=("Consolas", 12, "bold"))
+        self.lbl_progress.grid(row=0, column=1, padx=(10, 0))
 
         # Export Button
         self.export_btn = ctk.CTkButton(self.right_frame, text="Exportar", width=100, command=self.export_output)
@@ -464,6 +471,8 @@ class App(ctk.CTk):
     def execute_external(self, command_str):
         if hasattr(self, 'progressbar'):
             self.progressbar.set(0)
+            if hasattr(self, 'lbl_progress'):
+                self.lbl_progress.configure(text="0%")
         self.append_output(f"\n> {command_str}\n")
         self.is_running = True
         self.execute_btn.configure(text="Detener ejecución", fg_color="red", hover_color="#8B0000")
@@ -538,7 +547,10 @@ class App(ctk.CTk):
                 match = re.search(r'(\d+)%', text)
                 if match and hasattr(self, 'progressbar'):
                     try:
-                        self.progressbar.set(int(match.group(1)) / 100.0)
+                        val = int(match.group(1))
+                        self.progressbar.set(val / 100.0)
+                        if hasattr(self, 'lbl_progress'):
+                            self.lbl_progress.configure(text=f"{val}%")
                     except:
                         pass
                         

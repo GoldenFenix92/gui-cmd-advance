@@ -69,3 +69,8 @@ _(Add more categories and commands as needed)_
 - [x] **Fase 1:** Motor Visual (Resaltado de Sintaxis) e Información en Vivo (Dashboard de Estado).
 - [x] **Fase 2:** Interactividad y Productividad (Sistema de Favoritos y Exportación HTML).
 - [ ] **Fase 3:** Arquitectura Avanzada (Salidas Tabulares Interactivas).
+
+## Multimedia
+
+- [x] Compresor de Multimedia
+
