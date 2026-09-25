@@ -732,6 +732,48 @@
                                 }
                             ],
                             "description": "Ajuste de imagen."
+                        },
+                        {
+                            "name": "Motor de Aceleracion de Hardware",
+                            "type": "radio_group",
+                            "options": [
+                                {
+                                    "name": "Auto-Detectar (NVIDIA/AMD/Intel)",
+                                    "flag": "--hw auto"
+                                },
+                                {
+                                    "name": "Solo CPU (Lento pero seguro)",
+                                    "flag": "--hw cpu"
+                                },
+                                {
+                                    "name": "Forzar NVIDIA (NVENC)",
+                                    "flag": "--hw nvenc"
+                                },
+                                {
+                                    "name": "Forzar AMD (AMF)",
+                                    "flag": "--hw amf"
+                                }
+                            ],
+                            "description": "Permite usar la Tarjeta Grafica (GPU) para comprimir el video hasta 10 veces mas rapido sin cargar el procesador."
+                        },
+                        {
+                            "name": "Prioridad de Consumo (Preset)",
+                            "type": "radio_group",
+                            "options": [
+                                {
+                                    "name": "Rapido (Menor impacto, ideal para jugar mientras)",
+                                    "flag": "--preset fast"
+                                },
+                                {
+                                    "name": "Medio (Balanceado)",
+                                    "flag": "--preset medium"
+                                },
+                                {
+                                    "name": "Lento (Mejor calidad visual, 100% uso GPU/CPU)",
+                                    "flag": "--preset slow"
+                                }
+                            ],
+                            "description": "Ajusta que tanto hardware se le permite usar a FFmpeg y la calidad del resultado."
                         }
                     ]
                 }

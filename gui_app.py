@@ -261,6 +261,9 @@ class App(ctk.CTk):
 
         cmd_data = self.get_command_data(selected_command)
         if cmd_data:
+            if cmd_data.get("name") == "Compresor de Multimedia":
+                self.update_hardware_options(cmd_data)
+                
             args = cmd_data.get("args", [])
             for arg in args:
                 arg_name = arg.get("name")
@@ -346,6 +349,41 @@ class App(ctk.CTk):
                 btn_info.pack(side="right")
         
         self.update_preview()
+
+    def update_hardware_options(self, cmd_data):
+        import subprocess
+        import os
+        
+        local_ffmpeg = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ffmpeg.exe")
+        ffmpeg_cmd = local_ffmpeg if os.path.exists(local_ffmpeg) else "ffmpeg"
+        
+        try:
+            output = subprocess.check_output([ffmpeg_cmd, '-encoders'], text=True, stderr=subprocess.STDOUT, creationflags=subprocess.CREATE_NO_WINDOW)
+            has_nvenc = 'h264_nvenc' in output
+            has_amf = 'h264_amf' in output
+            has_qsv = 'h264_qsv' in output
+        except Exception:
+            has_nvenc = has_amf = has_qsv = False
+
+        options = [
+            {'name': 'Auto-Detectar (Prioriza Dedicada)', 'flag': '--hw auto'}
+        ]
+        
+        if has_nvenc:
+            options.append({'name': 'NVIDIA (NVENC) - Dedicada', 'flag': '--hw nvenc'})
+        if has_amf:
+            options.append({'name': 'AMD (AMF)', 'flag': '--hw amf'})
+        if has_qsv:
+            options.append({'name': 'Intel (QSV) - Integrada', 'flag': '--hw qsv'})
+            
+        options.append({'name': 'Solo CPU (Lento pero seguro)', 'flag': '--hw cpu'})
+
+        for arg in cmd_data.get("args", []):
+            if arg.get("name") == "Motor de Aceleracion de Hardware":
+                arg["options"] = options
+                # Pre-seleccionar Auto
+                arg["value"] = "--hw auto"
+                break
 
     def update_preview(self):
         selected_command = self.cmd_var.get()
