@@ -4,6 +4,12 @@ import argparse
 import subprocess
 from pathlib import Path
 
+# Forzar UTF-8 en la salida estándar para evitar errores de codificación con emojis en los nombres de archivo
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8')
+if hasattr(sys.stderr, 'reconfigure'):
+    sys.stderr.reconfigure(encoding='utf-8')
+
 def ensure_requirements():
     try:
         from PIL import Image
@@ -41,7 +47,7 @@ def compress_image(input_path, output_path, quality=75, file_index=0, total_file
         print(f"[SUCCESS] Imagen comprimida: {output_path}")
         overall_pct = int(((file_index + 1) * 100) / total_files)
         print(f" {overall_pct}%", end='', flush=True)
-        return {'status': 'success', 'file': input_path, 'type': 'image'}
+        return {'status': 'success', 'file': input_path, 'out_file': output_path, 'type': 'image'}
     except Exception as e:
         print(f"[ERROR] No se pudo comprimir {input_path}: {e}")
         return {'status': 'error', 'file': input_path, 'msg': str(e), 'type': 'image'}
@@ -63,7 +69,7 @@ def detect_best_encoder():
         pass
     return 'libx264'
 
-def compress_video(input_path, output_path, crf=23, hw="auto", preset="fast", file_index=0, total_files=1):
+def compress_video(input_path, output_path, crf=23, hw="auto", preset="fast", threads=0, file_index=0, total_files=1):
     if not is_ffmpeg_installed():
         print("[ERROR] FFmpeg no esta instalado o no esta en el PATH del sistema.")
         print("Por favor, instala FFmpeg para poder comprimir videos (https://ffmpeg.org/download.html).")
@@ -88,8 +94,13 @@ def compress_video(input_path, output_path, crf=23, hw="auto", preset="fast", fi
         cmd = [
             get_ffmpeg_path(), "-y", "-i", input_path,
             "-vcodec", encoder, "-crf", str(crf) if encoder == "libx264" else str(crf),
-            "-preset", preset, output_path
+            "-preset", preset
         ]
+        
+        if threads > 0:
+            cmd.extend(["-threads", str(threads)])
+            
+        cmd.append(output_path)
         
         # Ajuste para encoders especificos
         if encoder == "h264_nvenc":
@@ -146,15 +157,21 @@ def compress_video(input_path, output_path, crf=23, hw="auto", preset="fast", fi
             print(f"\n[SUCCESS] Video comprimido: {output_path}")
             overall_pct = int(((file_index + 1) * 100) / total_files)
             print(f" {overall_pct}%", end='', flush=True)
-            return {"status": "success", "file": input_path, "type": "video"}
+            return {"status": "success", "file": input_path, "out_file": output_path, "type": "video"}
         else:
+            if encoder != "libx264":
+                print(f"\n[WARNING] Fallo la compresion con {encoder}. Reintentando automaticamente con CPU...")
+                return compress_video(input_path, output_path, crf, "cpu", preset, threads, file_index, total_files)
             print(f"\n[ERROR] Fallo la compresion de {input_path}")
             return {"status": "error", "file": input_path, "msg": last_error, "type": "video"}
     except Exception as e:
-        print(f"[ERROR] Excepcion al comprimir {input_path}: {e}")
+        if 'encoder' in locals() and encoder != "libx264":
+            print(f"\n[WARNING] Excepcion con {encoder}. Reintentando automaticamente con CPU...")
+            return compress_video(input_path, output_path, crf, "cpu", preset, threads, file_index, total_files)
+        print(f"\n[ERROR] Excepcion al comprimir {input_path}: {e}")
         return {"status": "error", "file": input_path, "msg": str(e), "type": "video"}
 
-def get_output_path(input_path, output_dir, suffix="_comprimido"):
+def get_output_path(input_path, output_dir, suffix="_comprimido", force_ext=None):
     p = Path(input_path)
     if not output_dir:
         output_dir = p.parent
@@ -162,7 +179,8 @@ def get_output_path(input_path, output_dir, suffix="_comprimido"):
         output_dir = Path(output_dir)
         output_dir.mkdir(parents=True, exist_ok=True)
         
-    return str(output_dir / f"{p.stem}{suffix}{p.suffix}")
+    ext = force_ext if force_ext else p.suffix
+    return str(output_dir / f"{p.stem}{suffix}{ext}")
 
 def main():
     parser = argparse.ArgumentParser(description="Compresor de Video e Imagenes")
@@ -174,6 +192,8 @@ def main():
     
     parser.add_argument("--hw", default="auto", help="Motor de aceleracion de hardware")
     parser.add_argument("--preset", default="fast", help="Preset de velocidad y consumo")
+    parser.add_argument("--threads", type=int, default=0, help="Hilos de CPU a usar (0 = auto)")
+    parser.add_argument("--delete-original", action="store_true", help="Eliminar archivos originales procesados con exito")
     
     args = parser.parse_args()
     
@@ -182,7 +202,7 @@ def main():
     start_time = time.time()
     
     image_exts = {".jpg", ".jpeg", ".png", ".webp", ".bmp", ".tiff"}
-    video_exts = {".mp4", ".mkv", ".avi", ".mov", ".wmv", ".flv", ".webm", ".m4v"}
+    video_exts = {".mp4", ".mkv", ".avi", ".mov", ".wmv", ".flv", ".webm", ".m4v", ".3gp", ".mpeg", ".mpg", ".ts"}
     
     files_to_process = []
     
@@ -207,8 +227,8 @@ def main():
             res = compress_image(str(f), out, quality=args.quality, file_index=i, total_files=total_files)
             if res: results.append(res)
         elif ext in video_exts:
-            out = get_output_path(f, args.output, args.suffix)
-            res = compress_video(str(f), out, crf=args.crf, hw=args.hw, preset=args.preset, file_index=i, total_files=total_files)
+            out = get_output_path(f, args.output, args.suffix, force_ext=".mp4")
+            res = compress_video(str(f), out, crf=args.crf, hw=args.hw, preset=args.preset, threads=args.threads, file_index=i, total_files=total_files)
             if res: results.append(res)
 
     elapsed = time.time() - start_time
@@ -232,10 +252,44 @@ def main():
     print("-" * 65)
     print(f"{'TOTAL GENERAL':<15} | {len(success_img)+len(success_vid):<15} | {len(error_img)+len(error_vid):<15} | {len(results):<15}")
     
+    total_orig_size = 0
+    total_comp_size = 0
+    
+    for r in success_img + success_vid:
+        try:
+            total_orig_size += Path(r['file']).stat().st_size
+            total_comp_size += Path(r['out_file']).stat().st_size
+        except:
+            pass
+
+    def format_size(size_bytes):
+        if size_bytes == 0: return "0 B"
+        import math
+        size_name = ("B", "KB", "MB", "GB", "TB")
+        i = int(math.floor(math.log(size_bytes, 1024)))
+        p = math.pow(1024, i)
+        s = round(size_bytes / p, 2)
+        return f"{s} {size_name[i]}"
+        
+    if total_orig_size > 0:
+        ahorro = total_orig_size - total_comp_size
+        ahorro_pct = (ahorro / total_orig_size) * 100
+        print(f"\n[ RESUMEN DE ESPACIO ]")
+        print(f"Peso Original : {format_size(total_orig_size)}")
+        print(f"Peso Final    : {format_size(total_comp_size)}")
+        print(f"Espacio Ahorrado: {format_size(ahorro)} ({ahorro_pct:.1f}%)")
+    
     if success_img or success_vid:
         print("\n[ ARCHIVOS COMPLETADOS CON EXITO ]")
         for r in success_img + success_vid:
-            print(f" - [OK] {Path(r['file']).name}")
+            file_p = Path(r['file'])
+            print(f" - [OK] {file_p.name}")
+            if args.delete_original:
+                try:
+                    file_p.unlink()
+                    print(f"   -> (Eliminado original: {file_p.name})")
+                except Exception as e:
+                    print(f"   -> (No se pudo eliminar: {e})")
             
     if error_img or error_vid:
         print("\n[ ARCHIVOS CON ERRORES ]")

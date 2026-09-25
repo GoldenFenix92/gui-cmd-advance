@@ -203,6 +203,19 @@ class App(ctk.CTk):
             disks = ["0", "1", "2"]
         return disks
 
+    def get_cpu_threads_list(self):
+        import os
+        try:
+            threads = os.cpu_count() or 4
+        except:
+            threads = 4
+            
+        options = ["0 (Auto - Todos)"]
+        for i in range(1, threads + 1):
+            options.append(str(i))
+            
+        return options
+
     def toggle_theme(self):
         if self.theme_switch.get() == 1:
             ctk.set_appearance_mode("Dark")
@@ -339,6 +352,15 @@ class App(ctk.CTk):
                         var.set(pdisks[0])
                     dropdown = ctk.CTkOptionMenu(row_frame, variable=var, values=pdisks)
                     dropdown.pack(side="left", fill="x", expand=True, padx=(0, 10))
+                    
+                elif arg_type == "threads_dropdown":
+                    lbl = ctk.CTkLabel(row_frame, text=f"{arg_name}:")
+                    lbl.pack(side="left", padx=(0, 5))
+                    threads_options = self.get_cpu_threads_list()
+                    if threads_options:
+                        var.set(threads_options[0])
+                    dropdown = ctk.CTkOptionMenu(row_frame, variable=var, values=threads_options)
+                    dropdown.pack(side="left", fill="x", expand=True, padx=(0, 10))
                 
                 self.current_args_vars[arg_name] = {"var": var, "type": arg_type, "flag": arg_flag}
                 
@@ -352,18 +374,24 @@ class App(ctk.CTk):
 
     def update_hardware_options(self, cmd_data):
         import subprocess
-        import os
         
-        local_ffmpeg = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ffmpeg.exe")
-        ffmpeg_cmd = local_ffmpeg if os.path.exists(local_ffmpeg) else "ffmpeg"
-        
+        has_nvenc = False
+        has_amf = False
+        has_qsv = False
+
         try:
-            output = subprocess.check_output([ffmpeg_cmd, '-encoders'], text=True, stderr=subprocess.STDOUT, creationflags=subprocess.CREATE_NO_WINDOW)
-            has_nvenc = 'h264_nvenc' in output
-            has_amf = 'h264_amf' in output
-            has_qsv = 'h264_qsv' in output
+            startupinfo = subprocess.STARTUPINFO()
+            startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+            output = subprocess.check_output(['powershell', '-Command', 'Get-CimInstance Win32_VideoController | Select-Object -ExpandProperty Name'], text=True, startupinfo=startupinfo)
+            out_upper = output.upper()
+            if 'NVIDIA' in out_upper:
+                has_nvenc = True
+            if 'AMD' in out_upper or 'RADEON' in out_upper:
+                has_amf = True
+            if 'INTEL' in out_upper:
+                has_qsv = True
         except Exception:
-            has_nvenc = has_amf = has_qsv = False
+            pass
 
         options = [
             {'name': 'Auto-Detectar (Prioriza Dedicada)', 'flag': '--hw auto'}
@@ -409,11 +437,11 @@ class App(ctk.CTk):
                     if arg_data["flag"]:
                         command_list.append(arg_data["flag"])
                     command_list.append(val)
-                elif arg_data["type"] in ["drive_dropdown", "disk_dropdown"]:
-                    drive = val.split(" ")[0]
+                elif arg_data["type"] in ["drive_dropdown", "disk_dropdown", "threads_dropdown"]:
+                    val_to_use = val.split(" ")[0]
                     if arg_data["flag"]:
                         command_list.append(arg_data["flag"])
-                    command_list.append(drive)
+                    command_list.append(val_to_use)
         
         full_command_str = " ".join(command_list)
         self.preview_var.set(full_command_str)
@@ -582,13 +610,14 @@ class App(ctk.CTk):
 
                 self.output_textbox.see("end")
                 
-                match = re.search(r'(\d+)%', text)
+                match = re.search(r'\b(\d{1,3})%', text)
                 if match and hasattr(self, 'progressbar'):
                     try:
                         val = int(match.group(1))
-                        self.progressbar.set(val / 100.0)
-                        if hasattr(self, 'lbl_progress'):
-                            self.lbl_progress.configure(text=f"{val}%")
+                        if 0 <= val <= 100:
+                            self.progressbar.set(val / 100.0)
+                            if hasattr(self, 'lbl_progress'):
+                                self.lbl_progress.configure(text=f"{val}%")
                     except:
                         pass
                         

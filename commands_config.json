@@ -734,6 +734,12 @@
                             "description": "Ajuste de imagen."
                         },
                         {
+                            "name": "Eliminar Originales",
+                            "flag": "--delete-original",
+                            "type": "checkbox",
+                            "description": "Si se procesa con éxito, elimina el archivo original de tu disco para ahorrar espacio (CUIDADO)."
+                        },
+                        {
                             "name": "Motor de Aceleracion de Hardware",
                             "type": "radio_group",
                             "options": [
@@ -774,6 +780,12 @@
                                 }
                             ],
                             "description": "Ajusta que tanto hardware se le permite usar a FFmpeg y la calidad del resultado."
+                        },
+                        {
+                            "name": "Hilos CPU (Solo en CPU)",
+                            "flag": "--threads",
+                            "type": "threads_dropdown",
+                            "description": "Cantidad de hilos a usar."
                         }
                     ]
                 }

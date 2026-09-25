@@ -22,7 +22,11 @@ class CommandRunner:
                     b = self.process.stdout.read(1)
                     if not b:
                         if buffer:
-                            output_callback(buffer.decode('mbcs', 'ignore'))
+                            try:
+                                decoded = buffer.decode('utf-8')
+                            except UnicodeDecodeError:
+                                decoded = buffer.decode('mbcs', 'ignore')
+                            output_callback(decoded)
                         break
                     
                     if b == b'\x00':
@@ -30,7 +34,11 @@ class CommandRunner:
                         
                     buffer.extend(b)
                     if b in [b'\n', b'\r']:
-                        output_callback(buffer.decode('mbcs', 'ignore'))
+                        try:
+                            decoded = buffer.decode('utf-8')
+                        except UnicodeDecodeError:
+                            decoded = buffer.decode('mbcs', 'ignore')
+                        output_callback(decoded)
                         buffer.clear()
                         
                 self.process.wait()
