@@ -75,3 +75,4 @@ _(Add more categories and commands as needed)_
 - [x] Compresor de Multimedia
 - [x] Reparador de Multimedia
 
+- [x] Buscador de Duplicados
