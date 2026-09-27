@@ -180,7 +180,13 @@ def get_output_path(input_path, output_dir, suffix="_comprimido", force_ext=None
         output_dir.mkdir(parents=True, exist_ok=True)
         
     ext = force_ext if force_ext else p.suffix
-    return str(output_dir / f"{p.stem}{suffix}{ext}")
+    
+    # Prevenir que el archivo de salida sobrescriba el archivo original
+    out_path = output_dir / f"{p.stem}{suffix}{ext}"
+    if out_path.resolve() == p.resolve():
+        out_path = output_dir / f"{p.stem}_out{ext}"
+        
+    return str(out_path)
 
 def main():
     parser = argparse.ArgumentParser(description="Compresor de Video e Imagenes")
@@ -296,10 +302,10 @@ def main():
         print(f"{'ARCHIVO':<35} | {'MOTIVO DEL FALLO'}")
         print("-" * 80)
         for err in error_img + error_vid:
-            msg = err["msg"][:40] + "..." if len(err["msg"]) > 40 else err["msg"]
+            msg = err["msg"][:100] + "..." if len(err["msg"]) > 100 else err["msg"]
             name = Path(err['file']).name
-            name = name[:32] + "..." if len(name) > 32 else name
-            print(f"{name:<35} | {msg}")
+            name = name[:40] + "..." if len(name) > 40 else name
+            print(f"{name:<45} | {msg}")
             
     print(f"==================================================================================\n")
 

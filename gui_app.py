@@ -107,9 +107,15 @@ class App(ctk.CTk):
         self.lbl_progress = ctk.CTkLabel(self.progress_frame, text="0%", width=40, font=("Consolas", 12, "bold"))
         self.lbl_progress.grid(row=0, column=1, padx=(10, 0))
 
-        # Export Button
-        self.export_btn = ctk.CTkButton(self.right_frame, text="Exportar", width=100, command=self.export_output)
-        self.export_btn.grid(row=3, column=0, padx=10, pady=(0, 5), sticky="sw")
+        # Export Buttons
+        self.btn_frame = ctk.CTkFrame(self.right_frame, fg_color="transparent")
+        self.btn_frame.grid(row=3, column=0, padx=10, pady=(0, 5), sticky="sw")
+        
+        self.export_btn = ctk.CTkButton(self.btn_frame, text="Exportar Actual", width=100, command=self.export_output)
+        self.export_btn.pack(side="left", padx=(0, 10))
+        
+        self.convert_btn = ctk.CTkButton(self.btn_frame, text="Convertir Reporte Antiguo", width=150, command=self.convert_old_report, fg_color="#475569", hover_color="#334155")
+        self.convert_btn.pack(side="left")
         
         # Dashboard (Status Bar)
         self.status_bar = ctk.CTkFrame(self.right_frame, height=25, fg_color="transparent")
@@ -428,6 +434,8 @@ class App(ctk.CTk):
             val = arg_data["var"].get().strip()
             if val:
                 if arg_data["type"] in ["checkbox", "radio_group"]:
+                    if arg_data["type"] == "checkbox" and val != arg_data["flag"]:
+                        continue
                     command_list.append(val)
                 elif arg_data["type"] in ["entry", "directory_entry", "file_entry"]:
                     if arg_data["type"] in ["directory_entry", "file_entry"]:
@@ -458,7 +466,65 @@ class App(ctk.CTk):
         if self.is_running:
             cmd_executor.stop_command()
         else:
+            self.check_drives_and_run()
+
+    def check_drives_and_run(self):
+        cmd_str = self.preview_var.get()
+        if not cmd_str: return
+        
+        # Extraer posibles letras de unidad (ej. C:\ o E:\)
+        import re, threading, subprocess
+        drives = set(re.findall(r'([A-Za-z]):[\\/]', cmd_str))
+        
+        # Si no hay unidades evidentes, ejecutamos normal
+        if not drives:
             self.run_command()
+            return
+            
+        self.execute_btn.configure(text="Analizando disco...", state="disabled")
+        
+        def _check():
+            warnings = []
+            try:
+                for d in drives:
+                    script = f"""
+                    $vol = Get-Partition -DriveLetter '{d}' -ErrorAction SilentlyContinue | Get-Disk -ErrorAction SilentlyContinue
+                    if ($vol) {{
+                        Write-Output "$($vol.MediaType)|$($vol.IsReadOnly)|$($vol.HealthStatus)"
+                    }}
+                    """
+                    out = subprocess.check_output(["powershell", "-NoProfile", "-Command", script], creationflags=subprocess.CREATE_NO_WINDOW, text=True).strip()
+                    if out:
+                        parts = out.split('|')
+                        if len(parts) >= 3:
+                            media_type, is_ro, health = parts[0], parts[1], parts[2]
+                            
+                            if is_ro.lower() == 'true':
+                                warnings.append(f"• El disco {d}: está bloqueado en modo Solo Lectura (Hardware). Cualquier comando de escritura o borrado fallará. Si es un SSD, es probable que haya fallado permanentemente.")
+                            if health.lower() not in ['healthy', 'unknown', '']:
+                                warnings.append(f"• El estado de salud del disco {d}: es '{health}'. Proceder con precaución.")
+                            
+                            if media_type.lower() == 'ssd':
+                                cmd_lower = cmd_str.lower()
+                                if "chkdsk" in cmd_lower and "/r" in cmd_lower:
+                                    warnings.append(f"• Vas a ejecutar CHKDSK /R en un SSD ({d}:). Esto causa desgaste y escrituras masivas innecesarias. En SSDs, los sectores se reasignan automáticamente por firmware.")
+                                if "clear-disk" in cmd_lower:
+                                    warnings.append(f"• CUIDADO: Clear-Disk borrará TODA la información y particiones del SSD ({d}:) de forma irrecuperable.")
+            except Exception as e:
+                pass
+                
+            self.after(0, self._on_check_done, warnings)
+            
+        threading.Thread(target=_check, daemon=True).start()
+
+    def _on_check_done(self, warnings):
+        self.execute_btn.configure(text="Ejecutar Comando", state="normal")
+        if warnings:
+            from tkinter import messagebox
+            msg = "Resultados del Análisis de Unidad:\n\n" + "\n\n".join(warnings) + "\n\n¿Estás completamente seguro de continuar con la ejecución?"
+            if not messagebox.askyesno("Advertencia de Hardware", msg):
+                return
+        self.run_command()
 
     def remove_favorite(self):
         cmd_name = self.cmd_var.get()
@@ -629,39 +695,137 @@ class App(ctk.CTk):
         self.output_textbox.delete("1.0", "end")
         self.output_textbox.configure(state="disabled")
 
+    def get_html_template(self, content, title="Reporte de Ejecución", command="Desconocido"):
+        import datetime, os
+        timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        template_path = os.path.join(os.path.dirname(__file__), "templates", "base_report.html")
+        
+        if os.path.exists(template_path):
+            with open(template_path, "r", encoding="utf-8") as tf:
+                html = tf.read()
+                # Escapar contenido
+                safe_content = content.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+                html = html.replace("{{TITLE}}", title)
+                html = html.replace("{{COMMAND}}", command)
+                html = html.replace("{{TIMESTAMP}}", timestamp)
+                html = html.replace("{{CONTENT}}", safe_content)
+                return html
+        else:
+            # Fallback simple
+            return f"<html><body><h1>{title}</h1><pre>{content}</pre></body></html>"
+
     def export_output(self):
         content = self.output_textbox.get("1.0", "end-1c")
         if not content.strip(): return
-        file_path = filedialog.asksaveasfilename(defaultextension=".html", filetypes=[("HTML Report", "*.html"), ("Text file", "*.txt")], title="Exportar Consola")
+        
+        from tkinter import messagebox
+        import re
+        
+        # Preguntar si desea exportar completo o solo resumen
+        ans = messagebox.askyesnocancel(
+            "Tipo de Exportación", 
+            "¿Deseas exportar TODO el historial de la consola?\n\n"
+            "• SÍ: Exporta toda la salida (útil para ver procesos detalle a detalle).\n"
+            "• NO: Exporta SOLO el resumen final (recomendado para no sobrecargar archivos HTML).\n"
+            "• CANCELAR: Aborta la exportación."
+        )
+        
+        if ans is None:
+            return
+            
+        if not ans:
+            # Extraer solo el resumen
+            lines = content.split('\n')
+            summary_start = 0
+            for i in range(len(lines)-1, -1, -1):
+                if "ARCHIVOS COMPLETADOS" in lines[i] or "ARCHIVOS CON ERRORES" in lines[i] or "RESUMEN DE" in lines[i]:
+                    # Buscar la línea divisoria '===' justo arriba del resumen
+                    for j in range(i, max(-1, i-5), -1):
+                        if "===" in lines[j]:
+                            summary_start = j
+                            break
+                    else:
+                        summary_start = max(0, i-2)
+                    break
+            
+            if summary_start > 0:
+                content = "\n... (Salida larga de proceso omitida) ...\n\n" + "\n".join(lines[summary_start:])
+            elif len(lines) > 300:
+                content = "\n... (Salida larga omitida, marcador de resumen no detectado) ...\n\n" + "\n".join(lines[-300:])
+        
+        file_path = filedialog.asksaveasfilename(defaultextension=".html", filetypes=[("HTML Interactivo", "*.html"), ("Text file", "*.txt")], title="Exportar Consola a Plantilla")
         if file_path:
             with open(file_path, "w", encoding="utf-8") as f:
                 if file_path.endswith(".html"):
-                    import datetime
-                    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                    html_content = f"""<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8">
-    <title>Reporte de Ejecución - CMD GUI Advance</title>
-    <style>
-        body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #1e1e1e; color: #d4d4d4; padding: 20px; }}
-        .header {{ border-bottom: 2px solid #007acc; padding-bottom: 10px; margin-bottom: 20px; }}
-        .console {{ background-color: #000000; padding: 15px; border-radius: 8px; font-family: Consolas, monospace; white-space: pre-wrap; overflow-x: auto; color: #00ff00; }}
-        h1 {{ margin: 0; color: #ffffff; }}
-    </style>
-</head>
-<body>
-    <div class="header">
-        <h1>📋 Reporte de Ejecución</h1>
-        <p><strong>Fecha:</strong> {timestamp}</p>
-    </div>
-    <div class="console">{content}</div>
-</body>
-</html>"""
-                    f.write(html_content)
+                    cmd = self.cmd_var.get()
+                    f.write(self.get_html_template(content, title=cmd, command=self.preview_var.get() or cmd))
                 else:
                     f.write(content)
             self.output_textbox.configure(state="normal")
-            self.output_textbox.insert("end", f"\n[!] Exportado a: {file_path}\n", "success")
+            self.output_textbox.insert("end", f"\n[!] Reporte Exportado con Plantilla a: {file_path}\n", "success")
+            self.output_textbox.see("end")
+            self.output_textbox.configure(state="disabled")
+
+    def convert_old_report(self):
+        # Abre un archivo antiguo (.txt o .html basico) y lo convierte al nuevo formato
+        input_path = filedialog.askopenfilename(filetypes=[("Archivos de texto/HTML", "*.txt *.html *.log"), ("Todos los archivos", "*.*")], title="Selecciona un reporte antiguo para convertir")
+        if not input_path: return
+        
+        try:
+            with open(input_path, "r", encoding="utf-8") as f:
+                content = f.read()
+        except:
+            # Fallback for ANSI encoding
+            with open(input_path, "r", encoding="latin-1") as f:
+                content = f.read()
+                
+        # Limpiar si el archivo viejo ya era un HTML (muy básico, extraemos el body text si es posible, o lo metemos crudo)
+        import re
+        if "<body" in content.lower():
+            match = re.search(r'<div class="console">(.*?)</div>', content, re.IGNORECASE | re.DOTALL)
+            if match:
+                content = match.group(1).replace("&lt;", "<").replace("&gt;", ">").replace("&amp;", "&")
+            else:
+                # Si no encontramos consola, quitamos las etiquetas html basicas
+                content = re.sub(r'<[^>]+>', '', content)
+
+        from tkinter import messagebox
+        ans = messagebox.askyesnocancel(
+            "Tipo de Conversión", 
+            "¿Deseas mantener TODO el historial del reporte antiguo?\n\n"
+            "• SÍ: Convierte todo el texto íntegro.\n"
+            "• NO: Extrae y convierte SOLO el resumen final (más ligero).\n"
+            "• CANCELAR: Aborta la conversión."
+        )
+        
+        if ans is None:
+            return
+            
+        if not ans:
+            # Extraer solo el resumen
+            lines = content.split('\n')
+            summary_start = 0
+            for i in range(len(lines)-1, -1, -1):
+                if "ARCHIVOS COMPLETADOS" in lines[i] or "ARCHIVOS CON ERRORES" in lines[i] or "RESUMEN DE" in lines[i]:
+                    for j in range(i, max(-1, i-5), -1):
+                        if "===" in lines[j]:
+                            summary_start = j
+                            break
+                    else:
+                        summary_start = max(0, i-2)
+                    break
+            
+            if summary_start > 0:
+                content = "\n... (Salida larga de proceso omitida durante la conversión) ...\n\n" + "\n".join(lines[summary_start:])
+            elif len(lines) > 300:
+                content = "\n... (Salida larga omitida, marcador no detectado) ...\n\n" + "\n".join(lines[-300:])
+
+        output_path = filedialog.asksaveasfilename(defaultextension=".html", filetypes=[("HTML Interactivo", "*.html")], title="Guardar Nuevo Reporte Interactivo", initialfile=os.path.basename(input_path).split('.')[0] + "_interactivo.html")
+        if output_path:
+            with open(output_path, "w", encoding="utf-8") as f:
+                f.write(self.get_html_template(content, title="Reporte Convertido", command="Importado desde " + os.path.basename(input_path)))
+            
+            self.output_textbox.configure(state="normal")
+            self.output_textbox.insert("end", f"\n[!] Reporte antiguo convertido con éxito a HTML interactivo: {output_path}\n", "success")
             self.output_textbox.see("end")
             self.output_textbox.configure(state="disabled")

@@ -73,4 +73,5 @@ _(Add more categories and commands as needed)_
 ## Multimedia
 
 - [x] Compresor de Multimedia
+- [x] Reparador de Multimedia
 

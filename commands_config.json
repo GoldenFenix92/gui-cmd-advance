@@ -788,6 +788,134 @@
                             "description": "Cantidad de hilos a usar."
                         }
                     ]
+                },
+                {
+                    "name": "Reparador de Multimedia",
+                    "description": "Intenta rescatar y reparar fotos truncadas o videos corruptos de forma masiva o individual.",
+                    "command": "python media_repair.py",
+                    "args": [
+                        {
+                            "name": "Archivos / Carpeta Origen",
+                            "flag": "--input",
+                            "type": "file_entry",
+                            "description": "Selecciona la carpeta o los archivos dañados a reparar."
+                        },
+                        {
+                            "name": "Archivo de Referencia (Opcional)",
+                            "flag": "--reference",
+                            "type": "file_entry",
+                            "description": "Selecciona un archivo 100% sano grabado con la misma cámara/app para ayudar en la reparación."
+                        },
+                        {
+                            "name": "Carpeta de Destino",
+                            "flag": "--output",
+                            "type": "directory_entry",
+                            "description": "Opcional: Dónde guardar los archivos reparados (por defecto, en la misma carpeta)."
+                        },
+                        {
+                            "name": "Sufijo de archivo",
+                            "flag": "--suffix",
+                            "type": "entry",
+                            "value": "_reparado",
+                            "description": "Texto para añadir al final del nombre reparado."
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Permisos y Seguridad",
+            "commands": [
+                {
+                    "name": "Quitar Solo Lectura (attrib)",
+                    "description": "Remueve el atributo de Solo Lectura, Oculto y Sistema de archivos y carpetas.",
+                    "command": "attrib",
+                    "args": [
+                        {
+                            "name": "Ruta",
+                            "flag": "",
+                            "type": "directory_entry",
+                            "description": "Selecciona la carpeta o archivo."
+                        },
+                        {
+                            "name": "Quitar Solo Lectura (-r)",
+                            "flag": "-r",
+                            "type": "checkbox",
+                            "value": "-r",
+                            "description": "Quita la proteccion de solo lectura."
+                        },
+                        {
+                            "name": "Aplicar a subcarpetas (/s)",
+                            "flag": "/s",
+                            "type": "checkbox",
+                            "description": "Aplica a todos los archivos en los subdirectorios."
+                        },
+                        {
+                            "name": "Incluir carpetas (/d)",
+                            "flag": "/d",
+                            "type": "checkbox",
+                            "description": "Aplica tambien a los directorios (requiere /s)."
+                        }
+                    ]
+                },
+                {
+                    "name": "Tomar Posesion (takeown)",
+                    "description": "Toma la propiedad de un archivo o carpeta (muy util si Windows no te deja borrar o editar algo).",
+                    "command": "takeown",
+                    "args": [
+                        {
+                            "name": "Ruta",
+                            "flag": "/f",
+                            "type": "directory_entry",
+                            "description": "Ruta del archivo o carpeta objetivo."
+                        },
+                        {
+                            "name": "Aplicar a todo el contenido (/r)",
+                            "flag": "/r",
+                            "type": "checkbox",
+                            "description": "Aplica a todos los archivos y subcarpetas (recursivo)."
+                        },
+                        {
+                            "name": "Confirmar automaticamente (/d y)",
+                            "flag": "/d y",
+                            "type": "checkbox",
+                            "description": "Responde S (si) automaticamente a cualquier confirmacion."
+                        }
+                    ]
+                },
+                {
+                    "name": "Conceder Control Total (icacls)",
+                    "description": "Modifica las listas de control de acceso para dar permisos completos a los Administradores o Usuarios.",
+                    "command": "icacls",
+                    "args": [
+                        {
+                            "name": "Ruta",
+                            "flag": "",
+                            "type": "directory_entry",
+                            "description": "Ruta del directorio o archivo."
+                        },
+                        {
+                            "name": "Permiso",
+                            "type": "radio_group",
+                            "options": [
+                                {
+                                    "name": "Control Total a Administradores",
+                                    "flag": "/grant Administrators:F"
+                                },
+                                {
+                                    "name": "Control Total a Todos (Everyone)",
+                                    "flag": "/grant Everyone:F"
+                                }
+                            ],
+                            "description": "A quien deseas concederle control total (Lectura/Escritura/Borrado)."
+                        },
+                        {
+                            "name": "Aplicar a subcarpetas (/t)",
+                            "flag": "/t",
+                            "type": "checkbox",
+                            "description": "Modifica todas las subcarpetas y archivos (recursivo)."
+                        }
+                    ]
                 }
             ]
         }

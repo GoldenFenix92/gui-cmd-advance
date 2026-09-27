@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{TITLE}} - CMD GUI Advance</title>
+    <style>
+        :root[data-theme="dark"] {
+            --bg-color: #0f172a;
+            --text-color: #f8fafc;
+            --card-bg: #1e293b;
+            --console-bg: #000000;
+            --console-text: #e2e8f0;
+            --border-color: #334155;
+            --btn-bg: #2563eb;
+            --btn-hover: #1d4ed8;
+            --accent: #38bdf8;
+        }
+        :root[data-theme="light"] {
+            --bg-color: #f1f5f9;
+            --text-color: #0f172a;
+            --card-bg: #ffffff;
+            --console-bg: #f8fafc;
+            --console-text: #334155;
+            --border-color: #cbd5e1;
+            --btn-bg: #3b82f6;
+            --btn-hover: #2563eb;
+            --accent: #0284c7;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: var(--card-bg);
+            padding: 20px 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            border: 1px solid var(--border-color);
+        }
+
+        .header-info h1 {
+            margin: 0 0 10px 0;
+            color: var(--accent);
+            font-size: 1.8rem;
+        }
+
+        .header-info p {
+            margin: 0;
+            opacity: 0.8;
+            font-size: 0.95rem;
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 10px;
+            background-color: var(--card-bg);
+            padding: 15px 30px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border-color);
+            flex-wrap: wrap;
+        }
+
+        button {
+            background-color: var(--btn-bg);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: var(--btn-hover);
+        }
+
+        button.filter-btn { background-color: #475569; }
+        button.filter-btn.active { background-color: var(--accent); }
+        button.filter-error { background-color: #ef4444; }
+        button.filter-success { background-color: #10b981; }
+
+        .console-container {
+            background-color: var(--console-bg);
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        .console-header {
+            background-color: #1e293b;
+            padding: 10px 20px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            gap: 8px;
+        }
+
+        .mac-btn { width: 12px; height: 12px; border-radius: 50%; }
+        .mac-btn.close { background-color: #ef4444; }
+        .mac-btn.min { background-color: #eab308; }
+        .mac-btn.max { background-color: #22c55e; }
+
+        pre {
+            margin: 0;
+            padding: 20px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.95rem;
+            color: var(--console-text);
+            line-height: 1.5;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+
+        /* Syntax Highlighting Classes */
+        .line { display: block; padding: 2px 0; border-left: 3px solid transparent; }
+        .line:hover { background-color: rgba(255,255,255,0.05); }
+        .line-error { color: #ef4444; border-left-color: #ef4444; background-color: rgba(239, 68, 68, 0.05); }
+        .line-success { color: #10b981; border-left-color: #10b981; }
+        .line-warn { color: #eab308; border-left-color: #eab308; }
+        
+        .hidden { display: none !important; }
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <div class="header-info">
+            <h1>🚀 {{TITLE}}</h1>
+            <p><strong>Comando Ejecutado:</strong> {{COMMAND}}</p>
+            <p><strong>Fecha de Generación:</strong> {{TIMESTAMP}}</p>
+        </div>
+        <div class="header-actions">
+            <button onclick="toggleTheme()" id="themeBtn">☀️ Modo Claro</button>
+        </div>
+    </div>
+
+    <div class="toolbar">
+        <button onclick="copyToClipboard()">📋 Copiar Todo</button>
+        <button onclick="downloadRaw()">💾 Guardar RAW</button>
+        <div style="width: 2px; background: var(--border-color); margin: 0 10px;"></div>
+        <button class="filter-btn active" id="btn-all" onclick="filterLines('all')">🔍 Mostrar Todo</button>
+        <button class="filter-btn filter-error" id="btn-error" onclick="filterLines('error')">❌ Solo Errores</button>
+        <button class="filter-btn filter-success" id="btn-success" onclick="filterLines('success')">✅ Solo Éxitos</button>
+    </div>
+
+    <div class="console-container">
+        <div class="console-header">
+            <div class="mac-btn close"></div>
+            <div class="mac-btn min"></div>
+            <div class="mac-btn max"></div>
+        </div>
+        <pre id="consoleOutput">{{CONTENT}}</pre>
+    </div>
+</div>
+
+<script>
+    // Configuración Inicial e inyección de estilos
+    document.addEventListener("DOMContentLoaded", () => {
+        const pre = document.getElementById('consoleOutput');
+        // Usar textContent para no perder el formato real o innerHTML si fue limpiado
+        const contentStr = pre.innerHTML || "";
+        const lines = contentStr.split(/\r?\n/);
+        
+        let formattedHtml = '';
+        let currentSection = 'neutral';
+        
+        lines.forEach(line => {
+            // Escapar HTML en la línea de forma segura si no lo está
+            let safeLine = line.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            // Deshacer el doble escape si innerHTML ya lo tenía escapado
+            safeLine = safeLine.replace(/&amp;amp;/g, "&amp;").replace(/&amp;lt;/g, "&lt;").replace(/&amp;gt;/g, "&gt;");
+            
+            let lowerLine = safeLine.toLowerCase();
+            
+            // State machine to track sections
+            if (lowerLine.includes('[ archivos con errores ]') || lowerLine.includes('fallidos:')) {
+                currentSection = 'error';
+            } else if (lowerLine.includes('[ archivos completados') || lowerLine.includes('exitosos:')) {
+                currentSection = 'success';
+            } else if (lowerLine.includes('resumen') || lowerLine.includes('=====')) {
+                currentSection = 'neutral';
+            }
+            
+            let lineClass = 'line';
+            let isErrorKeyword = lowerLine.includes('error') || lowerLine.includes('fail') || lowerLine.includes('denied') || lowerLine.includes('truncated') || lowerLine.includes('terminating');
+            let isSuccessKeyword = lowerLine.includes('success') || lowerLine.includes('[ok]') || lowerLine.includes('éxito') || lowerLine.includes('exito');
+            let isWarnKeyword = lowerLine.includes('warn') || lowerLine.includes('advertencia');
+            
+            if (isErrorKeyword || (currentSection === 'error' && safeLine.trim() !== '')) {
+                lineClass += ' line-error';
+            } else if (isSuccessKeyword || (currentSection === 'success' && safeLine.trim() !== '')) {
+                lineClass += ' line-success';
+            } else if (isWarnKeyword) {
+                lineClass += ' line-warn';
+            }
+            
+            if(safeLine.trim() !== '') {
+                formattedHtml += `<span class="${lineClass}">${safeLine}</span>\n`;
+            } else {
+                formattedHtml += `<br>`;
+            }
+        });
+        
+        if(formattedHtml) {
+            pre.innerHTML = formattedHtml;
+        }
+    });
+
+    function toggleTheme() {
+        const html = document.documentElement;
+        const btn = document.getElementById('themeBtn');
+        if (html.getAttribute('data-theme') === 'dark') {
+            html.setAttribute('data-theme', 'light');
+            btn.innerHTML = '🌙 Modo Oscuro';
+        } else {
+            html.setAttribute('data-theme', 'dark');
+            btn.innerHTML = '☀️ Modo Claro';
+        }
+    }
+
+    function copyToClipboard() {
+        const text = document.getElementById('consoleOutput').innerText;
+        navigator.clipboard.writeText(text).then(() => {
+            alert('¡Contenido copiado al portapapeles!');
+        });
+    }
+
+    function downloadRaw() {
+        const text = document.getElementById('consoleOutput').innerText;
+        const blob = new Blob([text], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'reporte_raw.txt';
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+
+    function filterLines(type) {
+        // Update active button styling
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('btn-' + type).classList.add('active');
+
+        const lines = document.querySelectorAll('#consoleOutput .line');
+        lines.forEach(line => {
+            line.classList.remove('hidden');
+            if (type === 'error' && !line.classList.contains('line-error')) {
+                line.classList.add('hidden');
+            } else if (type === 'success' && !line.classList.contains('line-success')) {
+                line.classList.add('hidden');
+            }
+        });
+    }
+</script>
+
+</body>
+</html>
