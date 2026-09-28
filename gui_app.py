@@ -6,8 +6,19 @@ import os
 from tkinter import filedialog
 from tkinter import messagebox
 
+import sys
+
+def get_base_path():
+    if getattr(sys, 'frozen', False):
+        return os.path.dirname(sys.executable)
+    else:
+        return os.path.dirname(os.path.abspath(__file__))
+
+def get_resource_path(relative_path):
+    return os.path.join(get_base_path(), relative_path)
+
 try:
-    ctk.set_default_color_theme("custom_github_theme.json")
+    ctk.set_default_color_theme(get_resource_path("custom_github_theme.json"))
 except Exception as e:
     print(f"No se pudo cargar el tema, usando blue: {e}")
     ctk.set_default_color_theme("blue")
@@ -140,13 +151,13 @@ class App(ctk.CTk):
     def load_config(self):
         config = {"categories": []}
         try:
-            with open("commands_config.json", "r", encoding="utf-8") as f:
+            with open(get_resource_path("commands_config.json"), "r", encoding="utf-8") as f:
                 config = json.load(f)
         except Exception as e:
             pass
             
         try:
-            with open("favorites.json", "r", encoding="utf-8") as f:
+            with open(get_resource_path("favorites.json"), "r", encoding="utf-8") as f:
                 favs = json.load(f)
                 if favs:
                     config["categories"].insert(0, {
@@ -530,15 +541,15 @@ class App(ctk.CTk):
         cmd_name = self.cmd_var.get()
         favs = []
         try:
-            if os.path.exists("favorites.json"):
-                with open("favorites.json", "r", encoding="utf-8") as f:
+            if os.path.exists(get_resource_path("favorites.json")):
+                with open(get_resource_path("favorites.json"), "r", encoding="utf-8") as f:
                     favs = json.load(f)
         except:
             return
             
         new_favs = [f for f in favs if f.get("name") != cmd_name]
         
-        with open("favorites.json", "w", encoding="utf-8") as f:
+        with open(get_resource_path("favorites.json"), "w", encoding="utf-8") as f:
             json.dump(new_favs, f, indent=4)
             
         self.output_textbox.configure(state="normal")
@@ -560,8 +571,8 @@ class App(ctk.CTk):
                 
         favs = []
         try:
-            if os.path.exists("favorites.json"):
-                with open("favorites.json", "r", encoding="utf-8") as f:
+            if os.path.exists(get_resource_path("favorites.json")):
+                with open(get_resource_path("favorites.json"), "r", encoding="utf-8") as f:
                     favs = json.load(f)
         except:
             pass
@@ -587,7 +598,7 @@ class App(ctk.CTk):
         fav_cmd["name"] = fav_name
             
         favs.append(fav_cmd)
-        with open("favorites.json", "w", encoding="utf-8") as f:
+        with open(get_resource_path("favorites.json"), "w", encoding="utf-8") as f:
             json.dump(favs, f, indent=4)
             
         self.output_textbox.configure(state="normal")

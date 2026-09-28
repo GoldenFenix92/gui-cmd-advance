@@ -19,4 +19,9 @@ if __name__ == "__main__":
         app.mainloop()
     else:
         # Volver a ejecutar el script con privilegios de administrador
-        ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, f'"{__file__}"', None, 1)
+        if getattr(sys, 'frozen', False):
+            # Running as compiled executable
+            ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, "", None, 1)
+        else:
+            # Running as python script
+            ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, f'"{__file__}"', None, 1)
