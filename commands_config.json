@@ -668,7 +668,7 @@
                 {
                     "name": "Compresor de Multimedia",
                     "description": "Comprime imagenes y videos (requiere FFmpeg y Pillow). Soporta seleccion de archivo o carpeta.",
-                    "command": "python compressor.py",
+                    "command": "__INTERNAL__ --run-compressor",
                     "args": [
                         {
                             "name": "Seleccionar Carpeta (Lote)",
@@ -792,7 +792,7 @@
                 {
                     "name": "Reparador de Multimedia",
                     "description": "Intenta rescatar y reparar fotos truncadas o videos corruptos de forma masiva o individual.",
-                    "command": "python media_repair.py",
+                    "command": "__INTERNAL__ --run-media-repair",
                     "args": [
                         {
                             "name": "Archivos / Carpeta Origen",
@@ -824,7 +824,7 @@
                 {
                     "name": "Buscador de Duplicados",
                     "description": "Busca archivos multimedia duplicados o da\u00f1ados, con vista previa.",
-                    "command": ".\\.venv\\Scripts\\python.exe duplicate_finder.py",
+                    "command": "__INTERNAL__ --run-duplicate-finder",
                     "args": [
                         {
                             "name": "Carpeta a escanear",

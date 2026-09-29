@@ -9,7 +9,13 @@ from PIL import Image, ImageFile
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 def get_ffmpeg_path():
-    # Asume que ffmpeg está en el PATH del sistema
+    import os, sys
+    if getattr(sys, 'frozen', False):
+        local_ffmpeg = os.path.join(sys._MEIPASS, "ffmpeg.exe")
+    else:
+        local_ffmpeg = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ffmpeg.exe")
+    if os.path.exists(local_ffmpeg):
+        return local_ffmpeg
     return "ffmpeg"
 
 def repair_image(input_path, output_path, reference_path=None):

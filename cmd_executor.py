@@ -7,6 +7,10 @@ class CommandRunner:
         self.process = None
 
     def execute_command_async(self, command_string, output_callback, finished_callback):
+        if "__INTERNAL__" in command_string:
+            import sys
+            command_string = command_string.replace("__INTERNAL__", f'"{sys.executable}"')
+            
         def run_process():
             try:
                 self.process = subprocess.Popen(

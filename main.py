@@ -9,6 +9,24 @@ def is_admin():
         return False
 
 if __name__ == "__main__":
+    if len(sys.argv) > 1:
+        if sys.argv[1] == "--run-compressor":
+            import compressor
+            sys.argv.pop(1)
+            compressor.main()
+            sys.exit(0)
+        elif sys.argv[1] == "--run-duplicate-finder":
+            import duplicate_finder
+            sys.argv.pop(1)
+            app = duplicate_finder.DuplicateFinderApp()
+            app.mainloop()
+            sys.exit(0)
+        elif sys.argv[1] == "--run-media-repair":
+            import media_repair
+            sys.argv.pop(1)
+            media_repair.main()
+            sys.exit(0)
+            
     if is_admin():
         # Ocultar la consola de fondo en Windows
         hwnd = ctypes.windll.kernel32.GetConsoleWindow()
