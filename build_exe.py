@@ -108,7 +108,7 @@ def main():
     cmd = [
         sys.executable, "-m", "PyInstaller",
         "--noconfirm",
-        "--onedir",          
+        "--onefile",          
         "--windowed",        
         "--version-file", version_file,
         "--name", name,
