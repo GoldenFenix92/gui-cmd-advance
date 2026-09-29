@@ -14,11 +14,23 @@ from tkinter import filedialog, messagebox
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
+def get_resource_path(relative_path):
+    if getattr(sys, 'frozen', False):
+        return os.path.join(sys._MEIPASS, relative_path)
+    return os.path.join(os.path.dirname(os.path.abspath(__file__)), relative_path)
+
 class DuplicateFinderApp(ctk.CTk):
     def __init__(self, folder=None, hw="cpu", threads=0):
         super().__init__()
         self.title("Buscador de Duplicados y Multimedia Dañada")
         self.geometry("900x700")
+        
+        def set_icon():
+            try:
+                self.iconbitmap(get_resource_path("app_icon.ico"))
+            except:
+                pass
+        self.after(200, set_icon)
         
         self.selected_folder = folder or ""
         self.hw_mode = hw

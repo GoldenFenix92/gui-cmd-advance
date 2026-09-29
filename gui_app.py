@@ -60,7 +60,7 @@ class App(ctk.CTk):
         self.theme_switch.grid(row=0, column=0, padx=15, pady=15, sticky="nw")
         self.theme_switch.select()
 
-        self.credits_btn = ctk.CTkButton(self.left_frame, text="ℹ️ Créditos", width=80, height=25, fg_color="transparent", border_width=1, command=self.show_credits)
+        self.credits_btn = ctk.CTkButton(self.left_frame, text="ℹ️ Créditos", width=80, height=25, fg_color="transparent", border_width=1, text_color=("black", "white"), command=self.show_credits)
         self.credits_btn.grid(row=0, column=0, padx=15, pady=15, sticky="ne")
 
         self.lbl_cat = ctk.CTkLabel(self.left_frame, text="Categoría:", font=("Arial", 12, "bold"))
@@ -113,7 +113,7 @@ class App(ctk.CTk):
 
         # Preview de comando en vivo
         self.preview_var = ctk.StringVar(value="")
-        self.preview_entry = ctk.CTkEntry(self.right_frame, textvariable=self.preview_var, state="disabled", font=("Consolas", 14, "bold"), text_color="#3B8ED0")
+        self.preview_entry = ctk.CTkEntry(self.right_frame, textvariable=self.preview_var, state="disabled", font=("Consolas", 14, "bold"), text_color=("#1f6aa5", "#3B8ED0"))
         self.preview_entry.grid(row=0, column=0, columnspan=2, padx=10, pady=(10, 0), sticky="ew")
 
         # Consola
@@ -145,7 +145,7 @@ class App(ctk.CTk):
         # Dashboard (Status Bar)
         self.status_bar = ctk.CTkFrame(self.right_frame, height=25, fg_color="transparent")
         self.status_bar.grid(row=4, column=0, columnspan=2, sticky="ew")
-        self.lbl_status = ctk.CTkLabel(self.status_bar, text="Iniciando sistema...", font=("Consolas", 12, "bold"), text_color="#A9A9A9")
+        self.lbl_status = ctk.CTkLabel(self.status_bar, text="Iniciando sistema...", font=("Consolas", 12, "bold"), text_color=("#444444", "#A9A9A9"))
         self.lbl_status.pack(side="right", padx=10)
         
         # Configurar tags de sintaxis
@@ -269,13 +269,39 @@ class App(ctk.CTk):
                     return cmd
         return None
 
+    def show_custom_info(self, title, message):
+        info_win = ctk.CTkToplevel(self)
+        info_win.title(title)
+        info_win.geometry("450x250")
+        info_win.resizable(False, False)
+        
+        def set_icon():
+            try:
+                info_win.iconbitmap(get_resource_path("app_icon.ico"))
+            except:
+                pass
+        
+        info_win.after(200, set_icon)
+        
+        info_win.transient(self)
+        info_win.grab_set()
+        
+        lbl_title = ctk.CTkLabel(info_win, text=title, font=("Arial", 16, "bold"), text_color=("#1f6aa5", "#F39C12"))
+        lbl_title.pack(pady=(20, 10))
+        
+        lbl_msg = ctk.CTkLabel(info_win, text=message, font=("Arial", 13), justify="center", wraplength=400, text_color=("black", "white"))
+        lbl_msg.pack(pady=10, fill="both", expand=True, padx=20)
+        
+        close_btn = ctk.CTkButton(info_win, text="Entendido", command=info_win.destroy, fg_color=("#1f6aa5", "#24292F"), hover_color=("#144870", "#40464d"), text_color="white")
+        close_btn.pack(pady=(10, 20))
+
     def show_command_info(self):
         cmd_data = self.get_command_data(self.cmd_var.get())
         if cmd_data:
-            messagebox.showinfo(f"Info: {cmd_data.get('name')}", cmd_data.get("description", ""))
+            self.show_custom_info(f"Info: {cmd_data.get('name')}", cmd_data.get("description", ""))
 
     def show_arg_info(self, arg_name, arg_desc):
-        messagebox.showinfo(f"Info: {arg_name}", arg_desc)
+        self.show_custom_info(f"Info: {arg_name}", arg_desc)
 
     def on_category_change(self, selected_category):
         cat_data = self.get_category_data(selected_category)
@@ -861,10 +887,13 @@ class App(ctk.CTk):
         credits_win.geometry("400x450")
         credits_win.resizable(False, False)
         
-        try:
-            credits_win.iconbitmap(get_resource_path("app_icon.ico"))
-        except:
-            pass
+        def set_credits_icon():
+            try:
+                credits_win.iconbitmap(get_resource_path("app_icon.ico"))
+            except:
+                pass
+                
+        credits_win.after(200, set_credits_icon)
             
         credits_win.transient(self)
         credits_win.grab_set()
