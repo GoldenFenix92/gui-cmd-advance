@@ -36,36 +36,53 @@ VSVersionInfo(
 )
 """
 
-def prompt(text, default=""):
-    val = input(f"{text} [{default}]: ").strip()
-    return val if val else default
+def get_git_commit_count():
+    try:
+        output = subprocess.check_output(["git", "rev-list", "--count", "HEAD"], stderr=subprocess.STDOUT).decode("utf-8").strip()
+        return int(output)
+    except Exception:
+        return 0
 
 def main():
     print("="*60)
-    print("  ASISTENTE DE COMPILACIÓN (.EXE) CON COPYRIGHT Y METADATOS")
+    print("  COMPILACIÓN AUTOMÁTICA (.EXE) - GUI CMD ADVANCE")
     print("="*60)
-    print("Este asistente te guiará para crear tu archivo .exe con información")
-    print("de copyright, lo cual ayuda a evitar falsos positivos en el")
-    print("SmartScreen de Windows y antivirus.\\n")
 
-    # 1. Ask for metadata
-    company = prompt("Nombre de la empresa o creador", "Mi Empresa")
-    name = prompt("Nombre del programa", "GUI_CMD_Advance")
-    description = prompt("Descripción corta", "Herramienta avanzada de comandos")
-    copyright_txt = prompt("Texto de Copyright", "© 2026 Todos los derechos reservados")
-    version = prompt("Versión del programa (formato X.X.X.X)", "1.0.0.0")
+    # Preguntar si es fase beta
+    ans = input("¿Es fase Beta? (S/n): ").strip().lower()
+    is_beta = ans != 'n'
 
-    # Parse version
-    v_parts = version.split(".")
-    while len(v_parts) < 4:
-        v_parts.append("0")
-    try:
-        v1, v2, v3, v4 = [int(x) for x in v_parts[:4]]
-    except:
-        print("Formato de versión inválido. Usando 1.0.0.0")
-        v1, v2, v3, v4 = 1, 0, 0, 0
+    # Variables solicitadas
+    company = "GOLDEN FENIX"
+    
+    # Nombre sin guiones ni guiones bajos
+    base_name = "Gui Cmd Advance"
+    if is_beta:
+        name = f"{base_name} Beta"
+    else:
+        name = base_name
 
-    # 2. Write version info file
+    description = "Herramienta gráfica avanzada para comandos de sistema"
+    copyright_txt = "© 2026 GoldenFenix Todos los derechos reservados."
+    icon = "app_icon.ico"
+    
+    commit_count = get_git_commit_count()
+    version_windows = f"1.0.{commit_count}.0"
+    
+    version_ui = f"1.0.{commit_count}"
+    if is_beta:
+        version_ui += " Beta"
+        
+    v1, v2, v3, v4 = 1, 0, commit_count, 0
+
+    print(f"[*] Versión detectada por Git: {version_ui}")
+    
+    # Escribir version.py para que la GUI lo lea
+    with open("version.py", "w", encoding="utf-8") as vf:
+        vf.write(f'__version__ = "{version_ui}"\n')
+    print("[+] Archivo 'version.py' actualizado.")
+
+    # Escribir metadatos de Windows
     version_content = VERSION_FILE_TEMPLATE.format(
         v1=v1, v2=v2, v3=v3, v4=v4,
         company=company,
@@ -78,19 +95,15 @@ def main():
     with open(version_file, "w", encoding="utf-8") as f:
         f.write(version_content)
     
-    print(f"\\n[+] Archivo '{version_file}' generado con éxito.")
+    print(f"[+] Archivo '{version_file}' generado con metadatos de Windows.")
 
-    # 3. Check for pyinstaller
     try:
         import PyInstaller
     except ImportError:
-        print("\\nPyInstaller no está instalado. Instalándolo ahora...")
+        print("\nPyInstaller no está instalado. Instalándolo ahora...")
         subprocess.run([sys.executable, "-m", "pip", "install", "pyinstaller"], check=True)
         
-    icon = prompt("Ruta del icono (.ico) (Deja en blanco si no tienes)", "")
-    
-    # 4. Build command for PyInstaller
-    print("\\nGenerando el ejecutable principal...")
+    print("\nGenerando el ejecutable principal...")
     
     cmd = [
         sys.executable, "-m", "PyInstaller",
@@ -99,25 +112,22 @@ def main():
         "--windowed",        
         "--version-file", version_file,
         "--name", name,
-        "--add-data", f"commands_config.json;.",
-        "--add-data", f"github_theme.json;.",
-        "--add-data", f"custom_github_theme.json;.",
-        "--add-data", f"ffmpeg.exe;.",
+        "--add-data", "commands_config.json;.",
+        "--add-data", "github_theme.json;.",
+        "--add-data", "custom_github_theme.json;.",
+        "--add-data", "ffmpeg.exe;.",
+        "--add-data", "app_icon.ico;.",
+        "--icon", icon,
         "main.py"
     ]
     
-    if icon and os.path.exists(icon):
-        cmd.extend(["--icon", icon])
-        
-    print(f"Ejecutando: {' '.join(cmd)}\\n")
+    print(f"Ejecutando: {' '.join(cmd)}\n")
     subprocess.run(cmd)
     
-    print("\\n" + "="*60)
+    print("\n" + "="*60)
     print("  COMPILACIÓN COMPLETADA")
     print("="*60)
     print(f"Tu programa compilado está en la carpeta 'dist/{name}'")
-    print("Recuerda que para que los scripts adicionales (compressor.py, duplicate_finder.py) funcionen")
-    print("debes colocarlos junto al main.exe, o compilarlos como ejecutables separados.")
 
 if __name__ == "__main__":
     main()

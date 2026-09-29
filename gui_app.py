@@ -7,10 +7,16 @@ from tkinter import filedialog
 from tkinter import messagebox
 
 import sys
+import webbrowser
+
+try:
+    from version import __version__
+except ImportError:
+    __version__ = "1.0.0"
 
 def get_base_path():
     if getattr(sys, 'frozen', False):
-        return os.path.dirname(sys.executable)
+        return sys._MEIPASS
     else:
         return os.path.dirname(os.path.abspath(__file__))
 
@@ -31,6 +37,11 @@ class App(ctk.CTk):
 
         self.title("CMD GUI Advance")
         self.geometry("1400x800")
+        
+        try:
+            self.iconbitmap(get_resource_path("app_icon.ico"))
+        except:
+            pass
 
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(0, weight=1)
@@ -48,6 +59,9 @@ class App(ctk.CTk):
         self.theme_switch = ctk.CTkSwitch(self.left_frame, text="Modo Oscuro", command=self.toggle_theme)
         self.theme_switch.grid(row=0, column=0, padx=15, pady=15, sticky="nw")
         self.theme_switch.select()
+
+        self.credits_btn = ctk.CTkButton(self.left_frame, text="ℹ️ Créditos", width=80, height=25, fg_color="transparent", border_width=1, command=self.show_credits)
+        self.credits_btn.grid(row=0, column=0, padx=15, pady=15, sticky="ne")
 
         self.lbl_cat = ctk.CTkLabel(self.left_frame, text="Categoría:", font=("Arial", 12, "bold"))
         self.lbl_cat.grid(row=1, column=0, padx=15, pady=(5, 0), sticky="w")
@@ -840,3 +854,49 @@ class App(ctk.CTk):
             self.output_textbox.insert("end", f"\n[!] Reporte antiguo convertido con éxito a HTML interactivo: {output_path}\n", "success")
             self.output_textbox.see("end")
             self.output_textbox.configure(state="disabled")
+
+    def show_credits(self):
+        credits_win = ctk.CTkToplevel(self)
+        credits_win.title("Acerca de GUI CMD ADVANCE")
+        credits_win.geometry("400x450")
+        credits_win.resizable(False, False)
+        
+        try:
+            credits_win.iconbitmap(get_resource_path("app_icon.ico"))
+        except:
+            pass
+            
+        credits_win.transient(self)
+        credits_win.grab_set()
+        
+        # Icono o Título Principal
+        lbl_title = ctk.CTkLabel(credits_win, text="GUI CMD ADVANCE", font=("Arial", 20, "bold"), text_color="#F39C12")
+        lbl_title.pack(pady=(20, 5))
+        
+        lbl_version = ctk.CTkLabel(credits_win, text=f"Versión {__version__}", font=("Arial", 12))
+        lbl_version.pack(pady=(0, 15))
+        
+        # Descripción
+        desc = ("Herramienta gráfica avanzada para comandos de sistema.\n"
+                "Diseñada para simplificar y optimizar tareas de\n"
+                "mantenimiento, red y gestión de archivos en Windows.")
+        lbl_desc = ctk.CTkLabel(credits_win, text=desc, font=("Arial", 12), justify="center")
+        lbl_desc.pack(pady=10)
+        
+        # Autor y Copyright
+        lbl_author = ctk.CTkLabel(credits_win, text="Desarrollador: GOLDEN FENIX", font=("Arial", 12, "bold"))
+        lbl_author.pack(pady=(15, 5))
+        
+        lbl_copy = ctk.CTkLabel(credits_win, text="© 2026 GoldenFenix. Todos los derechos reservados.", font=("Arial", 10))
+        lbl_copy.pack(pady=5)
+        
+        # Link GitHub
+        def open_repo():
+            webbrowser.open("https://github.com/GoldenFenix92/gui-cmd-advance")
+            
+        link_btn = ctk.CTkButton(credits_win, text="Ver Repositorio en GitHub", fg_color="#24292F", hover_color="#40464d", command=open_repo)
+        link_btn.pack(pady=15)
+        
+        close_btn = ctk.CTkButton(credits_win, text="Cerrar", command=credits_win.destroy)
+        close_btn.pack(pady=(10, 20))
+
