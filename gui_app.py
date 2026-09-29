@@ -157,6 +157,10 @@ class App(ctk.CTk):
 
         self.update_status_dashboard()
 
+        self.auto_clear_var = ctk.BooleanVar(value=True)
+        self.auto_clear_cb = ctk.CTkCheckBox(self.right_frame, text="Auto-Limpiar", variable=self.auto_clear_var, width=100)
+        self.auto_clear_cb.grid(row=3, column=0, padx=10, pady=(0, 10), sticky="sw")
+
         self.clear_btn = ctk.CTkButton(self.right_frame, text="Limpiar", width=100, fg_color="transparent", border_width=1, text_color=("#24292F", "#C9D1D9"), command=self.clear_output)
         self.clear_btn.grid(row=3, column=1, padx=10, pady=(0, 10), sticky="se")
 
@@ -652,6 +656,9 @@ class App(ctk.CTk):
         self.execute_external(self.preview_var.get())
 
     def execute_external(self, command_str):
+        if hasattr(self, 'auto_clear_var') and self.auto_clear_var.get():
+            self.clear_output()
+            
         if hasattr(self, 'progressbar'):
             self.progressbar.set(0)
             if hasattr(self, 'lbl_progress'):
