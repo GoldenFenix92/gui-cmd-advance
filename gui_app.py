@@ -157,12 +157,15 @@ class App(ctk.CTk):
 
         self.update_status_dashboard()
 
-        self.auto_clear_var = ctk.BooleanVar(value=True)
-        self.auto_clear_cb = ctk.CTkCheckBox(self.right_frame, text="Auto-Limpiar", variable=self.auto_clear_var, width=100)
-        self.auto_clear_cb.grid(row=3, column=0, padx=10, pady=(0, 10), sticky="sw")
+        self.clear_frame = ctk.CTkFrame(self.right_frame, fg_color="transparent")
+        self.clear_frame.grid(row=3, column=1, padx=10, pady=(0, 10), sticky="se")
 
-        self.clear_btn = ctk.CTkButton(self.right_frame, text="Limpiar", width=100, fg_color="transparent", border_width=1, text_color=("#24292F", "#C9D1D9"), command=self.clear_output)
-        self.clear_btn.grid(row=3, column=1, padx=10, pady=(0, 10), sticky="se")
+        self.auto_clear_var = ctk.BooleanVar(value=True)
+        self.auto_clear_cb = ctk.CTkCheckBox(self.clear_frame, text="Auto-Limpiar", variable=self.auto_clear_var, width=100)
+        self.auto_clear_cb.pack(side="left", padx=(0, 10))
+
+        self.clear_btn = ctk.CTkButton(self.clear_frame, text="Limpiar", width=100, fg_color="transparent", border_width=1, text_color=("#24292F", "#C9D1D9"), command=self.clear_output)
+        self.clear_btn.pack(side="left")
 
         self.on_category_change(self.cat_var.get())
 
