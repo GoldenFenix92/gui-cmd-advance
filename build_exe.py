@@ -117,6 +117,14 @@ def main():
         "--add-data", "custom_github_theme.json;.",
         "--add-data", "ffmpeg.exe;.",
         "--add-data", "app_icon.ico;.",
+        "--hidden-import", "functions.compressor",
+        "--hidden-import", "functions.duplicate_finder",
+        "--hidden-import", "functions.temp_cleaner",
+        "--hidden-import", "functions.advanced_search",
+        "--hidden-import", "functions.smart_info",
+        "--hidden-import", "functions.credentials_vault",
+        "--hidden-import", "functions.media_repair",
+        "--hidden-import", "functions.cmd_executor",
         "--icon", icon,
         "main.py"
     ]

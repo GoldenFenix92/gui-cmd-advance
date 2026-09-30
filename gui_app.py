@@ -1,7 +1,7 @@
 import json
 import re
 import customtkinter as ctk
-import cmd_executor
+from functions import cmd_executor
 import os
 from tkinter import filedialog
 from tkinter import messagebox

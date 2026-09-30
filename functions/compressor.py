@@ -23,7 +23,7 @@ def get_ffmpeg_path():
     if getattr(sys, 'frozen', False):
         local_ffmpeg = os.path.join(sys._MEIPASS, "ffmpeg.exe")
     else:
-        local_ffmpeg = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ffmpeg.exe")
+        local_ffmpeg = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "ffmpeg.exe")
     if os.path.exists(local_ffmpeg):
         return local_ffmpeg
     return "ffmpeg"

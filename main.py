@@ -11,42 +11,42 @@ def is_admin():
 if __name__ == "__main__":
     if len(sys.argv) > 1:
         if sys.argv[1] == "--run-compressor":
-            import compressor
+            from functions import compressor
             sys.argv.pop(1)
             compressor.main()
             sys.exit(0)
         elif sys.argv[1] == "--run-duplicate-finder":
-            import duplicate_finder
+            from functions import duplicate_finder
             sys.argv.pop(1)
             app = duplicate_finder.DuplicateFinderApp()
             app.mainloop()
             sys.exit(0)
         elif sys.argv[1] == "--run-temp-cleaner":
-            import temp_cleaner
+            from functions import temp_cleaner
             sys.argv.pop(1)
             app = temp_cleaner.TempCleanerApp()
             app.mainloop()
             sys.exit(0)
         elif sys.argv[1] == "--run-advanced-search":
-            import advanced_search
+            from functions import advanced_search
             sys.argv.pop(1)
             app = advanced_search.AdvancedSearchApp()
             app.mainloop()
             sys.exit(0)
         elif sys.argv[1] == "--run-smart-info":
-            import smart_info
+            from functions import smart_info
             sys.argv.pop(1)
             app = smart_info.SmartInfoApp()
             app.mainloop()
             sys.exit(0)
         elif sys.argv[1] == "--run-vault":
-            import credentials_vault
+            from functions import credentials_vault
             sys.argv.pop(1)
             app = credentials_vault.CredentialsVaultApp()
             app.mainloop()
             sys.exit(0)
         elif sys.argv[1] == "--run-media-repair":
-            import media_repair
+            from functions import media_repair
             sys.argv.pop(1)
             media_repair.main()
             sys.exit(0)
