@@ -21,9 +21,9 @@ def ensure_requirements():
 def get_ffmpeg_path():
     import os, sys
     if getattr(sys, 'frozen', False):
-        local_ffmpeg = os.path.join(sys._MEIPASS, "ffmpeg.exe")
+        local_ffmpeg = os.path.join(sys._MEIPASS, "tools", "ffmpeg.exe")
     else:
-        local_ffmpeg = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "ffmpeg.exe")
+        local_ffmpeg = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "tools", "ffmpeg.exe")
     if os.path.exists(local_ffmpeg):
         return local_ffmpeg
     return "ffmpeg"

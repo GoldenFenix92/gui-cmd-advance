@@ -115,7 +115,8 @@ def main():
         "--add-data", "commands_config.json;.",
         "--add-data", "github_theme.json;.",
         "--add-data", "custom_github_theme.json;.",
-        "--add-data", "ffmpeg.exe;.",
+        "--add-data", "tools/ffmpeg.exe;tools",
+        "--add-data", "tools/setup.exe;tools",
         "--add-data", "app_icon.ico;.",
         "--hidden-import", "functions.compressor",
         "--hidden-import", "functions.duplicate_finder",
@@ -125,6 +126,7 @@ def main():
         "--hidden-import", "functions.credentials_vault",
         "--hidden-import", "functions.media_repair",
         "--hidden-import", "functions.cmd_executor",
+        "--hidden-import", "functions.office_deploy",
         "--icon", icon,
         "main.py"
     ]

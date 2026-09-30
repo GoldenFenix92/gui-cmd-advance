@@ -1231,6 +1231,29 @@
                     "args": []
                 }
             ]
+        },
+        {
+            "name": "Instaladores Oficiales (Microsoft)",
+            "commands": [
+                {
+                    "name": "Descargar ISO Windows 11",
+                    "description": "Abre la página oficial de Microsoft para descargar la imagen ISO o Media Creation Tool de Windows 11.",
+                    "command": "powershell -Command \"Start-Process 'https://www.microsoft.com/es-es/software-download/windows11'; Write-Host 'Abriendo navegador...'\"",
+                    "args": []
+                },
+                {
+                    "name": "Descargar ISO Windows 10",
+                    "description": "Abre la página oficial de Microsoft para descargar la imagen ISO o Media Creation Tool de Windows 10.",
+                    "command": "powershell -Command \"Start-Process 'https://www.microsoft.com/es-es/software-download/windows10'; Write-Host 'Abriendo navegador...'\"",
+                    "args": []
+                },
+                {
+                    "name": "Desplegar Microsoft Office (ODT)",
+                    "description": "Abre la herramienta gráfica interna para descargar, configurar el XML e instalar Microsoft Office LTSC 2019/2021/2024.",
+                    "command": "__INTERNAL__ --run-office-deploy",
+                    "args": []
+                }
+            ]
         }
     ]
 }

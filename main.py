@@ -50,6 +50,12 @@ if __name__ == "__main__":
             sys.argv.pop(1)
             media_repair.main()
             sys.exit(0)
+        elif sys.argv[1] == "--run-office-deploy":
+            from functions import office_deploy
+            sys.argv.pop(1)
+            app = office_deploy.OfficeDeployApp()
+            app.mainloop()
+            sys.exit(0)
             
     if is_admin():
         hwnd = ctypes.windll.kernel32.GetConsoleWindow()
