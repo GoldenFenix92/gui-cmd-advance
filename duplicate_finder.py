@@ -19,11 +19,18 @@ def get_resource_path(relative_path):
         return os.path.join(sys._MEIPASS, relative_path)
     return os.path.join(os.path.dirname(os.path.abspath(__file__)), relative_path)
 
+def center_window(window, width, height):
+    screen_width = window.winfo_screenwidth()
+    screen_height = window.winfo_screenheight()
+    x = int((screen_width / 2) - (width / 2))
+    y = int((screen_height / 2) - (height / 2))
+    window.geometry(f"{width}x{height}+{x}+{y}")
+
 class DuplicateFinderApp(ctk.CTk):
     def __init__(self, folder=None, hw="cpu", threads=0):
         super().__init__()
         self.title("Buscador de Duplicados y Multimedia Dañada")
-        self.geometry("900x700")
+        center_window(self, 900, 700)
         
         def set_icon():
             try:

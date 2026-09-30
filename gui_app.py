@@ -10,6 +10,11 @@ import sys
 import webbrowser
 
 try:
+    from CTkToolTip import CTkToolTip
+except ImportError:
+    CTkToolTip = None
+
+try:
     from version import __version__
 except ImportError:
     __version__ = "1.0.0"
@@ -22,6 +27,13 @@ def get_base_path():
 
 def get_resource_path(relative_path):
     return os.path.join(get_base_path(), relative_path)
+
+def center_window(window, width, height):
+    screen_width = window.winfo_screenwidth()
+    screen_height = window.winfo_screenheight()
+    x = int((screen_width / 2) - (width / 2))
+    y = int((screen_height / 2) - (height / 2))
+    window.geometry(f"{width}x{height}+{x}+{y}")
 
 try:
     ctk.set_default_color_theme(get_resource_path("custom_github_theme.json"))
@@ -36,7 +48,7 @@ class App(ctk.CTk):
         super().__init__()
 
         self.title("CMD GUI Advance")
-        self.geometry("1400x800")
+        center_window(self, 1400, 800)
         
         try:
             self.iconbitmap(get_resource_path("app_icon.ico"))
@@ -53,7 +65,8 @@ class App(ctk.CTk):
         # ---------- FRAME IZQUIERDO: Panel de Control ----------
         self.left_frame = ctk.CTkFrame(self)
         self.left_frame.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
-        self.left_frame.grid_rowconfigure(5, weight=1)
+        self.left_frame.grid_rowconfigure(6, weight=1)
+        self.left_frame.grid_rowconfigure(7, weight=0)
         self.left_frame.grid_columnconfigure(0, weight=1)
 
         self.theme_switch = ctk.CTkSwitch(self.left_frame, text="Modo Oscuro", command=self.toggle_theme)
@@ -63,17 +76,22 @@ class App(ctk.CTk):
         self.credits_btn = ctk.CTkButton(self.left_frame, text="ℹ️ Créditos", width=80, height=25, fg_color="transparent", border_width=1, text_color=("black", "white"), command=self.show_credits)
         self.credits_btn.grid(row=0, column=0, padx=15, pady=15, sticky="ne")
 
+        self.search_var = ctk.StringVar()
+        self.search_var.trace_add("write", self.on_search)
+        self.search_entry = ctk.CTkEntry(self.left_frame, textvariable=self.search_var, placeholder_text="🔍 Buscar comando...")
+        self.search_entry.grid(row=1, column=0, padx=15, pady=(15, 5), sticky="ew")
+
         self.lbl_cat = ctk.CTkLabel(self.left_frame, text="Categoría:", font=("Arial", 12, "bold"))
-        self.lbl_cat.grid(row=1, column=0, padx=15, pady=(5, 0), sticky="w")
+        self.lbl_cat.grid(row=2, column=0, padx=15, pady=(5, 0), sticky="w")
 
         categories = [cat.get("name", "Unknown") for cat in self.commands_config.get("categories", [])]
         self.cat_var = ctk.StringVar(value=categories[0] if categories else "")
         self.cat_menu = ctk.CTkOptionMenu(self.left_frame, values=categories, variable=self.cat_var, command=self.on_category_change)
-        self.cat_menu.grid(row=2, column=0, padx=15, pady=5, sticky="ew")
+        self.cat_menu.grid(row=3, column=0, padx=15, pady=5, sticky="ew")
 
         # Frame Comando (Label + Info + Help)
         self.cmd_label_frame = ctk.CTkFrame(self.left_frame, fg_color="transparent")
-        self.cmd_label_frame.grid(row=3, column=0, padx=15, pady=(10, 0), sticky="ew")
+        self.cmd_label_frame.grid(row=4, column=0, padx=15, pady=(10, 0), sticky="ew")
         
         self.lbl_cmd = ctk.CTkLabel(self.cmd_label_frame, text="Comando:", font=("Arial", 12, "bold"))
         self.lbl_cmd.pack(side="left")
@@ -81,28 +99,32 @@ class App(ctk.CTk):
         # Info button
         self.cmd_info_btn = ctk.CTkButton(self.cmd_label_frame, text="ℹ", width=25, height=25, command=self.show_command_info)
         self.cmd_info_btn.pack(side="right", padx=(5, 0))
+        if CTkToolTip: CTkToolTip(self.cmd_info_btn, message="Información detallada del comando")
 
         # Help button
         self.cmd_help_btn = ctk.CTkButton(self.cmd_label_frame, text="❔", width=25, height=25, command=self.run_help)
         self.cmd_help_btn.pack(side="right")
+        if CTkToolTip: CTkToolTip(self.cmd_help_btn, message="Ejecutar la ayuda oficial del comando (/? o --help)")
 
         self.cmd_var = ctk.StringVar(value="")
         self.cmd_menu = ctk.CTkOptionMenu(self.left_frame, variable=self.cmd_var, command=self.on_command_change)
-        self.cmd_menu.grid(row=4, column=0, padx=15, pady=5, sticky="ew")
+        self.cmd_menu.grid(row=5, column=0, padx=15, pady=5, sticky="ew")
 
-        self.args_frame = ctk.CTkScrollableFrame(self.left_frame, fg_color="transparent")
-        self.args_frame.grid(row=5, column=0, padx=10, pady=10, sticky="nsew")
+        self.args_frame = ctk.CTkScrollableFrame(self.left_frame, fg_color="transparent", bg_color="transparent")
+        self.args_frame.grid(row=6, column=0, padx=10, pady=10, sticky="nsew")
         
         self.current_args_vars = {}
 
         self.btn_frame = ctk.CTkFrame(self.left_frame, fg_color="transparent")
-        self.btn_frame.grid(row=6, column=0, padx=15, pady=15, sticky="ew")
+        self.btn_frame.grid(row=7, column=0, padx=15, pady=15, sticky="ew")
 
         self.execute_btn = ctk.CTkButton(self.btn_frame, text="Ejecutar Comando", command=self.toggle_execution)
         self.execute_btn.pack(side="left", fill="x", expand=True, padx=(0, 5))
+        if CTkToolTip: CTkToolTip(self.execute_btn, message="Ejecutar el comando en segundo plano (Ctrl+Enter)")
         
         self.fav_btn = ctk.CTkButton(self.btn_frame, text="⭐", width=40, font=("Segoe UI Emoji", 15), anchor="center", command=self.save_favorite, fg_color="#F39C12", hover_color="#D68910")
         self.fav_btn.pack(side="right")
+        if CTkToolTip: CTkToolTip(self.fav_btn, message="Guardar o remover de Favoritos")
 
         # ---------- FRAME DERECHO: Consola y Exportar ----------
         self.right_frame = ctk.CTkFrame(self)
@@ -145,8 +167,12 @@ class App(ctk.CTk):
         # Dashboard (Status Bar)
         self.status_bar = ctk.CTkFrame(self.right_frame, height=25, fg_color="transparent")
         self.status_bar.grid(row=4, column=0, columnspan=2, sticky="ew")
-        self.lbl_status = ctk.CTkLabel(self.status_bar, text="Iniciando sistema...", font=("Consolas", 12, "bold"), text_color=("#444444", "#A9A9A9"))
-        self.lbl_status.pack(side="right", padx=10)
+        
+        self.lbl_ram = ctk.CTkLabel(self.status_bar, text="🧠 RAM: --%", font=("Consolas", 12, "bold"))
+        self.lbl_ram.pack(side="right", padx=10)
+        
+        self.lbl_cpu = ctk.CTkLabel(self.status_bar, text="💻 CPU: --%", font=("Consolas", 12, "bold"))
+        self.lbl_cpu.pack(side="right", padx=10)
         
         # Configurar tags de sintaxis
         self.output_textbox.tag_config("error", foreground="#FF4C4C")
@@ -163,9 +189,16 @@ class App(ctk.CTk):
         self.auto_clear_var = ctk.BooleanVar(value=True)
         self.auto_clear_cb = ctk.CTkCheckBox(self.clear_frame, text="Auto-Limpiar", variable=self.auto_clear_var, width=100)
         self.auto_clear_cb.pack(side="left", padx=(0, 10))
+        if CTkToolTip: CTkToolTip(self.auto_clear_cb, message="Limpiar la consola antes de ejecutar un nuevo comando")
 
         self.clear_btn = ctk.CTkButton(self.clear_frame, text="Limpiar", width=100, fg_color="transparent", border_width=1, text_color=("#24292F", "#C9D1D9"), command=self.clear_output)
         self.clear_btn.pack(side="left")
+        if CTkToolTip: CTkToolTip(self.clear_btn, message="Limpiar la consola manualmente (Ctrl+L)")
+
+        # Keyboard shortcuts
+        self.bind("<Control-Return>", lambda e: self.toggle_execution())
+        self.bind("<Control-l>", lambda e: self.clear_output())
+        self.bind("<Control-L>", lambda e: self.clear_output())
 
         self.on_category_change(self.cat_var.get())
 
@@ -195,9 +228,18 @@ class App(ctk.CTk):
         try:
             cpu = psutil.cpu_percent(interval=None)
             ram = psutil.virtual_memory().percent
-            self.lbl_status.configure(text=f"💻 CPU: {cpu}%   |   🧠 RAM: {ram}%")
+            
+            def get_color(val):
+                if val < 25: return "#28a745" # Verde
+                elif val < 50: return "#ffc107" # Amarillo
+                elif val < 75: return "#fd7e14" # Naranja
+                else: return "#dc3545" # Rojo
+                
+            self.lbl_cpu.configure(text=f"💻 CPU: {cpu}%", text_color=get_color(cpu))
+            self.lbl_ram.configure(text=f"🧠 RAM: {ram}%", text_color=get_color(ram))
         except:
-            self.lbl_status.configure(text="💻 CPU: --%   |   🧠 RAM: --%")
+            self.lbl_cpu.configure(text="💻 CPU: --%")
+            self.lbl_ram.configure(text="🧠 RAM: --%")
         self.after(2000, self.update_status_dashboard)
 
     def get_windows_drives(self):
@@ -241,6 +283,37 @@ class App(ctk.CTk):
             disks = ["0", "1", "2"]
         return disks
 
+    def get_wifi_profiles(self):
+        import subprocess
+        profiles = []
+        try:
+            output = subprocess.check_output(
+                "netsh wlan show profiles", shell=True, creationflags=subprocess.CREATE_NO_WINDOW
+            ).decode('mbcs', errors='ignore').split('\n')
+            for line in output:
+                if "Perfil de todos los usuarios" in line or "All User Profile" in line:
+                    profile_name = line.split(":", 1)[1].strip()
+                    if profile_name:
+                        profiles.append(profile_name)
+        except:
+            pass
+        return profiles if profiles else ["(Ninguna red encontrada)"]
+
+    def get_network_adapters(self):
+        import subprocess
+        adapters = []
+        try:
+            output = subprocess.check_output(
+                ["powershell", "-Command", "Get-NetAdapter | Select-Object -ExpandProperty Name"],
+                creationflags=subprocess.CREATE_NO_WINDOW
+            ).decode('mbcs', errors='ignore').strip().split('\n')
+            for line in output:
+                if line.strip():
+                    adapters.append(line.strip())
+        except:
+            pass
+        return adapters if adapters else ["(Ninguno)"]
+
     def get_cpu_threads_list(self):
         import os
         try:
@@ -269,9 +342,8 @@ class App(ctk.CTk):
         return None
 
     def get_command_data(self, cmd_name):
-        cat_data = self.get_category_data(self.cat_var.get())
-        if cat_data:
-            for cmd in cat_data.get("commands", []):
+        for cat in self.commands_config.get("categories", []):
+            for cmd in cat.get("commands", []):
                 if cmd.get("name") == cmd_name:
                     return cmd
         return None
@@ -279,7 +351,7 @@ class App(ctk.CTk):
     def show_custom_info(self, title, message):
         info_win = ctk.CTkToplevel(self)
         info_win.title(title)
-        info_win.geometry("450x250")
+        center_window(info_win, 450, 250)
         info_win.resizable(False, False)
         
         def set_icon():
@@ -309,6 +381,29 @@ class App(ctk.CTk):
 
     def show_arg_info(self, arg_name, arg_desc):
         self.show_custom_info(f"Info: {arg_name}", arg_desc)
+
+    def on_search(self, *args):
+        query = self.search_var.get().lower()
+        if not query:
+            self.cat_menu.configure(state="normal")
+            self.on_category_change(self.cat_var.get())
+            return
+            
+        self.cat_menu.configure(state="disabled")
+        matched_commands = []
+        for cat in self.commands_config.get("categories", []):
+            for cmd in cat.get("commands", []):
+                if query in cmd.get("name", "").lower() or query in cmd.get("description", "").lower() or query in cmd.get("command", "").lower():
+                    matched_commands.append(cmd.get("name"))
+                    
+        if matched_commands:
+            self.cmd_menu.configure(values=matched_commands)
+            self.cmd_var.set(matched_commands[0])
+            self.on_command_change(matched_commands[0])
+        else:
+            self.cmd_menu.configure(values=[])
+            self.cmd_var.set("")
+            self.on_command_change("")
 
     def on_category_change(self, selected_category):
         cat_data = self.get_category_data(selected_category)
@@ -349,7 +444,7 @@ class App(ctk.CTk):
                 arg_desc = arg.get("description", "")
                 
                 row_frame = ctk.CTkFrame(self.args_frame, fg_color="transparent")
-                row_frame.pack(fill="x", pady=4)
+                row_frame.pack(fill="x", pady=10)
                 
                 var = ctk.StringVar(value=arg.get("value", ""))
                 var.trace_add("write", lambda *args: self.update_preview())
@@ -416,6 +511,29 @@ class App(ctk.CTk):
                         var.set(pdisks[0])
                     dropdown = ctk.CTkOptionMenu(row_frame, variable=var, values=pdisks)
                     dropdown.pack(side="left", fill="x", expand=True, padx=(0, 10))
+                    
+                elif arg_type == "netadapter_dropdown":
+                    lbl = ctk.CTkLabel(row_frame, text=f"{arg_name}:")
+                    lbl.pack(side="left", padx=(0, 5))
+                    adapters = self.get_network_adapters()
+                    if adapters:
+                        var.set(adapters[0])
+                    dropdown = ctk.CTkOptionMenu(row_frame, variable=var, values=adapters)
+                    dropdown.pack(side="left", fill="x", expand=True, padx=(0, 10))
+                    
+                elif arg_type == "wifi_radio_group":
+                    lbl = ctk.CTkLabel(row_frame, text=f"{arg_name}:")
+                    lbl.pack(side="top", anchor="w", padx=(0, 5))
+                    
+                    rb_frame = ctk.CTkFrame(row_frame, fg_color="transparent")
+                    rb_frame.pack(side="top", fill="x", expand=True, padx=(10, 0))
+                    
+                    profiles = self.get_wifi_profiles()
+                    if profiles:
+                        var.set(profiles[0])
+                    for prof in profiles:
+                        rb = ctk.CTkRadioButton(rb_frame, text=prof, variable=var, value=prof)
+                        rb.pack(side="top", anchor="w", pady=(0, 5))
                     
                 elif arg_type == "threads_dropdown":
                     lbl = ctk.CTkLabel(row_frame, text=f"{arg_name}:")
@@ -495,10 +613,10 @@ class App(ctk.CTk):
                     if arg_data["type"] == "checkbox" and val != arg_data["flag"]:
                         continue
                     command_list.append(val)
-                elif arg_data["type"] in ["entry", "directory_entry", "file_entry"]:
+                elif arg_data["type"] in ["entry", "directory_entry", "file_entry", "wifi_radio_group", "netadapter_dropdown"]:
                     if arg_data["type"] in ["directory_entry", "file_entry"]:
                         val = val.replace("/", "\\")
-                    if " " in val and not val.startswith('"'):
+                    if any(c in val for c in [" ", ",", ";", "&", "|", "(", ")", "'"]) and not val.startswith('"'):
                         val = f'"{val}"'
                     if arg_data["flag"]:
                         command_list.append(arg_data["flag"])
@@ -894,7 +1012,7 @@ class App(ctk.CTk):
     def show_credits(self):
         credits_win = ctk.CTkToplevel(self)
         credits_win.title("Acerca de GUI CMD ADVANCE")
-        credits_win.geometry("400x450")
+        center_window(credits_win, 400, 450)
         credits_win.resizable(False, False)
         
         def set_credits_icon():

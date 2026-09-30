@@ -9,8 +9,13 @@ class CommandRunner:
     def execute_command_async(self, command_string, output_callback, finished_callback):
         if "__INTERNAL__" in command_string:
             import sys
-            command_string = command_string.replace("__INTERNAL__", f'"{sys.executable}"')
-            
+            import os
+            main_script = os.path.abspath(sys.argv[0])
+            if main_script.endswith('.py') or main_script.endswith('.pyw'):
+                command_string = command_string.replace("__INTERNAL__", f'"{sys.executable}" "{main_script}"')
+            else:
+                command_string = command_string.replace("__INTERNAL__", f'"{sys.executable}"')
+                
         def run_process():
             try:
                 self.process = subprocess.Popen(

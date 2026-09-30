@@ -21,6 +21,12 @@ if __name__ == "__main__":
             app = duplicate_finder.DuplicateFinderApp()
             app.mainloop()
             sys.exit(0)
+        elif sys.argv[1] == "--run-vault":
+            import credentials_vault
+            sys.argv.pop(1)
+            app = credentials_vault.CredentialsVaultApp()
+            app.mainloop()
+            sys.exit(0)
         elif sys.argv[1] == "--run-media-repair":
             import media_repair
             sys.argv.pop(1)
