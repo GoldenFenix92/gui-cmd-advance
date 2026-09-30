@@ -366,6 +366,12 @@
                             "description": "Fuerza el cierre de aplicaciones sin advertir a los usuarios."
                         }
                     ]
+                },
+                {
+                    "name": "Limpieza Selectiva de Temporales",
+                    "description": "Abre una herramienta avanzada para escanear y eliminar basura de Windows con selección individual.",
+                    "command": "__INTERNAL__ --run-temp-cleaner",
+                    "args": []
                 }
             ]
         },
@@ -568,6 +574,12 @@
                             "description": "El archivo a modificar."
                         }
                     ]
+                },
+                {
+                    "name": "Búsqueda Avanzada de Texto",
+                    "description": "Abre un buscador ultra rápido basado en findstr para localizar texto dentro de archivos con regex y filtros.",
+                    "command": "__INTERNAL__ --run-advanced-search",
+                    "args": []
                 }
             ]
         },
@@ -786,6 +798,12 @@
                             "description": "Selecciona la unidad a optimizar."
                         }
                     ]
+                },
+                {
+                    "name": "Estado de Salud SMART Avanzado",
+                    "description": "Abre un visor estilo CrystalDiskInfo para evaluar la salud física y temperatura de tus discos.",
+                    "command": "__INTERNAL__ --run-smart-info",
+                    "args": []
                 }
             ]
         },

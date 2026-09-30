@@ -11,6 +11,10 @@
     *   **Buscador de Duplicados:** Escanea y limpia archivos duplicados mediante hashes MD5.
     *   **Compresor de Multimedia:** Optimiza imágenes y videos en lote (Integrado con Pillow y FFmpeg).
     *   **Reparador de Multimedia:** Rescata imágenes truncadas y reconstruye videos corruptos.
+    *   **Bóveda de Credenciales:** Gestiona, lee y manipula las contraseñas de red de Windows (cmdkey) con una interfaz propia.
+    *   **Limpiador Temp Avanzado:** Escanea de forma asíncrona y vacía cachés de Windows Update, Prefetch y Temp.
+    *   **Búsqueda Avanzada de Texto:** Un wrapper ultra-rápido de Findstr que agrupa múltiples coincidencias por archivo, soporta Regex y abre archivos nativamente.
+    *   **Visor SMART Avanzado:** Extrae y decodifica a bajo nivel los bloques WMI/CIM de discos SATA y NVMe para diagnosticar la salud de tus discos (temperatura, horas de encendido, sectores reasignados) con una interfaz similar a CrystalDiskInfo.
 *   **🎨 Interfaz Moderna (CustomTkinter):**
     *   Soporte dinámico para **Modo Claro** y **Modo Oscuro**.
     *   Resaltado de sintaxis inteligente en la consola (IPs, errores, rutas y éxitos tienen sus propios colores).

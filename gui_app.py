@@ -73,12 +73,12 @@ class App(ctk.CTk):
         self.theme_switch.grid(row=0, column=0, padx=15, pady=15, sticky="nw")
         self.theme_switch.select()
 
-        self.credits_btn = ctk.CTkButton(self.left_frame, text="ℹ️ Créditos", width=80, height=25, fg_color="transparent", border_width=1, text_color=("black", "white"), command=self.show_credits)
+        self.credits_btn = ctk.CTkButton(self.left_frame, text="ℹ️ Créditos", width=80, height=25, fg_color="transparent", text_color=("black", "white"), command=self.show_credits)
         self.credits_btn.grid(row=0, column=0, padx=15, pady=15, sticky="ne")
 
         self.search_var = ctk.StringVar()
         self.search_var.trace_add("write", self.on_search)
-        self.search_entry = ctk.CTkEntry(self.left_frame, textvariable=self.search_var, placeholder_text="🔍 Buscar comando...")
+        self.search_entry = ctk.CTkEntry(self.left_frame, textvariable=self.search_var, placeholder_text="🔍 Buscar comando...", border_width=0)
         self.search_entry.grid(row=1, column=0, padx=15, pady=(15, 5), sticky="ew")
 
         self.lbl_cat = ctk.CTkLabel(self.left_frame, text="Categoría:", font=("Arial", 12, "bold"))
@@ -135,11 +135,11 @@ class App(ctk.CTk):
 
         # Preview de comando en vivo
         self.preview_var = ctk.StringVar(value="")
-        self.preview_entry = ctk.CTkEntry(self.right_frame, textvariable=self.preview_var, state="disabled", font=("Consolas", 14, "bold"), text_color=("#1f6aa5", "#3B8ED0"))
+        self.preview_entry = ctk.CTkEntry(self.right_frame, textvariable=self.preview_var, state="disabled", font=("Consolas", 14, "bold"), text_color=("#1f6aa5", "#3B8ED0"), border_width=0)
         self.preview_entry.grid(row=0, column=0, columnspan=2, padx=10, pady=(10, 0), sticky="ew")
 
         # Consola
-        self.output_textbox = ctk.CTkTextbox(self.right_frame, font=("Consolas", 13), wrap="none")
+        self.output_textbox = ctk.CTkTextbox(self.right_frame, font=("Consolas", 13), wrap="none", border_width=0)
         self.output_textbox.grid(row=1, column=0, columnspan=2, padx=10, pady=10, sticky="nsew")
         self.output_textbox.configure(state="disabled")
 
@@ -191,7 +191,7 @@ class App(ctk.CTk):
         self.auto_clear_cb.pack(side="left", padx=(0, 10))
         if CTkToolTip: CTkToolTip(self.auto_clear_cb, message="Limpiar la consola antes de ejecutar un nuevo comando")
 
-        self.clear_btn = ctk.CTkButton(self.clear_frame, text="Limpiar", width=100, fg_color="transparent", border_width=1, text_color=("#24292F", "#C9D1D9"), command=self.clear_output)
+        self.clear_btn = ctk.CTkButton(self.clear_frame, text="Limpiar", width=100, fg_color="transparent", text_color=("#24292F", "#C9D1D9"), command=self.clear_output)
         self.clear_btn.pack(side="left")
         if CTkToolTip: CTkToolTip(self.clear_btn, message="Limpiar la consola manualmente (Ctrl+L)")
 
@@ -455,7 +455,7 @@ class App(ctk.CTk):
                 elif arg_type in ["entry", "directory_entry", "file_entry"]:
                     lbl = ctk.CTkLabel(row_frame, text=f"{arg_name}:")
                     lbl.pack(side="left", padx=(0, 5))
-                    ent = ctk.CTkEntry(row_frame, textvariable=var, placeholder_text="Escribir...")
+                    ent = ctk.CTkEntry(row_frame, textvariable=var, placeholder_text="Escribir...", border_width=0)
                     ent.pack(side="left", fill="x", expand=True, padx=(0, 10))
                     
                     if arg_type == "directory_entry":
@@ -547,7 +547,7 @@ class App(ctk.CTk):
                 self.current_args_vars[arg_name] = {"var": var, "type": arg_type, "flag": arg_flag}
                 
                 btn_info = ctk.CTkButton(
-                    row_frame, text="ℹ", width=25, height=25, fg_color="transparent", border_width=1,
+                    row_frame, text="ℹ", width=25, height=25, fg_color="transparent",
                     text_color=("black", "white"), command=lambda n=arg_name, d=arg_desc: self.show_arg_info(n, d)
                 )
                 btn_info.pack(side="right")

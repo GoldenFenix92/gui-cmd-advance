@@ -21,6 +21,24 @@ if __name__ == "__main__":
             app = duplicate_finder.DuplicateFinderApp()
             app.mainloop()
             sys.exit(0)
+        elif sys.argv[1] == "--run-temp-cleaner":
+            import temp_cleaner
+            sys.argv.pop(1)
+            app = temp_cleaner.TempCleanerApp()
+            app.mainloop()
+            sys.exit(0)
+        elif sys.argv[1] == "--run-advanced-search":
+            import advanced_search
+            sys.argv.pop(1)
+            app = advanced_search.AdvancedSearchApp()
+            app.mainloop()
+            sys.exit(0)
+        elif sys.argv[1] == "--run-smart-info":
+            import smart_info
+            sys.argv.pop(1)
+            app = smart_info.SmartInfoApp()
+            app.mainloop()
+            sys.exit(0)
         elif sys.argv[1] == "--run-vault":
             import credentials_vault
             sys.argv.pop(1)
@@ -34,13 +52,17 @@ if __name__ == "__main__":
             sys.exit(0)
             
     if is_admin():
-        # Ocultar la consola de fondo en Windows
         hwnd = ctypes.windll.kernel32.GetConsoleWindow()
         if hwnd:
             ctypes.windll.user32.ShowWindow(hwnd, 0)
             
-        app = App()
-        app.mainloop()
+        try:
+            app = App()
+            app.mainloop()
+        except Exception as e:
+            import traceback, os
+            with open(os.path.join(os.path.dirname(__file__), "crash.log"), "w") as f:
+                f.write(traceback.format_exc())
     else:
         # Volver a ejecutar el script con privilegios de administrador
         if getattr(sys, 'frozen', False):
