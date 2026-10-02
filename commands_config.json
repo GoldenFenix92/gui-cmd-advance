@@ -1060,6 +1060,26 @@
                             "description": "Carpeta donde se buscarán duplicados y archivos dañados."
                         },
                         {
+                            "name": "Modo de Búsqueda",
+                            "flag": "",
+                            "type": "radio_group",
+                            "description": "Selecciona el método para encontrar duplicados.",
+                            "options": [
+                                {
+                                    "name": "Ambos (Hash y Nombre)",
+                                    "flag": "--mode both"
+                                },
+                                {
+                                    "name": "Solo por Hash (Exactos)",
+                                    "flag": "--mode hash"
+                                },
+                                {
+                                    "name": "Solo por Nombre (Similares)",
+                                    "flag": "--mode name"
+                                }
+                            ]
+                        },
+                        {
                             "name": "Motor de Aceleracion de Hardware",
                             "flag": "",
                             "type": "radio_group",

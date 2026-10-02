@@ -4,6 +4,7 @@ import hashlib
 import threading
 import shutil
 import argparse
+import re
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 import subprocess
@@ -27,7 +28,7 @@ def center_window(window, width, height):
     window.geometry(f"{width}x{height}+{x}+{y}")
 
 class DuplicateFinderApp(ctk.CTk):
-    def __init__(self, folder=None, hw="cpu", threads=0):
+    def __init__(self, folder=None, hw="cpu", mode="both", threads=0):
         super().__init__()
         self.title("Buscador de Duplicados y Multimedia Dañada")
         center_window(self, 900, 700)
@@ -41,10 +42,12 @@ class DuplicateFinderApp(ctk.CTk):
         
         self.selected_folder = folder or ""
         self.hw_mode = hw
+        self.search_mode = mode
         self.max_threads = threads if threads > 0 else (os.cpu_count() or 4)
         
         self.results = []
         self.checkboxes = []
+        self.is_scanning = False
         
         # UI Setup
         self.setup_ui()
@@ -71,6 +74,9 @@ class DuplicateFinderApp(ctk.CTk):
         self.btn_scan = ctk.CTkButton(top_frame, text="Escanear", command=self.start_scan, state="disabled")
         self.btn_scan.pack(side="right", padx=10, pady=10)
         
+        self.btn_stop = ctk.CTkButton(top_frame, text="Detener", command=self.stop_scan, state="disabled", fg_color="darkred", hover_color="red")
+        self.btn_stop.pack(side="right", padx=10, pady=10)
+        
         # Center Frame - Scrollable Results
         self.scroll_frame = ctk.CTkScrollableFrame(self)
         self.scroll_frame.grid(row=1, column=0, padx=10, pady=10, sticky="nsew")
@@ -82,11 +88,14 @@ class DuplicateFinderApp(ctk.CTk):
         self.lbl_status = ctk.CTkLabel(bottom_frame, text="Listo.")
         self.lbl_status.pack(side="left", padx=10, pady=10)
         
+        self.btn_move_all = ctk.CTkButton(bottom_frame, text="Mover TODOS (Rápido)", command=self.move_all, state="disabled", fg_color="darkred", hover_color="red")
+        self.btn_move_all.pack(side="right", padx=10, pady=10)
+        
         self.btn_move = ctk.CTkButton(bottom_frame, text="Mover Visibles", command=self.move_selected, state="disabled")
         self.btn_move.pack(side="right", padx=10, pady=10)
         
-        self.btn_move_all = ctk.CTkButton(bottom_frame, text="Mover TODOS (Rápido)", command=self.move_all, state="disabled", fg_color="darkred", hover_color="red")
-        self.btn_move_all.pack(side="right", padx=10, pady=10)
+        self.chk_select_all = ctk.CTkCheckBox(bottom_frame, text="Seleccionar Visibles", command=self.toggle_all_visible, state="disabled")
+        self.chk_select_all.pack(side="right", padx=20, pady=10)
         
         self.progress_bar = ctk.CTkProgressBar(bottom_frame, mode="determinate")
         self.progress_bar.pack(side="bottom", fill="x", padx=10, pady=5)
@@ -101,10 +110,12 @@ class DuplicateFinderApp(ctk.CTk):
             self.btn_scan.configure(state="normal")
 
     def start_scan(self):
+        self.is_scanning = True
         self.btn_scan.configure(state="disabled")
         self.btn_select.configure(state="disabled")
         self.btn_move.configure(state="disabled")
         self.btn_move_all.configure(state="disabled")
+        self.btn_stop.configure(state="normal")
         self.lbl_status.configure(text="Escaneando... esto puede tomar un tiempo.")
         self.progress_bar.pack(side="bottom", fill="x", padx=10, pady=5)
         self.progress_bar.set(0)
@@ -114,9 +125,16 @@ class DuplicateFinderApp(ctk.CTk):
             
         self.results = []
         self.checkboxes = []
+        self.all_suspects = []
+        self.rendered_count = 0
         
         thread = threading.Thread(target=self.scan_process, daemon=True)
         thread.start()
+
+    def stop_scan(self):
+        self.is_scanning = False
+        self.btn_stop.configure(state="disabled")
+        self.lbl_status.configure(text="Deteniendo el escaneo... por favor espere.")
 
     def update_progress(self, current, total, msg):
         self.progress_bar.set(current / total if total > 0 else 0)
@@ -131,6 +149,20 @@ class DuplicateFinderApp(ctk.CTk):
             return sha256.hexdigest()
         except Exception:
             return None
+
+    def get_base_name(self, filepath):
+        stem = filepath.stem
+        # Matches suffixes like " - copia", "_copy", " (1)". Limitamos a 2 digitos en parentesis para evitar secuencias largas (ej. 13209)
+        pattern = r'([-_ ]+(copia|copy)\b[-_ ]*\d*|[-_ ]+\(\d{1,2}\))+$'
+        base = re.sub(pattern, '', stem, flags=re.IGNORECASE).strip()
+        return base if base else stem
+
+    def toggle_all_visible(self):
+        new_val = self.chk_select_all.get()
+        # Only toggle those that are rendered
+        for item in self.all_suspects[:max(100, self.rendered_count)]:
+            if "checkbox_var" in item:
+                item["checkbox_var"].set(new_val)
 
     def check_corruption(self, filepath):
         ext = filepath.suffix.lower()
@@ -153,8 +185,7 @@ class DuplicateFinderApp(ctk.CTk):
         elif ext in [".mp4", ".mkv", ".avi", ".mov", ".flv", ".wmv", ".webm", ".m4v"]:
             # Check with ffprobe if ffmpeg is available
             try:
-                ffmpeg_dir = Path(__file__).parent.resolve()
-                ffmpeg_exe = ffmpeg_dir / "ffmpeg.exe"
+                ffmpeg_exe = Path(get_resource_path("ffmpeg.exe"))
                 if not ffmpeg_exe.exists():
                     return False # Can't check
                 
@@ -192,19 +223,11 @@ class DuplicateFinderApp(ctk.CTk):
                 doc.close()
                 return img
             elif ext in [".mp4", ".mkv", ".avi", ".mov", ".flv", ".wmv", ".webm", ".m4v"]:
-                ffmpeg_dir = Path(__file__).parent.resolve()
-                ffmpeg_exe = ffmpeg_dir / "ffmpeg.exe"
+                ffmpeg_exe = Path(get_resource_path("ffmpeg.exe"))
                 if ffmpeg_exe.exists():
                     out_jpg = filepath.with_suffix(f".thumb_{threading.get_ident()}.jpg")
-                    cmd = [str(ffmpeg_exe), "-y"]
-                    if self.hw_mode == "nvenc":
-                        cmd.extend(["-hwaccel", "cuda"])
-                    elif self.hw_mode == "amf":
-                        cmd.extend(["-hwaccel", "dxva2"])
-                    elif self.hw_mode == "auto":
-                        cmd.extend(["-hwaccel", "auto"])
-                        
-                    cmd.extend(["-i", str(filepath), "-vframes", "1", "-vf", "scale=100:-1", str(out_jpg)])
+                    # Usamos CPU y saltamos 1 segundo para evitar fotogramas negros
+                    cmd = [str(ffmpeg_exe), "-y", "-ss", "1", "-i", str(filepath), "-vframes", "1", "-vf", "scale=100:-1", str(out_jpg)]
                     subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, creationflags=subprocess.CREATE_NO_WINDOW)
                     if out_jpg.exists():
                         img = Image.open(out_jpg).copy()
@@ -219,11 +242,8 @@ class DuplicateFinderApp(ctk.CTk):
         folder = Path(self.selected_folder)
         all_files = []
         for root, dirs, files in os.walk(folder):
-            # Ignorar carpetas de destino para que no se re-escaneen
-            if "Archivos_Duplicados" in dirs:
-                dirs.remove("Archivos_Duplicados")
-            if "Archivos_Dañados" in dirs:
-                dirs.remove("Archivos_Dañados")
+            # Ignorar carpetas de destino para que no se re-escaneen de forma insensible a mayúsculas
+            dirs[:] = [d for d in dirs if d.lower() not in ("archivos_duplicados", "archivos_dañados")]
                 
             for f in files:
                 all_files.append(Path(root) / f)
@@ -233,9 +253,13 @@ class DuplicateFinderApp(ctk.CTk):
             self.after(0, self.finish_scan, [])
             return
 
-        # Fase 1: Agrupar por tamaño (muy rápido)
+        # Fase 1: Agrupar por tamaño (muy rápido) y por nombre base
         size_dict = {}
+        name_dict = {}
+        
         for i, f in enumerate(all_files):
+            if not self.is_scanning:
+                break
             if i % 100 == 0:
                 self.after(0, self.update_progress, i, total_files, f"Fase 1/2: Buscando archivos... ({i}/{total_files})")
             try:
@@ -243,21 +267,44 @@ class DuplicateFinderApp(ctk.CTk):
                 if s not in size_dict:
                     size_dict[s] = []
                 size_dict[s].append(f)
+                
+                if self.search_mode in ["both", "name"]:
+                    base_name = self.get_base_name(f)
+                    name_key = (base_name, f.suffix.lower())
+                    if name_key not in name_dict:
+                        name_dict[name_key] = []
+                    name_dict[name_key].append(f)
             except Exception:
                 pass
+                
+        # Procesar duplicados por nombre
+        name_duplicates = set()
+        name_originals = set()
+        if self.search_mode in ["both", "name"]:
+            for g in name_dict.values():
+                if len(g) > 1:
+                    g_sorted = sorted(g, key=lambda x: len(x.name))
+                    name_originals.add(g_sorted[0])
+                    for d in g_sorted[1:]:
+                        name_duplicates.add(d)
                 
         # Preparar grupos para la Fase 2
         groups = list(size_dict.values())
         
         # Helper function para procesar un grupo entero (por tamaño)
         def process_group(files_in_group):
-            needs_hash = len(files_in_group) > 1
+            if not self.is_scanning:
+                return 0, []
+                
+            needs_hash = len(files_in_group) > 1 and self.search_mode in ["both", "hash"]
             group_results = []
             
             hash_dict = {}
             corrupt_files = []
             
             for fpath in files_in_group:
+                if not self.is_scanning:
+                    return 0, []
                 h = self.get_hash(fpath) if needs_hash else None
                 is_corrupt = self.check_corruption(fpath)
                 
@@ -272,34 +319,51 @@ class DuplicateFinderApp(ctk.CTk):
             suspects = []
             for h, h_files in hash_dict.items():
                 if len(h_files) > 1:
+                    h_files = sorted(h_files, key=lambda x: len(x.name))
                     is_c = any(f == h_files[0] for f, _ in corrupt_files)
-                    suspects.append({"path": h_files[0], "status": "Original (Dañado)" if is_c else "Original", "hash": h})
+                    suspects.append({"path": h_files[0], "status": "Original (Dañado)" if is_c else "Original", "hash": h, "group_key": h})
                     for d_file in h_files[1:]:
                         is_c_d = any(f == d_file for f, _ in corrupt_files)
-                        suspects.append({"path": d_file, "status": "Duplicado (Dañado)" if is_c_d else "Duplicado", "hash": h})
+                        suspects.append({"path": d_file, "status": "Duplicado (Dañado)" if is_c_d else "Duplicado", "hash": h, "group_key": h})
                         
-            # Dañados que no son duplicados
-            dupe_paths = [s["path"] for s in suspects]
-            for c_file, h in corrupt_files:
-                if c_file not in dupe_paths:
-                    suspects.append({"path": c_file, "status": "Dañado", "hash": h})
+            # Añadir duplicados por nombre y archivos dañados
+            processed_paths = set(s["path"] for s in suspects)
+            
+            for fpath in files_in_group:
+                if fpath in processed_paths:
+                    continue
+                
+                is_c = any(f == fpath for f, _ in corrupt_files)
+                
+                if fpath in name_duplicates:
+                    suspects.append({"path": fpath, "status": "Duplicado por Nombre (Dañado)" if is_c else "Duplicado por Nombre", "hash": None, "group_key": self.get_base_name(fpath)})
+                    processed_paths.add(fpath)
+                elif fpath in name_originals:
+                    suspects.append({"path": fpath, "status": "Original por Nombre (Dañado)" if is_c else "Original por Nombre", "hash": None, "group_key": self.get_base_name(fpath)})
+                    processed_paths.add(fpath)
+                elif is_c:
+                    suspects.append({"path": fpath, "status": "Dañado", "hash": None, "group_key": str(fpath)})
+                    processed_paths.add(fpath)
                     
             # Extraer miniaturas de los sospechosos encontrados
             for s in suspects:
+                if not self.is_scanning:
+                    break
                 s["thumb"] = self.extract_thumbnail(s["path"])
                 
             return len(files_in_group), suspects
 
         processed = 0
         found_suspects_count = 0
-        self.all_suspects = []
-        self.rendered_count = 0
         self.btn_load_more = ctk.CTkButton(self.scroll_frame, text="Cargar 100 más...", command=self.load_more)
         
         # Iniciar Pool para procesar los grupos en paralelo
         with ThreadPoolExecutor(max_workers=self.max_threads) as executor:
             futures = {executor.submit(process_group, g): g for g in groups}
             for future in as_completed(futures):
+                if not self.is_scanning:
+                    continue # Skip processing remaining results if stopped
+                    
                 count_processed, suspects = future.result()
                 processed += count_processed
                 
@@ -311,6 +375,7 @@ class DuplicateFinderApp(ctk.CTk):
                     found_suspects_count += len(suspects)
                     self.after(0, self._render_suspects_chunk, suspects)
 
+        self.is_scanning = False
         self.after(0, self._finish_scan_ui, found_suspects_count)
 
     def _render_suspects_chunk(self, suspects):
@@ -366,13 +431,26 @@ class DuplicateFinderApp(ctk.CTk):
 
     def _finish_scan_ui(self, count):
         self.progress_bar.pack_forget()
-        self.lbl_status.configure(text=f"Escaneo finalizado. {count} archivos sospechosos/duplicados encontrados.")
+        self.btn_stop.configure(state="disabled")
+        
+        # Ordenar all_suspects para agrupar Originales con sus Duplicados correspondientes
+        # Ordenamos por: group_key, y luego si es Original (para que queden arriba del grupo)
+        self.all_suspects.sort(key=lambda x: (str(x.get("group_key", "")), not x["status"].startswith("Original"), x["path"].name))
+        
+        self.lbl_status.configure(text=f"Escaneo finalizado. {len(self.all_suspects)} archivos sospechosos/duplicados encontrados.")
         self.btn_select.configure(state="normal")
         self.btn_scan.configure(state="normal")
-        if count > 0:
+        
+        if len(self.all_suspects) > 0:
             self.btn_move.configure(state="normal")
             self.btn_move_all.configure(state="normal")
-            self.btn_move.configure(text=f"Mover Visibles ({self.rendered_count})")
+            self.chk_select_all.configure(state="normal")
+            self.chk_select_all.deselect()
+            self._refresh_ui()
+        else:
+            # Refresh to show empty UI
+            self.chk_select_all.configure(state="disabled")
+            self._refresh_ui()
 
     def move_all(self):
         dest_dupes = Path(self.selected_folder) / "Archivos_Duplicados"
@@ -478,9 +556,10 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("folder", nargs="?", default="")
     parser.add_argument("--hw", default="cpu")
+    parser.add_argument("--mode", default="both")
     parser.add_argument("--threads", type=int, default=0)
     args = parser.parse_args()
 
     ctk.set_appearance_mode("Dark")
-    app = DuplicateFinderApp(folder=args.folder, hw=args.hw, threads=args.threads)
+    app = DuplicateFinderApp(folder=args.folder, hw=args.hw, mode=args.mode, threads=args.threads)
     app.mainloop()

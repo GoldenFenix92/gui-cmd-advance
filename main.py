@@ -18,7 +18,14 @@ if __name__ == "__main__":
         elif sys.argv[1] == "--run-duplicate-finder":
             from functions import duplicate_finder
             sys.argv.pop(1)
-            app = duplicate_finder.DuplicateFinderApp()
+            import argparse
+            parser = argparse.ArgumentParser()
+            parser.add_argument("folder", nargs="?", default="")
+            parser.add_argument("--hw", default="cpu")
+            parser.add_argument("--mode", default="both")
+            parser.add_argument("--threads", type=int, default=0)
+            args = parser.parse_args(sys.argv[1:])
+            app = duplicate_finder.DuplicateFinderApp(folder=args.folder, hw=args.hw, mode=args.mode, threads=args.threads)
             app.mainloop()
             sys.exit(0)
         elif sys.argv[1] == "--run-temp-cleaner":
