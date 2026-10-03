@@ -61,7 +61,7 @@ class AdvancedSearchApp(ctk.CTk):
         super().__init__()
         self.title("Búsqueda Avanzada de Texto (FindStr Ultra)")
         center_window(self, 900, 600)
-        try: self.iconbitmap(get_resource_path("app_icon.ico"))
+        try: self.iconbitmap(get_resource_path("resources/app_icon.ico"))
         except: pass
         
         self.grid_rowconfigure(2, weight=1)

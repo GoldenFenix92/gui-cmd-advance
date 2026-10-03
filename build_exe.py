@@ -64,7 +64,7 @@ def main():
 
     description = "Herramienta gráfica avanzada para comandos de sistema"
     copyright_txt = "© 2026 GoldenFenix Todos los derechos reservados."
-    icon = "app_icon.ico"
+    icon = "resources/app_icon.ico"
     
     commit_count = get_git_commit_count()
     version_windows = f"1.0.{commit_count}.0"
@@ -112,10 +112,7 @@ def main():
         "--windowed",        
         "--version-file", version_file,
         "--name", name,
-        "--add-data", "commands_config.json;.",
-        "--add-data", "github_theme.json;.",
-        "--add-data", "custom_github_theme.json;.",
-        "--add-data", "app_icon.ico;.",
+        "--add-data", "resources;resources",
         "--hidden-import", "PIL",
         "--hidden-import", "pymupdf",
         "--hidden-import", "psutil",

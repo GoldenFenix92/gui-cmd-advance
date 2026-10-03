@@ -13,7 +13,7 @@ class CredentialsVaultApp(ctk.CTk):
         
         try:
             from gui_app import get_resource_path
-            self.iconbitmap(get_resource_path("app_icon.ico"))
+            self.iconbitmap(get_resource_path("resources/app_icon.ico"))
         except:
             pass
 

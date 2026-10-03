@@ -57,7 +57,7 @@ class SmartInfoApp(ctk.CTk):
         super().__init__()
         self.title("Estado de Salud SMART Avanzado (CrystalDiskInfo Clone)")
         center_window(self, 900, 600)
-        try: self.iconbitmap(get_resource_path("app_icon.ico"))
+        try: self.iconbitmap(get_resource_path("resources/app_icon.ico"))
         except: pass
         
         self.grid_rowconfigure(1, weight=1)

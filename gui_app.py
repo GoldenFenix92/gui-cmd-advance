@@ -45,7 +45,7 @@ def center_window(window, width, height):
     window.geometry(f"{width}x{height}+{x}+{y}")
 
 try:
-    ctk.set_default_color_theme(get_resource_path("custom_github_theme.json"))
+    ctk.set_default_color_theme(get_resource_path("resources/custom_github_theme.json"))
 except Exception as e:
     print(f"No se pudo cargar el tema, usando blue: {e}")
     ctk.set_default_color_theme("blue")
@@ -60,7 +60,7 @@ class App(ctk.CTk):
         center_window(self, 1400, 800)
         
         try:
-            self.iconbitmap(get_resource_path("app_icon.ico"))
+            self.iconbitmap(get_resource_path("resources/app_icon.ico"))
         except:
             pass
 
@@ -230,7 +230,7 @@ class App(ctk.CTk):
     def load_config(self):
         config = {"categories": []}
         try:
-            with open(get_resource_path("commands_config.json"), "r", encoding="utf-8") as f:
+            with open(get_resource_path("resources/commands_config.json"), "r", encoding="utf-8") as f:
                 config = json.load(f)
         except Exception as e:
             pass
@@ -381,7 +381,7 @@ class App(ctk.CTk):
         
         def set_icon():
             try:
-                info_win.iconbitmap(get_resource_path("app_icon.ico"))
+                info_win.iconbitmap(get_resource_path("resources/app_icon.ico"))
             except:
                 pass
         
@@ -931,7 +931,7 @@ class App(ctk.CTk):
     def get_html_template(self, content, title="Reporte de Ejecución", command="Desconocido"):
         import datetime, os
         timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        template_path = os.path.join(os.path.dirname(__file__), "templates", "base_report.html")
+        template_path = os.path.join(os.path.dirname(__file__), "resources/templates", "base_report.html")
         
         if os.path.exists(template_path):
             with open(template_path, "r", encoding="utf-8") as tf:
@@ -966,7 +966,7 @@ class App(ctk.CTk):
         win.geometry(f"+{x}+{y}")
         
         def set_win_icon():
-            try: win.iconbitmap(get_resource_path("app_icon.ico"))
+            try: win.iconbitmap(get_resource_path("resources/app_icon.ico"))
             except: pass
         win.after(200, set_win_icon)
         
@@ -1170,7 +1170,7 @@ class App(ctk.CTk):
         
         def set_credits_icon():
             try:
-                credits_win.iconbitmap(get_resource_path("app_icon.ico"))
+                credits_win.iconbitmap(get_resource_path("resources/app_icon.ico"))
             except:
                 pass
                 
