@@ -185,7 +185,7 @@ class DuplicateFinderApp(ctk.CTk):
         elif ext in [".mp4", ".mkv", ".avi", ".mov", ".flv", ".wmv", ".webm", ".m4v"]:
             # Check with ffprobe if ffmpeg is available
             try:
-                ffmpeg_exe = Path(get_resource_path("ffmpeg.exe"))
+                ffmpeg_exe = Path(get_resource_path(os.path.join("tools", "ffmpeg.exe")))
                 if not ffmpeg_exe.exists():
                     return False # Can't check
                 
@@ -200,6 +200,12 @@ class DuplicateFinderApp(ctk.CTk):
                 cmd.extend(["-i", str(filepath), "-f", "null", "-"])
                 result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, creationflags=subprocess.CREATE_NO_WINDOW)
                 if result.returncode != 0:
+                    if self.hw_mode in ["nvenc", "amf", "auto"]:
+                        fallback_cmd = [str(ffmpeg_exe), "-v", "error", "-i", str(filepath), "-f", "null", "-"]
+                        result_fb = subprocess.run(fallback_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, creationflags=subprocess.CREATE_NO_WINDOW)
+                        if result_fb.returncode != 0:
+                            return True
+                        return False
                     return True
                 return False
             except Exception:
@@ -223,7 +229,7 @@ class DuplicateFinderApp(ctk.CTk):
                 doc.close()
                 return img
             elif ext in [".mp4", ".mkv", ".avi", ".mov", ".flv", ".wmv", ".webm", ".m4v"]:
-                ffmpeg_exe = Path(get_resource_path("ffmpeg.exe"))
+                ffmpeg_exe = Path(get_resource_path(os.path.join("tools", "ffmpeg.exe")))
                 if ffmpeg_exe.exists():
                     out_jpg = filepath.with_suffix(f".thumb_{threading.get_ident()}.jpg")
                     # Usamos CPU y saltamos 1 segundo para evitar fotogramas negros
