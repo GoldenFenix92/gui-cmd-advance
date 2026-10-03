@@ -49,7 +49,9 @@ class PluginInstaller(ctk.CTkToplevel):
         self.protocol("WM_DELETE_WINDOW", self.cancel)
         
         def set_win_icon():
-            try: self.iconbitmap(master.iconbitmap())
+            try: 
+                from functions.utils import get_resource_path
+                self.iconbitmap(get_resource_path("resources/app_icon.ico"))
             except: pass
         self.after(200, set_win_icon)
         
@@ -135,7 +137,9 @@ class StartupCheck(ctk.CTkToplevel):
         self.protocol("WM_DELETE_WINDOW", self.close)
         
         def set_win_icon():
-            try: self.iconbitmap(master.iconbitmap())
+            try: 
+                from functions.utils import get_resource_path
+                self.iconbitmap(get_resource_path("resources/app_icon.ico"))
             except: pass
         self.after(200, set_win_icon)
         

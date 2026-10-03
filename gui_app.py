@@ -1008,8 +1008,8 @@ class App(ctk.CTk):
                     messagebox.showinfo("Éxito", "Complemento eliminado. El programa se reiniciará.")
                     win.destroy()
                     self.quit()
-                    import subprocess
-                    subprocess.Popen([sys.executable] + sys.argv)
+                    import ctypes
+                    ctypes.windll.shell32.ShellExecuteW(None, "open", sys.executable, "", None, 1)
                     os._exit(0)
                 except Exception as e:
                     from tkinter import messagebox
