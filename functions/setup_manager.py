@@ -48,6 +48,11 @@ class PluginInstaller(ctk.CTkToplevel):
         self.geometry(f"+{x}+{y}")
         self.protocol("WM_DELETE_WINDOW", self.cancel)
         
+        def set_win_icon():
+            try: self.iconbitmap(master.iconbitmap())
+            except: pass
+        self.after(200, set_win_icon)
+        
         lbl_title = ctk.CTkLabel(self, text=f"Descargando {self.plugin['name']}", font=("Arial", 16, "bold"))
         lbl_title.pack(pady=(20, 10))
         
@@ -128,6 +133,11 @@ class StartupCheck(ctk.CTkToplevel):
         y = int(master.winfo_y() + (master.winfo_height() / 2) - (400 / 2))
         self.geometry(f"+{x}+{y}")
         self.protocol("WM_DELETE_WINDOW", self.close)
+        
+        def set_win_icon():
+            try: self.iconbitmap(master.iconbitmap())
+            except: pass
+        self.after(200, set_win_icon)
         
         lbl = ctk.CTkLabel(self, text="Para mantener la app ligera, algunos componentes no vienen incluidos. Algunas funciones estarán bloqueadas hasta que los instales.", wraplength=450, justify="left")
         lbl.pack(pady=10, padx=20)

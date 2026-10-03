@@ -965,6 +965,11 @@ class App(ctk.CTk):
         y = int(self.winfo_y() + (self.winfo_height() / 2) - (450 / 2))
         win.geometry(f"+{x}+{y}")
         
+        def set_win_icon():
+            try: win.iconbitmap(get_resource_path("app_icon.ico"))
+            except: pass
+        win.after(200, set_win_icon)
+        
         lbl_title = ctk.CTkLabel(win, text="Complementos Disponibles", font=("Arial", 16, "bold"))
         lbl_title.pack(pady=15)
         
@@ -1002,7 +1007,10 @@ class App(ctk.CTk):
                     from tkinter import messagebox
                     messagebox.showinfo("Éxito", "Complemento eliminado. El programa se reiniciará.")
                     win.destroy()
-                    os.execl(sys.executable, sys.executable, *sys.argv)
+                    self.quit()
+                    import subprocess
+                    subprocess.Popen([sys.executable] + sys.argv)
+                    os._exit(0)
                 except Exception as e:
                     from tkinter import messagebox
                     messagebox.showerror("Error", f"No se pudo eliminar: {e}")
