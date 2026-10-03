@@ -17,14 +17,14 @@
     *   **Visor SMART Avanzado:** Extrae y decodifica a bajo nivel los bloques WMI/CIM de discos SATA y NVMe para diagnosticar la salud de tus discos (temperatura, horas de encendido, sectores reasignados) con una interfaz similar a CrystalDiskInfo.
     *   **Despliegue de Office (ODT):** Herramienta gráfica interna para descargar, configurar el XML e instalar Microsoft Office LTSC 2019/2021/2024.
 *   **🎨 Interfaz Moderna (CustomTkinter):**
-    *   Soporte dinámico para **Modo Claro** y **Modo Oscuro**.
+    *   Soporte dinámico para **Modo Claro** y **Modo Oscuro** con un estilo **Flat Design** sin bordes molestos.
     *   Resaltado de sintaxis inteligente en la consola (IPs, errores, rutas y éxitos tienen sus propios colores).
     *   Gestor de Complementos Universal para instalar dependencias de terceros (como FFmpeg o la ODT de Microsoft) bajo demanda.
 *   **💾 Sistema de Favoritos:** Guarda tus comandos más usados con un clic (⭐) para acceder rápidamente a ellos.
 *   **📊 Monitoreo en Tiempo Real:** Barra de estado inferior con uso actual de CPU y RAM.
 *   **📂 Exportación de Reportes:** Guarda los resultados de la consola en formato `.html` interactivo, con visualización de tablas avanzadas, o `.txt` con un solo clic.
 *   **🧹 Limpieza Inteligente:** Casilla de *Auto-Limpiar* para mantener los resultados siempre claros.
-*   **📦 100% Portable (Zero-Install):** Desarrollado para compilarse en un único archivo `.exe` ultraligero (sin dependencias). Puedes llevar la herramienta en una USB, y el Gestor de Complementos creará su propia carpeta local, permitiendo un uso 100% offline y sin configurar entornos.
+*   **📦 100% Portable (Zero-Install):** Desarrollado para compilarse en un único archivo `.exe` ultraligero (sin dependencias). Puedes llevar la herramienta en una USB, y el programa creará automáticamente su entorno aislado de persistencia en `C:\GuiCmdAdvance`, protegiendo tus datos contra eliminaciones accidentales y permitiendo un uso offline total.
 
 ## 🚀 Instalación y Uso (Modo Portable)
 
@@ -64,7 +64,7 @@ python build_exe.py
 Te preguntará si es una versión Beta. Tras unos segundos, tendrás tu ejecutable pulido en la carpeta `dist/`.
 
 ## ⚙️ ¿Cómo agregar nuevos comandos?
-El programa lee los comandos dinámicamente desde `commands_config.json`.
+El programa lee los comandos dinámicamente desde `resources/commands_config.json`.
 Puedes abrir ese archivo y agregar tus propios comandos fácilmente. Ejemplo de estructura:
 
 ```json
