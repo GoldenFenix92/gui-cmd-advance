@@ -144,12 +144,13 @@ class OfficeDeployApp(ctk.CTk):
         self.log("Por favor, descarga la herramienta, ejecútala y extrae el archivo 'setup.exe' en la misma carpeta donde está este programa.")
 
     def install_office(self):
+        from functions.utils import get_user_data_path
         setup_path = "setup.exe"
         if not os.path.exists(setup_path):
-            setup_path = get_resource_path(os.path.join("tools", "setup.exe"))
+            setup_path = get_user_data_path(os.path.join("tools", "setup.exe"))
             
         if not os.path.exists(setup_path):
-            messagebox.showerror("Error", "No se encontró 'setup.exe'. Por favor asegúrate de que el archivo setup.exe esté en la carpeta tools de tu proyecto.")
+            messagebox.showerror("Error", "No se encontró 'setup.exe'. Por favor asegúrate de instalar el complemento ODT.")
             return
             
         if not os.path.exists("config.xml"):

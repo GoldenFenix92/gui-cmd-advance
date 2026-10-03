@@ -3,113 +3,184 @@ import threading
 import urllib.request
 import zipfile
 import shutil
+import json
 import customtkinter as ctk
+from tkinter import messagebox
 from functions.utils import get_user_data_path
 
-class SetupManager(ctk.CTkToplevel):
-    def __init__(self, master, on_complete_callback=None):
+PLUGINS = {
+    "ffmpeg": {
+        "id": "ffmpeg",
+        "name": "FFmpeg (Motor Multimedia)",
+        "filename": "ffmpeg.exe",
+        "desc": "Habilita: Compresor, Reparador y Buscador de duplicados (video).",
+        "url": "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip",
+        "is_zip": True,
+        "zip_target": "ffmpeg.exe",
+        "size_str": "~35MB",
+        "cmds": ["__INTERNAL__ --run-compressor", "__INTERNAL__ --run-duplicate-finder", "__INTERNAL__ --run-media-repair"]
+    },
+    "odt": {
+        "id": "odt",
+        "name": "Office Deployment Tool (ODT)",
+        "filename": "setup.exe",
+        "desc": "Habilita: Descarga e instalación de Microsoft Office.",
+        "url": "https://github.com/GoldenFenix92/gui-cmd-advance/raw/main/tools/setup.exe",
+        "is_zip": False,
+        "size_str": "~7MB",
+        "cmds": ["__INTERNAL__ --run-office-deploy"]
+    }
+}
+
+class PluginInstaller(ctk.CTkToplevel):
+    def __init__(self, master, plugin_id, on_complete_callback=None):
         super().__init__(master)
-        self.title("Complemento Faltante")
+        self.plugin = PLUGINS[plugin_id]
+        self.title(f"Instalando {self.plugin['name']}")
         self.geometry("500x350")
         self.transient(master)
         self.grab_set()
         self.on_complete_callback = on_complete_callback
         
-        # Centrar
         self.update_idletasks()
         x = int(master.winfo_x() + (master.winfo_width() / 2) - (500 / 2))
         y = int(master.winfo_y() + (master.winfo_height() / 2) - (350 / 2))
         self.geometry(f"+{x}+{y}")
-        self.protocol("WM_DELETE_WINDOW", self.use_lite_mode)
+        self.protocol("WM_DELETE_WINDOW", self.cancel)
         
-        lbl_title = ctk.CTkLabel(self, text="Falta el Motor Multimedia (FFmpeg)", font=("Arial", 16, "bold"))
+        lbl_title = ctk.CTkLabel(self, text=f"Descargando {self.plugin['name']}", font=("Arial", 16, "bold"))
         lbl_title.pack(pady=(20, 10))
-        
-        desc = ("Para mantener la aplicación ligera, el motor multimedia no viene incluido.\n\n"
-                "Sin este complemento, las siguientes funciones estarán BLOQUEADAS:\n"
-                "❌ Compresor de Multimedia\n"
-                "❌ Reparador de Multimedia\n"
-                "❌ Buscador de Duplicados (Escaneo de video)\n\n"
-                "¿Qué deseas hacer?")
-                
-        lbl_desc = ctk.CTkLabel(self, text=desc, justify="left", wraplength=450)
-        lbl_desc.pack(padx=20, pady=10)
         
         self.progress_var = ctk.DoubleVar(value=0)
         self.progress_bar = ctk.CTkProgressBar(self, variable=self.progress_var)
-        self.lbl_status = ctk.CTkLabel(self, text="Esperando...")
+        self.progress_bar.pack(pady=(10, 0), padx=20, fill="x")
         
-        self.btn_frame = ctk.CTkFrame(self, fg_color="transparent")
-        self.btn_frame.pack(pady=20)
+        self.lbl_status = ctk.CTkLabel(self, text="Iniciando descarga...")
+        self.lbl_status.pack(pady=10)
         
-        self.btn_lite = ctk.CTkButton(self.btn_frame, text="Usar Modo Lite", fg_color="gray", command=self.use_lite_mode)
-        self.btn_lite.pack(side="left", padx=10)
+        self.btn_cancel = ctk.CTkButton(self, text="Cancelar", fg_color="gray", command=self.cancel)
+        self.btn_cancel.pack(pady=10)
         
-        self.btn_full = ctk.CTkButton(self.btn_frame, text="Descargar Modo Full (~35MB)", fg_color="#F39C12", hover_color="#D68910", command=self.start_download)
-        self.btn_full.pack(side="left", padx=10)
+        self.is_cancelled = False
+        threading.Thread(target=self._download_and_extract, daemon=True).start()
 
-    def use_lite_mode(self):
+    def cancel(self):
+        self.is_cancelled = True
         if self.on_complete_callback:
             self.on_complete_callback(False)
         self.destroy()
 
-    def start_download(self):
-        self.btn_lite.configure(state="disabled")
-        self.btn_full.configure(state="disabled")
-        
-        self.progress_bar.pack(pady=(10, 0), padx=20, fill="x")
-        self.lbl_status.pack()
-        
-        threading.Thread(target=self._download_and_extract, daemon=True).start()
-
     def _download_and_extract(self):
-        url = "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip"
-        # Usamos gpl-shared o un binario más pequeño si fuera posible, pero este sirve.
-        temp_zip = get_user_data_path("ffmpeg_temp.zip")
+        url = self.plugin["url"]
         tools_dir = get_user_data_path("tools")
         os.makedirs(tools_dir, exist_ok=True)
+        temp_file = get_user_data_path(f"temp_{self.plugin['id']}.tmp")
+        final_file = os.path.join(tools_dir, self.plugin["filename"])
         
         try:
-            # Descargar
-            self.lbl_status.configure(text="Descargando FFmpeg (esto puede tardar unos minutos)...")
             def report(blocknum, blocksize, totalsize):
+                if self.is_cancelled:
+                    raise Exception("Cancelado por el usuario")
                 readsofar = blocknum * blocksize
                 if totalsize > 0:
                     percent = readsofar / totalsize
                     self.progress_var.set(percent)
             
-            urllib.request.urlretrieve(url, temp_zip, reporthook=report)
+            urllib.request.urlretrieve(url, temp_file, reporthook=report)
             
-            # Extraer
-            self.lbl_status.configure(text="Extrayendo archivos...")
-            self.progress_var.set(0) # Indeterminate like
-            
-            with zipfile.ZipFile(temp_zip, 'r') as zip_ref:
-                for file_info in zip_ref.infolist():
-                    if file_info.filename.endswith('ffmpeg.exe'):
-                        file_info.filename = 'ffmpeg.exe'
-                        zip_ref.extract(file_info, tools_dir)
-                        break
-            
-            os.remove(temp_zip)
+            if self.plugin["is_zip"]:
+                self.lbl_status.configure(text="Extrayendo archivos...")
+                self.progress_var.set(0)
+                with zipfile.ZipFile(temp_file, 'r') as zip_ref:
+                    for file_info in zip_ref.infolist():
+                        if file_info.filename.endswith(self.plugin["zip_target"]):
+                            file_info.filename = self.plugin["filename"]
+                            zip_ref.extract(file_info, tools_dir)
+                            break
+                os.remove(temp_file)
+            else:
+                shutil.move(temp_file, final_file)
             
             self.lbl_status.configure(text="¡Instalación completada!")
-            self.after(1000, self._finish_success)
+            self.btn_cancel.configure(text="Cerrar", command=self.finish_success)
+            self.after(1000, self.finish_success)
             
         except Exception as e:
-            self.lbl_status.configure(text=f"Error: {str(e)}")
-            self.btn_lite.configure(state="normal")
-            self.btn_full.configure(state="normal")
-            
-    def _finish_success(self):
+            if not self.is_cancelled:
+                self.lbl_status.configure(text=f"Error: {str(e)}")
+
+    def finish_success(self):
         if self.on_complete_callback:
             self.on_complete_callback(True)
         self.destroy()
 
+class StartupCheck(ctk.CTkToplevel):
+    def __init__(self, master, missing_plugins, on_complete):
+        super().__init__(master)
+        self.title("Complementos Faltantes")
+        self.geometry("500x400")
+        self.transient(master)
+        self.grab_set()
+        self.on_complete = on_complete
+        
+        self.update_idletasks()
+        x = int(master.winfo_x() + (master.winfo_width() / 2) - (500 / 2))
+        y = int(master.winfo_y() + (master.winfo_height() / 2) - (400 / 2))
+        self.geometry(f"+{x}+{y}")
+        self.protocol("WM_DELETE_WINDOW", self.close)
+        
+        lbl = ctk.CTkLabel(self, text="Para mantener la app ligera, algunos componentes no vienen incluidos. Algunas funciones estarán bloqueadas hasta que los instales.", wraplength=450, justify="left")
+        lbl.pack(pady=10, padx=20)
+        
+        frame = ctk.CTkScrollableFrame(self)
+        frame.pack(fill="both", expand=True, padx=20, pady=10)
+        
+        for pid in missing_plugins:
+            p = PLUGINS[pid]
+            row = ctk.CTkFrame(frame)
+            row.pack(fill="x", pady=5)
+            ctk.CTkLabel(row, text=f"{p['name']} ({p['size_str']})", font=("Arial", 12, "bold")).pack(anchor="w", padx=10, pady=(5,0))
+            ctk.CTkLabel(row, text=p['desc'], text_color="gray").pack(anchor="w", padx=10)
+            
+            def install_p(plugin_id=pid):
+                def on_done(success):
+                    if success:
+                        self.close()
+                PluginInstaller(self, plugin_id, on_done)
+                
+            ctk.CTkButton(row, text="Instalar", width=80, command=install_p).pack(anchor="e", padx=10, pady=5)
+            
+        self.dont_show_var = ctk.BooleanVar(value=False)
+        ctk.CTkCheckBox(self, text="No volver a mostrar en el inicio", variable=self.dont_show_var).pack(pady=10)
+        
+        ctk.CTkButton(self, text="Continuar en Modo Lite", command=self.close).pack(pady=(0, 20))
+
+    def close(self):
+        if self.dont_show_var.get():
+            with open(get_user_data_path("hide_startup_plugins.json"), "w") as f:
+                json.dump({"hide": True}, f)
+        self.on_complete()
+        self.destroy()
+
 def check_dependencies(app):
-    ffmpeg_path = get_user_data_path(os.path.join("tools", "ffmpeg.exe"))
-    if not os.path.exists(ffmpeg_path):
-        def on_done(success):
-            if not success:
-                app.disable_multimedia_features()
-        SetupManager(app, on_done)
+    hide_path = get_user_data_path("hide_startup_plugins.json")
+    missing = []
+    for pid, p in PLUGINS.items():
+        if not os.path.exists(get_user_data_path(os.path.join("tools", p["filename"]))):
+            missing.append(pid)
+            
+    if os.path.exists(hide_path):
+        app.disable_missing_features()
+        return
+        
+    if missing:
+        StartupCheck(app, missing, lambda: app.disable_missing_features())
+    else:
+        app.disable_missing_features()
+
+def get_missing_commands():
+    missing_cmds = []
+    for pid, p in PLUGINS.items():
+        if not os.path.exists(get_user_data_path(os.path.join("tools", p["filename"]))):
+            missing_cmds.extend(p["cmds"])
+    return missing_cmds

@@ -78,12 +78,18 @@ class App(ctk.CTk):
         self.left_frame.grid_rowconfigure(7, weight=0)
         self.left_frame.grid_columnconfigure(0, weight=1)
 
-        self.theme_switch = ctk.CTkSwitch(self.left_frame, text="Modo Oscuro", command=self.toggle_theme)
-        self.theme_switch.grid(row=0, column=0, padx=15, pady=15, sticky="nw")
+        self.top_bar = ctk.CTkFrame(self.left_frame, fg_color="transparent")
+        self.top_bar.grid(row=0, column=0, padx=15, pady=15, sticky="ew")
+
+        self.theme_switch = ctk.CTkSwitch(self.top_bar, text="Oscuro", command=self.toggle_theme)
+        self.theme_switch.pack(side="left")
         self.theme_switch.select()
 
-        self.credits_btn = ctk.CTkButton(self.left_frame, text="ℹ️ Créditos", width=80, height=25, fg_color="transparent", text_color=("black", "white"), command=self.show_credits)
-        self.credits_btn.grid(row=0, column=0, padx=15, pady=15, sticky="ne")
+        self.credits_btn = ctk.CTkButton(self.top_bar, text="ℹ️ Créditos", width=80, height=25, fg_color="transparent", text_color=("black", "white"), command=self.show_credits)
+        self.credits_btn.pack(side="right")
+
+        self.plugins_btn = ctk.CTkButton(self.top_bar, text="🧩 Complementos", width=100, height=25, fg_color="#27AE60", hover_color="#2ECC71", command=self.show_plugins)
+        self.plugins_btn.pack(side="right", padx=(0, 10))
 
         self.search_var = ctk.StringVar()
         self.search_var.trace_add("write", self.on_search)
@@ -218,11 +224,7 @@ class App(ctk.CTk):
         # Check multimedia dependencies
         self.after(500, lambda: check_dependencies(self))
 
-    def disable_multimedia_features(self):
-        multimedia_cmds = ["__INTERNAL__ --run-compressor", "__INTERNAL__ --run-duplicate-finder", "__INTERNAL__ --run-media-repair"]
-        for cat in self.commands_config.get("categories", []):
-            cat["commands"] = [cmd for cmd in cat.get("commands", []) if cmd.get("command") not in multimedia_cmds]
-        # Refresh current category if it was selected
+    def disable_missing_features(self):
         self.on_category_change(self.cat_var.get())
 
     def load_config(self):
@@ -456,6 +458,32 @@ class App(ctk.CTk):
 
         cmd_data = self.get_command_data(selected_command)
         if cmd_data:
+            from functions.setup_manager import get_missing_commands, PLUGINS
+            missing = get_missing_commands()
+            if cmd_data.get("command") in missing:
+                plugin_needed = None
+                for pid, p in PLUGINS.items():
+                    if cmd_data.get("command") in p["cmds"]:
+                        plugin_needed = pid
+                        break
+                        
+                lbl = ctk.CTkLabel(self.args_frame, text=f"⚠️ Falta {PLUGINS[plugin_needed]['name']}.", text_color="#E74C3C", font=("Arial", 14, "bold"))
+                lbl.pack(pady=20)
+                
+                def install_it():
+                    from functions.setup_manager import PluginInstaller
+                    def on_done(success):
+                        if success:
+                            self.on_command_change(selected_command)
+                    PluginInstaller(self, plugin_needed, on_done)
+                
+                btn = ctk.CTkButton(self.args_frame, text="Instalar Complemento", fg_color="#F39C12", hover_color="#D68910", command=install_it)
+                btn.pack(pady=10)
+                self.execute_btn.configure(state="disabled")
+                return
+            else:
+                self.execute_btn.configure(state="normal")
+                
             if cmd_data.get("name") == "Compresor de Multimedia":
                 self.update_hardware_options(cmd_data)
                 
@@ -476,10 +504,8 @@ class App(ctk.CTk):
                     chk = ctk.CTkCheckBox(row_frame, text=arg_name, variable=var, onvalue=arg_flag, offvalue="")
                     chk.pack(side="left", padx=(0, 10))
                 elif arg_type in ["entry", "directory_entry", "file_entry"]:
-                    lbl = ctk.CTkLabel(row_frame, text=f"{arg_name}:")
+                    lbl = ctk.CTkLabel(row_frame, text=f"{arg_name}:", wraplength=180, justify="left")
                     lbl.pack(side="left", padx=(0, 5))
-                    ent = ctk.CTkEntry(row_frame, textvariable=var, placeholder_text="Escribir...", border_width=0)
-                    ent.pack(side="left", fill="x", expand=True, padx=(0, 10))
                     
                     if arg_type == "directory_entry":
                         def browse_folder(v=var):
@@ -490,7 +516,7 @@ class App(ctk.CTk):
                                     folder = f'"{folder}"'
                                 v.set(folder)
                         btn_browse = ctk.CTkButton(row_frame, text="Examinar", width=80, command=browse_folder)
-                        btn_browse.pack(side="left", padx=(0, 10))
+                        btn_browse.pack(side="right", padx=(0, 10))
                         
                     elif arg_type == "file_entry":
                         def browse_file(v=var):
@@ -501,7 +527,12 @@ class App(ctk.CTk):
                                     file_path = f'"{file_path}"'
                                 v.set(file_path)
                         btn_browse_f = ctk.CTkButton(row_frame, text="Examinar", width=80, command=browse_file)
-                        btn_browse_f.pack(side="left", padx=(0, 10))
+                        btn_browse_f.pack(side="right", padx=(0, 10))
+                        
+                    ent = ctk.CTkEntry(row_frame, textvariable=var, placeholder_text="Escribir...", border_width=0)
+                    ent.pack(side="left", fill="x", expand=True, padx=(0, 10))
+                    
+                    # The browse buttons and entry were already handled above
                         
                 elif arg_type == "radio_group":
                     lbl = ctk.CTkLabel(row_frame, text=f"{arg_name}:")
@@ -915,6 +946,84 @@ class App(ctk.CTk):
         else:
             # Fallback simple
             return f"<html><body><h1>{title}</h1><pre>{content}</pre></body></html>"
+
+    def show_plugins(self):
+        from functions.utils import get_user_data_path
+        from functions.setup_manager import PLUGINS, PluginInstaller
+        import os
+        import subprocess
+        import sys
+        
+        win = ctk.CTkToplevel(self)
+        win.title("Gestor de Complementos")
+        win.geometry("550x450")
+        win.transient(self)
+        win.grab_set()
+        
+        win.update_idletasks()
+        x = int(self.winfo_x() + (self.winfo_width() / 2) - (550 / 2))
+        y = int(self.winfo_y() + (self.winfo_height() / 2) - (450 / 2))
+        win.geometry(f"+{x}+{y}")
+        
+        lbl_title = ctk.CTkLabel(win, text="Complementos Disponibles", font=("Arial", 16, "bold"))
+        lbl_title.pack(pady=15)
+        
+        frame = ctk.CTkScrollableFrame(win)
+        frame.pack(fill="both", expand=True, padx=20, pady=(0, 20))
+        
+        for pid, p in PLUGINS.items():
+            path = get_user_data_path(os.path.join("tools", p["filename"]))
+            is_installed = os.path.exists(path)
+            
+            row = ctk.CTkFrame(frame)
+            row.pack(fill="x", padx=10, pady=10)
+            
+            name_lbl = ctk.CTkLabel(row, text=f"{p['name']} ({p['size_str']})", font=("Arial", 14, "bold"))
+            name_lbl.pack(side="top", anchor="w", padx=10, pady=(10, 0))
+            
+            desc_lbl = ctk.CTkLabel(row, text=p['desc'], text_color="gray", wraplength=400, justify="left")
+            desc_lbl.pack(side="top", anchor="w", padx=10)
+            
+            status_text = "🟢 Instalado" if is_installed else "🔴 No Instalado"
+            status_lbl = ctk.CTkLabel(row, text=status_text)
+            status_lbl.pack(side="top", anchor="w", padx=10, pady=(5, 10))
+            
+            btn_frame = ctk.CTkFrame(row, fg_color="transparent")
+            btn_frame.pack(side="top", fill="x", padx=10, pady=(0, 10))
+            
+            def open_folder(fpath=path):
+                tools_dir = os.path.dirname(fpath)
+                os.makedirs(tools_dir, exist_ok=True)
+                subprocess.Popen(f'explorer "{tools_dir}"')
+                
+            def delete_plugin(fpath=path):
+                try:
+                    os.remove(fpath)
+                    from tkinter import messagebox
+                    messagebox.showinfo("Éxito", "Complemento eliminado. El programa se reiniciará.")
+                    win.destroy()
+                    os.execl(sys.executable, sys.executable, *sys.argv)
+                except Exception as e:
+                    from tkinter import messagebox
+                    messagebox.showerror("Error", f"No se pudo eliminar: {e}")
+                    
+            def install_plugin(plug_id=pid):
+                def on_done(success):
+                    if success:
+                        win.destroy()
+                        self.show_plugins()
+                        self.on_category_change(self.cat_var.get())
+                PluginInstaller(win, plug_id, on_done)
+            
+            if is_installed:
+                btn_open = ctk.CTkButton(btn_frame, text="Abrir Ubicación", width=120, command=open_folder)
+                btn_open.pack(side="left", padx=(0, 10))
+                
+                btn_del = ctk.CTkButton(btn_frame, text="Eliminar", width=80, fg_color="#E74C3C", hover_color="#C0392B", command=delete_plugin)
+                btn_del.pack(side="left")
+            else:
+                btn_inst = ctk.CTkButton(btn_frame, text="Instalar", width=80, fg_color="#F39C12", hover_color="#D68910", command=install_plugin)
+                btn_inst.pack(side="left")
 
     def show_table_view(self):
         content = self.output_textbox.get("1.0", "end-1c").strip()
