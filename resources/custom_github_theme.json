@@ -13,7 +13,7 @@
   },
   "CTkFrame": {
     "corner_radius": 6,
-    "border_width": 1,
+    "border_width": 0,
     "fg_color": [
       "#F6F8FA",
       "#161B22"
@@ -323,7 +323,8 @@
     "label_fg_color": [
       "#FFFFFF",
       "#161B22"
-    ]
+    ],
+    "border_width": 0
   },
   "DropdownMenu": {
     "fg_color": [
