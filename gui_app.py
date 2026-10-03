@@ -25,6 +25,13 @@ def get_base_path():
     else:
         return os.path.dirname(os.path.abspath(__file__))
 
+def get_user_data_path(filename):
+    if getattr(sys, 'frozen', False):
+        base_dir = os.path.dirname(sys.executable)
+    else:
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+    return os.path.join(base_dir, filename)
+
 def get_resource_path(relative_path):
     return os.path.join(get_base_path(), relative_path)
 
@@ -211,7 +218,7 @@ class App(ctk.CTk):
             pass
             
         try:
-            with open(get_resource_path("favorites.json"), "r", encoding="utf-8") as f:
+            with open(get_user_data_path("favorites.json"), "r", encoding="utf-8") as f:
                 favs = json.load(f)
                 if favs:
                     config["categories"].insert(0, {
@@ -706,15 +713,15 @@ class App(ctk.CTk):
         cmd_name = self.cmd_var.get()
         favs = []
         try:
-            if os.path.exists(get_resource_path("favorites.json")):
-                with open(get_resource_path("favorites.json"), "r", encoding="utf-8") as f:
+            if os.path.exists(get_user_data_path("favorites.json")):
+                with open(get_user_data_path("favorites.json"), "r", encoding="utf-8") as f:
                     favs = json.load(f)
         except:
             return
             
         new_favs = [f for f in favs if f.get("name") != cmd_name]
         
-        with open(get_resource_path("favorites.json"), "w", encoding="utf-8") as f:
+        with open(get_user_data_path("favorites.json"), "w", encoding="utf-8") as f:
             json.dump(new_favs, f, indent=4)
             
         self.output_textbox.configure(state="normal")
@@ -736,8 +743,8 @@ class App(ctk.CTk):
                 
         favs = []
         try:
-            if os.path.exists(get_resource_path("favorites.json")):
-                with open(get_resource_path("favorites.json"), "r", encoding="utf-8") as f:
+            if os.path.exists(get_user_data_path("favorites.json")):
+                with open(get_user_data_path("favorites.json"), "r", encoding="utf-8") as f:
                     favs = json.load(f)
         except:
             pass
@@ -763,7 +770,7 @@ class App(ctk.CTk):
         fav_cmd["name"] = fav_name
             
         favs.append(fav_cmd)
-        with open(get_resource_path("favorites.json"), "w", encoding="utf-8") as f:
+        with open(get_user_data_path("favorites.json"), "w", encoding="utf-8") as f:
             json.dump(favs, f, indent=4)
             
         self.output_textbox.configure(state="normal")

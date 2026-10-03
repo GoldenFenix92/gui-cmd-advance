@@ -74,7 +74,8 @@ if __name__ == "__main__":
             app.mainloop()
         except Exception as e:
             import traceback, os
-            with open(os.path.join(os.path.dirname(__file__), "crash.log"), "w") as f:
+            base_dir = os.path.dirname(sys.executable) if getattr(sys, 'frozen', False) else os.path.dirname(__file__)
+            with open(os.path.join(base_dir, "crash.log"), "w") as f:
                 f.write(traceback.format_exc())
     else:
         # Volver a ejecutar el script con privilegios de administrador
