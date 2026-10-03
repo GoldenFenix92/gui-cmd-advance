@@ -19,7 +19,7 @@ except ImportError:
 # ==============================================================
 GITHUB_REPO = "GoldenFenix92/gui-cmd-advance"
 # Pon aquí tu URL del Webhook de Discord. Si está vacío, no se enviará nada.
-DISCORD_WEBHOOK_URL = "" 
+DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1556016800335007804/F6DCAMgpvrkVwIQVFPsdR_Kx5JYdunfCY_3xdgwNN5FcauFsDeSroYnb5-OhPU6CgHfy" 
 # ==============================================================
 
 def check_for_updates(master_win):
