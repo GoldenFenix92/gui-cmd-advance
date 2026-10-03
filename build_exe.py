@@ -125,6 +125,7 @@ def main():
         "--hidden-import", "functions.media_repair",
         "--hidden-import", "functions.cmd_executor",
         "--hidden-import", "functions.office_deploy",
+        "--hidden-import", "functions.telemetry",
         "--icon", icon,
         "main.py"
     ]

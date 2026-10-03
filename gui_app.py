@@ -223,6 +223,11 @@ class App(ctk.CTk):
         
         # Check multimedia dependencies
         self.after(500, lambda: check_dependencies(self))
+        
+        # Telemetry and Updates
+        from functions.telemetry import check_for_crashes, check_for_updates
+        self.after(1500, lambda: check_for_crashes(self))
+        self.after(3000, lambda: check_for_updates(self))
 
     def disable_missing_features(self):
         self.on_category_change(self.cat_var.get())
