@@ -19,11 +19,12 @@
 *   **🎨 Interfaz Moderna (CustomTkinter):**
     *   Soporte dinámico para **Modo Claro** y **Modo Oscuro**.
     *   Resaltado de sintaxis inteligente en la consola (IPs, errores, rutas y éxitos tienen sus propios colores).
+    *   Gestor de Complementos Universal para instalar dependencias de terceros (como FFmpeg o la ODT de Microsoft) bajo demanda.
 *   **💾 Sistema de Favoritos:** Guarda tus comandos más usados con un clic (⭐) para acceder rápidamente a ellos.
 *   **📊 Monitoreo en Tiempo Real:** Barra de estado inferior con uso actual de CPU y RAM.
-*   **📂 Exportación de Reportes:** Guarda los resultados de la consola en formato `.html` interactivo o `.txt` con un solo clic.
+*   **📂 Exportación de Reportes:** Guarda los resultados de la consola en formato `.html` interactivo, con visualización de tablas avanzadas, o `.txt` con un solo clic.
 *   **🧹 Limpieza Inteligente:** Casilla de *Auto-Limpiar* para mantener los resultados siempre claros.
-*   **📦 100% Portable (OneFile):** Desarrollado para compilarse en un único archivo `.exe`. Puedes llevar la herramienta en una USB y ejecutarla en cualquier PC sin instalar dependencias, Python ni configurar entornos.
+*   **📦 100% Portable (Zero-Install):** Desarrollado para compilarse en un único archivo `.exe` ultraligero (sin dependencias). Puedes llevar la herramienta en una USB, y el Gestor de Complementos creará su propia carpeta local, permitiendo un uso 100% offline y sin configurar entornos.
 
 ## 🚀 Instalación y Uso (Modo Portable)
 
@@ -31,6 +32,7 @@ Si solo quieres usar la aplicación, no necesitas instalar Python.
 1. Ve a la sección de **Releases** (o a la carpeta `dist/` si has clonado el repositorio).
 2. Descarga `Gui Cmd Advance.exe` o `Gui Cmd Advance Beta.exe`.
 3. Haz doble clic para ejecutarlo en cualquier PC con Windows (se pedirán permisos de Administrador para que los comandos de red y disco funcionen correctamente).
+4. El programa detectará si necesitas complementos extra y te ofrecerá descargarlos en su propia carpeta para un ecosistema aislado.
 
 ## 🛠️ Entorno de Desarrollo (Para Programadores)
 
@@ -54,7 +56,7 @@ pip install -r requirements.txt
 *(Nota: Si `requirements.txt` no existe, asegúrate de instalar `customtkinter`, `pillow`, `psutil`, `pymupdf`)*
 
 ### Compilación (Crear tu propio .EXE Portable)
-El proyecto incluye un script de automatización (`build_exe.py`) que detecta automáticamente la versión de los commits de Git, inyecta los metadatos de autoría, enlaza `ffmpeg.exe` y construye el `.exe` como `--onefile`.
+El proyecto incluye un script de automatización (`build_exe.py`) que detecta automáticamente la versión de los commits de Git, inyecta los metadatos de autoría y construye el `.exe` como `--onefile` (ya no adjunta binarios grandes como FFmpeg, manteniendo la build ligera).
 
 ```bash
 python build_exe.py
