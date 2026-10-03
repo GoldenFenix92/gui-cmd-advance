@@ -120,6 +120,7 @@ def main():
         "--add-data", "app_icon.ico;.",
         "--hidden-import", "functions.compressor",
         "--hidden-import", "functions.duplicate_finder",
+        "--hidden-import", "PIL",
         "--hidden-import", "functions.temp_cleaner",
         "--hidden-import", "functions.advanced_search",
         "--hidden-import", "functions.smart_info",
