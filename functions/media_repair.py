@@ -8,15 +8,7 @@ from PIL import Image, ImageFile
 # Habilitar la carga de imágenes truncadas/corruptas en Pillow
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
-def get_ffmpeg_path():
-    import os, sys
-    if getattr(sys, 'frozen', False):
-        local_ffmpeg = os.path.join(sys._MEIPASS, "tools", "ffmpeg.exe")
-    else:
-        local_ffmpeg = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "tools", "ffmpeg.exe")
-    if os.path.exists(local_ffmpeg):
-        return local_ffmpeg
-    return "ffmpeg"
+from functions.utils import get_ffmpeg_path
 
 def repair_image(input_path, output_path, reference_path=None):
     try:

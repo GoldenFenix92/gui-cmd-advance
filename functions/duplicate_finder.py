@@ -15,10 +15,7 @@ from tkinter import filedialog, messagebox
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
-def get_resource_path(relative_path):
-    if getattr(sys, 'frozen', False):
-        return os.path.join(sys._MEIPASS, relative_path)
-    return os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), relative_path)
+from functions.utils import get_resource_path
 
 def center_window(window, width, height):
     screen_width = window.winfo_screenwidth()

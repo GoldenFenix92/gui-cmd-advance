@@ -18,15 +18,7 @@ def ensure_requirements():
         subprocess.check_call([sys.executable, "-m", "pip", "install", "Pillow"])
         from PIL import Image
 
-def get_ffmpeg_path():
-    import os, sys
-    if getattr(sys, 'frozen', False):
-        local_ffmpeg = os.path.join(sys._MEIPASS, "tools", "ffmpeg.exe")
-    else:
-        local_ffmpeg = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "tools", "ffmpeg.exe")
-    if os.path.exists(local_ffmpeg):
-        return local_ffmpeg
-    return "ffmpeg"
+from functions.utils import get_ffmpeg_path
 
 def is_ffmpeg_installed():
     try:
