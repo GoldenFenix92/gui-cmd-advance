@@ -115,7 +115,6 @@ def main():
         "--add-data", "commands_config.json;.",
         "--add-data", "github_theme.json;.",
         "--add-data", "custom_github_theme.json;.",
-        "--add-data", "tools/ffmpeg.exe;tools",
         "--add-data", "tools/setup.exe;tools",
         "--add-data", "app_icon.ico;.",
         "--hidden-import", "PIL",

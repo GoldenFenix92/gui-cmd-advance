@@ -12,12 +12,18 @@ def get_resource_path(relative_path):
     # Si se ejecuta como script normal
     return os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), relative_path)
 
+def get_user_data_path(relative_path):
+    if getattr(sys, 'frozen', False):
+        base_dir = os.path.dirname(sys.executable)
+    else:
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    return os.path.join(base_dir, relative_path)
+
 def get_ffmpeg_path():
     """
-    Retorna la ruta al ejecutable de ffmpeg. Primero busca en la carpeta
-    local tools/ffmpeg.exe. Si no existe, asume que está en el PATH del sistema.
+    Retorna la ruta al ejecutable de ffmpeg. Busca en los datos persistentes del usuario.
     """
-    local_ffmpeg = get_resource_path(os.path.join("tools", "ffmpeg.exe"))
+    local_ffmpeg = get_user_data_path(os.path.join("tools", "ffmpeg.exe"))
     if os.path.exists(local_ffmpeg):
         return local_ffmpeg
     return "ffmpeg"

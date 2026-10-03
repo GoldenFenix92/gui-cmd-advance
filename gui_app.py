@@ -19,6 +19,8 @@ try:
 except ImportError:
     __version__ = "1.0.0"
 
+from functions.setup_manager import check_dependencies
+
 def get_base_path():
     if getattr(sys, 'frozen', False):
         return sys._MEIPASS
@@ -167,6 +169,10 @@ class App(ctk.CTk):
         
         self.export_btn = ctk.CTkButton(self.btn_frame, text="Exportar Actual", width=100, command=self.export_output)
         self.export_btn.pack(side="left", padx=(0, 10))
+
+        self.table_btn = ctk.CTkButton(self.btn_frame, text="Ver como Tabla", width=100, fg_color="#2E86C1", hover_color="#21618C", command=self.show_table_view)
+        self.table_btn.pack(side="left", padx=(0, 10))
+        if CTkToolTip: CTkToolTip(self.table_btn, message="Ver resultados en una tabla interactiva (ideal para CSV)")
         
         self.convert_btn = ctk.CTkButton(self.btn_frame, text="Convertir Reporte Antiguo", width=150, command=self.convert_old_report, fg_color="#475569", hover_color="#334155")
         self.convert_btn.pack(side="left")
@@ -207,6 +213,16 @@ class App(ctk.CTk):
         self.bind("<Control-l>", lambda e: self.clear_output())
         self.bind("<Control-L>", lambda e: self.clear_output())
 
+        self.on_category_change(self.cat_var.get())
+        
+        # Check multimedia dependencies
+        self.after(500, lambda: check_dependencies(self))
+
+    def disable_multimedia_features(self):
+        multimedia_cmds = ["__INTERNAL__ --run-compressor", "__INTERNAL__ --run-duplicate-finder", "__INTERNAL__ --run-media-repair"]
+        for cat in self.commands_config.get("categories", []):
+            cat["commands"] = [cmd for cmd in cat.get("commands", []) if cmd.get("command") not in multimedia_cmds]
+        # Refresh current category if it was selected
         self.on_category_change(self.cat_var.get())
 
     def load_config(self):
@@ -899,6 +915,19 @@ class App(ctk.CTk):
         else:
             # Fallback simple
             return f"<html><body><h1>{title}</h1><pre>{content}</pre></body></html>"
+
+    def show_table_view(self):
+        content = self.output_textbox.get("1.0", "end-1c").strip()
+        if not content:
+            messagebox.showinfo("Información", "No hay resultados para mostrar en la tabla.")
+            return
+        # Intentar normalizar salidas de powershell
+        lines = content.split('\n')
+        # Filter purely decorative lines
+        clean_lines = [l for l in lines if not l.startswith('---')]
+        
+        from functions.tabular_viewer import show_tabular_data
+        show_tabular_data(self, self.cmd_var.get(), '\n'.join(clean_lines))
 
     def export_output(self):
         content = self.output_textbox.get("1.0", "end-1c")
