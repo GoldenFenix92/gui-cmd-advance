@@ -51,7 +51,8 @@ def get_api_settings():
         "api_key": "",
         "model": "",
         "base_url": "",
-        "cached_models": []
+        "cached_models": [],
+        "free_only": True
     }
     try:
         if os.path.exists(settings_path):
@@ -215,7 +216,7 @@ class InterpreterApp(ctk.CTkToplevel):
         model = settings.get("model", "")
         base_url = settings.get("base_url", "")
 
-        prompt = "Traduce este resultado crudo de consola a lenguaje natural, indicando proceso, significado y errores. Usa emojis.\n\n" + content
+        prompt = "Instrucción estricta: Traduce este resultado crudo de consola a lenguaje natural, indicando proceso, significado y errores. Usa emojis. ESTÁ ESTRICTAMENTE PROHIBIDO usar formato Markdown (sin asteriscos **, sin numerales ##, sin cursivas). Devuelve texto plano totalmente limpio.\n\n" + content
         try:
             if provider == "Google Gemini":
                 url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
@@ -235,9 +236,10 @@ class InterpreterApp(ctk.CTkToplevel):
                     result = json.loads(response.read().decode())
                     text_response = result['content'][0]['text']
                     
-            elif provider in ["OpenAI", "Groq", "Personalizado"]:
+            elif provider in ["OpenAI", "Groq", "Deepseek", "Personalizado"]:
                 if provider == "OpenAI": url = "https://api.openai.com/v1/chat/completions"
                 elif provider == "Groq": url = "https://api.groq.com/openai/v1/chat/completions"
+                elif provider == "Deepseek": url = "https://api.deepseek.com/chat/completions"
                 else: url = base_url
                 headers = {'Content-Type': 'application/json', 'Authorization': f'Bearer {api_key}'}
                 data = {"model": model, "messages": [{"role": "user", "content": prompt}]}
@@ -246,7 +248,8 @@ class InterpreterApp(ctk.CTkToplevel):
                     result = json.loads(response.read().decode())
                     text_response = result['choices'][0]['message']['content']
 
-            self.after(0, self.set_output, text_response)
+            signature = f"🤖 [Analizado por {provider} - {model}]\n\n"
+            self.after(0, self.set_output, signature + text_response)
             self.after(0, lambda: self.lbl_status.configure(text=f"Análisis completado usando {provider} ({model})."))
 
         except Exception as e:
@@ -321,7 +324,7 @@ class ConfigAPIWindow(ctk.CTkToplevel):
         frame_prov.pack(fill="x", padx=40, pady=10)
         ctk.CTkLabel(frame_prov, text="Proveedor:", width=100, anchor="w").pack(side="left")
         self.var_provider = ctk.StringVar(value=self.settings.get("provider", "Google Gemini"))
-        self.menu_provider = ctk.CTkOptionMenu(frame_prov, variable=self.var_provider, values=["Google Gemini", "OpenAI", "Anthropic Claude", "Groq", "Personalizado"], command=self.on_provider_change)
+        self.menu_provider = ctk.CTkOptionMenu(frame_prov, variable=self.var_provider, values=["Google Gemini", "OpenAI", "Anthropic Claude", "Groq", "Deepseek", "Personalizado"], command=self.on_provider_change)
         self.menu_provider.pack(side="left", fill="x", expand=True)
 
         # Base URL (Hidden by default)
@@ -341,6 +344,10 @@ class ConfigAPIWindow(ctk.CTkToplevel):
         
         self.btn_link = ctk.CTkButton(self, text="👉 Obtener API Key", fg_color="transparent", text_color="#3498DB", hover_color="#2C3E50", command=self.open_link)
         self.btn_link.pack(pady=(0, 5))
+
+        self.var_free_only = ctk.BooleanVar(value=self.settings.get("free_only", True))
+        self.chk_free = ctk.CTkCheckBox(self, text="Solo mostrar modelos gratuitos/ligeros (evitar Error 429)", variable=self.var_free_only, text_color="gray")
+        self.chk_free.pack(pady=5)
 
         # 3. Load Models Button
         self.btn_fetch = ctk.CTkButton(self, text="🔄 Cargar Modelos Disponibles", fg_color="#F39C12", hover_color="#D68910", command=self.fetch_models)
@@ -403,6 +410,8 @@ class ConfigAPIWindow(ctk.CTkToplevel):
                 self.btn_link.configure(text="👉 Obtener API Key (Anthropic Console)", command=lambda: __import__('webbrowser').open("https://console.anthropic.com/settings/keys"))
             elif val == "Groq":
                 self.btn_link.configure(text="👉 Obtener API Key Gratuita (Groq Cloud)", command=lambda: __import__('webbrowser').open("https://console.groq.com/keys"))
+            elif val == "Deepseek":
+                self.btn_link.configure(text="👉 Obtener API Key (Deepseek Platform)", command=lambda: __import__('webbrowser').open("https://platform.deepseek.com/api_keys"))
 
     def open_model_dropdown(self):
         vals = self.cached_models if self.cached_models else ["--- Carga los modelos primero ---"]
@@ -435,8 +444,10 @@ class ConfigAPIWindow(ctk.CTkToplevel):
                             if "vision" not in name and "embedding" not in name:
                                 models.append(name)
                                 
-                elif provider in ["OpenAI", "Groq"]:
-                    url = "https://api.openai.com/v1/models" if provider == "OpenAI" else "https://api.groq.com/openai/v1/models"
+                elif provider in ["OpenAI", "Groq", "Deepseek"]:
+                    if provider == "OpenAI": url = "https://api.openai.com/v1/models"
+                    elif provider == "Groq": url = "https://api.groq.com/openai/v1/models"
+                    else: url = "https://api.deepseek.com/models"
                     req = urllib.request.Request(url, headers={'Authorization': f'Bearer {api_key}'})
                     with urllib.request.urlopen(req) as response:
                         res = json.loads(response.read().decode())
@@ -454,6 +465,9 @@ class ConfigAPIWindow(ctk.CTkToplevel):
 
                 if models:
                     models = sorted(list(set(models)), reverse=True)
+                    if self.var_free_only.get():
+                        models = [m for m in models if not any(x in m.lower() for x in ["pro", "opus", "gpt-4", "advanced", "sonnet"])]
+                        
                     self.cached_models = models
                     if self.var_model.get() not in models:
                         if provider == "Google Gemini" and "gemini-1.5-flash" in models: self.after(0, lambda: self.var_model.set("gemini-1.5-flash"))
@@ -483,7 +497,8 @@ class ConfigAPIWindow(ctk.CTkToplevel):
             "model": model,
             "api_key": self.var_key.get().strip(),
             "base_url": self.var_url.get().strip(),
-            "cached_models": self.cached_models
+            "cached_models": self.cached_models,
+            "free_only": self.var_free_only.get()
         }
         try:
             with open(settings_path, "w", encoding="utf-8") as f:
