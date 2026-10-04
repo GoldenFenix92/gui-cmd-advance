@@ -219,7 +219,11 @@ class InterpreterApp(ctk.CTkToplevel):
         content = self.txt_raw.get("1.0", "end").strip()
         if not content: return
         settings = get_api_settings()
-        if not settings.get("api_key") or not settings.get("model"):
+        
+        provider = settings.get("current_provider", "Google Gemini")
+        prov_data = settings.get("providers", {}).get(provider, {})
+        
+        if not prov_data.get("api_key") or not prov_data.get("model"):
             if messagebox.askyesno("API Key", "Falta configurar la API o el modelo. ¿Deseas configurarlos ahora?"):
                 self.config_api()
             return
