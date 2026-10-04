@@ -47,21 +47,38 @@ def get_api_settings():
         except: pass
 
     default_settings = {
-        "provider": "Google Gemini",
-        "api_key": "",
-        "model": "",
-        "base_url": "",
-        "cached_models": [],
-        "free_only": True
+        "providers": {
+            "Google Gemini": {"api_key": "", "model": "", "cached_models": []},
+            "OpenAI": {"api_key": "", "model": "", "cached_models": []},
+            "Anthropic Claude": {"api_key": "", "model": "", "cached_models": []},
+            "Groq": {"api_key": "", "model": "", "cached_models": []},
+            "Deepseek": {"api_key": "", "model": "", "cached_models": []},
+            "Personalizado": {"api_key": "", "model": "", "base_url": "", "cached_models": []}
+        },
+        "current_provider": "Google Gemini",
+        "free_only": True,
+        "model_train": []
     }
     try:
         if os.path.exists(settings_path):
             with open(settings_path, "r", encoding="utf-8") as f:
                 saved = json.load(f)
-                if "gemini_key" in saved and "provider" not in saved:
-                    default_settings["api_key"] = saved["gemini_key"]
+                if "providers" not in saved:
+                    prov = saved.get("provider", "Google Gemini")
+                    default_settings["current_provider"] = prov
+                    default_settings["providers"][prov]["api_key"] = saved.get("api_key", "")
+                    default_settings["providers"][prov]["model"] = saved.get("model", "")
+                    default_settings["providers"][prov]["cached_models"] = saved.get("cached_models", [])
+                    if "base_url" in saved: default_settings["providers"][prov]["base_url"] = saved["base_url"]
+                    if "free_only" in saved: default_settings["free_only"] = saved["free_only"]
                 else:
-                    default_settings.update(saved)
+                    for k, v in saved.items():
+                        if k == "providers":
+                            for pk, pv in v.items():
+                                if pk in default_settings["providers"]:
+                                    default_settings["providers"][pk].update(pv)
+                        else:
+                            default_settings[k] = v
     except:
         pass
     return default_settings
@@ -211,10 +228,11 @@ class InterpreterApp(ctk.CTkToplevel):
         threading.Thread(target=self._call_api, args=(settings, content), daemon=True).start()
 
     def _call_api(self, settings, content):
-        provider = settings.get("provider", "Google Gemini")
-        api_key = settings.get("api_key", "")
-        model = settings.get("model", "")
-        base_url = settings.get("base_url", "")
+        provider = settings.get("current_provider", "Google Gemini")
+        prov_data = settings.get("providers", {}).get(provider, {})
+        api_key = prov_data.get("api_key", "")
+        model = prov_data.get("model", "")
+        base_url = prov_data.get("base_url", "")
 
         prompt = "Instrucción estricta: Traduce este resultado crudo de consola a lenguaje natural, indicando proceso, significado y errores. Usa emojis. ESTÁ ESTRICTAMENTE PROHIBIDO usar formato Markdown (sin asteriscos **, sin numerales ##, sin cursivas). Devuelve texto plano totalmente limpio.\n\n" + content
         try:
@@ -314,7 +332,10 @@ class ConfigAPIWindow(ctk.CTkToplevel):
         self.grab_set()
 
         self.settings = get_api_settings()
-        self.cached_models = self.settings.get("cached_models", [])
+        
+        curr_prov = self.settings.get("current_provider", "Google Gemini")
+        prov_data = self.settings.get("providers", {}).get(curr_prov, {})
+        self.cached_models = prov_data.get("cached_models", [])
 
         lbl1 = ctk.CTkLabel(self, text="Gestor de Modelos de Lenguaje (LLM)", font=("Arial", 18, "bold"))
         lbl1.pack(pady=(20, 10))
@@ -323,14 +344,14 @@ class ConfigAPIWindow(ctk.CTkToplevel):
         frame_prov = ctk.CTkFrame(self, fg_color="transparent")
         frame_prov.pack(fill="x", padx=40, pady=10)
         ctk.CTkLabel(frame_prov, text="Proveedor:", width=100, anchor="w").pack(side="left")
-        self.var_provider = ctk.StringVar(value=self.settings.get("provider", "Google Gemini"))
+        self.var_provider = ctk.StringVar(value=curr_prov)
         self.menu_provider = ctk.CTkOptionMenu(frame_prov, variable=self.var_provider, values=["Google Gemini", "OpenAI", "Anthropic Claude", "Groq", "Deepseek", "Personalizado"], command=self.on_provider_change)
         self.menu_provider.pack(side="left", fill="x", expand=True)
 
         # Base URL (Hidden by default)
         self.frame_url = ctk.CTkFrame(self, fg_color="transparent")
         ctk.CTkLabel(self.frame_url, text="URL Base:", width=100, anchor="w").pack(side="left")
-        self.var_url = ctk.StringVar(value=self.settings.get("base_url", ""))
+        self.var_url = ctk.StringVar(value=prov_data.get("base_url", ""))
         self.entry_url = ctk.CTkEntry(self.frame_url, textvariable=self.var_url)
         self.entry_url.pack(side="left", fill="x", expand=True)
 
@@ -338,7 +359,7 @@ class ConfigAPIWindow(ctk.CTkToplevel):
         frame_key = ctk.CTkFrame(self, fg_color="transparent")
         frame_key.pack(fill="x", padx=40, pady=10)
         ctk.CTkLabel(frame_key, text="API Key:", width=100, anchor="w").pack(side="left")
-        self.var_key = ctk.StringVar(value=self.settings.get("api_key", ""))
+        self.var_key = ctk.StringVar(value=prov_data.get("api_key", ""))
         self.entry_key = ctk.CTkEntry(frame_key, textvariable=self.var_key, show="*")
         self.entry_key.pack(side="left", fill="x", expand=True)
         
@@ -360,7 +381,7 @@ class ConfigAPIWindow(ctk.CTkToplevel):
         self.frame_mod = ctk.CTkFrame(self, fg_color="transparent")
         self.frame_mod.pack(fill="x", padx=40, pady=10)
         ctk.CTkLabel(self.frame_mod, text="Modelo:", width=100, anchor="w").pack(side="left")
-        self.var_model = ctk.StringVar(value=self.settings.get("model", ""))
+        self.var_model = ctk.StringVar(value=prov_data.get("model", ""))
         
         initial_vals = self.cached_models if self.cached_models else (
             [self.var_model.get()] if self.var_model.get() else ["--- Carga los modelos primero ---"]
@@ -381,9 +402,21 @@ class ConfigAPIWindow(ctk.CTkToplevel):
         btn_save = ctk.CTkButton(frame_btns, text="💾 Guardar en Bóveda Local", fg_color="#27AE60", hover_color="#2ECC71", command=self.save)
         btn_save.pack(side="left", padx=10)
 
+        btn_train = ctk.CTkButton(frame_btns, text="🚂 Configurar Tren de Modelos", fg_color="#8E44AD", hover_color="#9B59B6", command=self.open_train)
+        btn_train.pack(side="left", padx=10)
+
         self.on_provider_change(self.var_provider.get(), initial_load=True)
 
     def on_provider_change(self, val, initial_load=False):
+        prov_data = self.settings.get("providers", {}).get(val, {})
+        
+        if not initial_load:
+            self.var_key.set(prov_data.get("api_key", ""))
+            self.var_url.set(prov_data.get("base_url", ""))
+            self.cached_models = prov_data.get("cached_models", [])
+            initial_vals = self.cached_models if self.cached_models else ["--- Carga los modelos primero ---"]
+            self.var_model.set(prov_data.get("model", initial_vals[0] if initial_vals else ""))
+            
         if val == "Personalizado":
             self.frame_url.pack(fill="x", padx=40, pady=5, after=self.menu_provider.master)
             self.btn_fetch.pack_forget()
@@ -398,9 +431,6 @@ class ConfigAPIWindow(ctk.CTkToplevel):
             self.lbl_verify.pack(pady=5, before=self.frame_mod)
             self.entry_model.pack_forget()
             self.menu_model.pack(side="left", fill="x", expand=True)
-            
-            if not initial_load: 
-                self.var_model.set(self.cached_models[0] if self.cached_models else "--- Carga los modelos primero ---")
 
             if val == "Google Gemini":
                 self.btn_link.configure(text="👉 Obtener API Key Gratuita (Google AI Studio)", command=lambda: __import__('webbrowser').open("https://aistudio.google.com/app/apikey"))
@@ -466,7 +496,7 @@ class ConfigAPIWindow(ctk.CTkToplevel):
                 if models:
                     models = sorted(list(set(models)), reverse=True)
                     if self.var_free_only.get():
-                        models = [m for m in models if not any(x in m.lower() for x in ["pro", "opus", "gpt-4", "advanced", "sonnet"])]
+                        models = [m for m in models if not any(x in m.lower() for x in ["pro", "opus", "gpt-4", "advanced", "sonnet", "image", "video", "veo", "sora", "audio", "whisper", "embedding", "realtime", "tts"])]
                         
                     self.cached_models = models
                     if self.var_model.get() not in models:
@@ -485,6 +515,9 @@ class ConfigAPIWindow(ctk.CTkToplevel):
                 
         threading.Thread(target=_fetch, daemon=True).start()
 
+    def open_train(self):
+        messagebox.showinfo("Próximamente", "La interfaz del Tren de Modelos se implementará en la siguiente fase.")
+
     def save(self):
         settings_path = get_user_data_path(os.path.join("tools", "ai_settings.json"))
         model = self.var_model.get().strip()
@@ -492,18 +525,20 @@ class ConfigAPIWindow(ctk.CTkToplevel):
             messagebox.showwarning("Modelo Inválido", "Por favor carga y selecciona un modelo válido.")
             return
 
-        data = {
-            "provider": self.var_provider.get(),
-            "model": model,
-            "api_key": self.var_key.get().strip(),
-            "base_url": self.var_url.get().strip(),
-            "cached_models": self.cached_models,
-            "free_only": self.var_free_only.get()
-        }
+        prov = self.var_provider.get()
+        self.settings["current_provider"] = prov
+        self.settings["free_only"] = self.var_free_only.get()
+        if prov not in self.settings["providers"]:
+            self.settings["providers"][prov] = {}
+        
+        self.settings["providers"][prov]["api_key"] = self.var_key.get().strip()
+        self.settings["providers"][prov]["base_url"] = self.var_url.get().strip()
+        self.settings["providers"][prov]["model"] = model
+        self.settings["providers"][prov]["cached_models"] = self.cached_models
+
         try:
             with open(settings_path, "w", encoding="utf-8") as f:
-                json.dump(data, f, indent=4)
+                json.dump(self.settings, f, indent=4)
             messagebox.showinfo("Bóveda IA", "Clave y configuración guardadas correctamente en la bóveda local.")
-            self.destroy()
         except Exception as e:
             messagebox.showerror("Error", f"No se pudo guardar la configuración: {e}")
