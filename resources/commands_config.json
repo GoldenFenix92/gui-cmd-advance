@@ -186,6 +186,31 @@
                             "description": "Selecciona la acción a realizar sobre el adaptador seleccionado."
                         }
                     ]
+                },
+                {
+                    "name": "pathping",
+                    "description": "Combina ping y tracert. Muestra el grado de pérdida de paquetes en cualquier enrutador o vínculo intermedio.",
+                    "command": "pathping",
+                    "args": [
+                        {
+                            "name": "Destino (IP/Dominio)",
+                            "flag": "",
+                            "type": "entry",
+                            "description": "Escribe la dirección IP o el dominio destino."
+                        }
+                    ]
+                },
+                {
+                    "name": "Tabla de Enrutamiento",
+                    "description": "Muestra la tabla de enrutamiento IP local.",
+                    "command": "route print",
+                    "args": []
+                },
+                {
+                    "name": "Conexiones TCP en Vivo",
+                    "description": "Muestra las conexiones TCP activas de forma detallada usando PowerShell.",
+                    "command": "powershell -Command \"Get-NetTCPConnection | Select-Object LocalAddress, LocalPort, RemoteAddress, RemotePort, State, OwningProcess | Format-Table -AutoSize\"",
+                    "args": []
                 }
             ]
         },
@@ -372,6 +397,52 @@
                     "description": "Abre una herramienta avanzada para escanear y eliminar basura de Windows con selección individual.",
                     "command": "__INTERNAL__ --run-temp-cleaner",
                     "args": []
+                }
+            ]
+        },
+        {
+            "name": "Seguridad y Privacidad",
+            "commands": [
+                {
+                    "name": "Gestor de Firewall",
+                    "description": "Habilita o deshabilita el Firewall de Windows para todos los perfiles.",
+                    "command": "powershell -Command \"& {param($op) if($op -eq 'on'){ Set-NetFirewallProfile -Profile Domain,Public,Private -Enabled True; Write-Host 'Firewall Habilitado.' } else { Set-NetFirewallProfile -Profile Domain,Public,Private -Enabled False; Write-Host 'Firewall Deshabilitado.' } }\"",
+                    "args": [
+                        {
+                            "name": "Acción",
+                            "type": "radio_group",
+                            "options": [
+                                {
+                                    "name": "Habilitar",
+                                    "flag": "-op on"
+                                },
+                                {
+                                    "name": "Deshabilitar",
+                                    "flag": "-op off"
+                                }
+                            ],
+                            "description": "Selecciona si deseas encender o apagar el Firewall de Windows (Requiere Administrador)."
+                        }
+                    ]
+                },
+                {
+                    "name": "Visor de Eventos de Seguridad",
+                    "description": "Muestra los últimos errores críticos y advertencias del sistema en el registro de eventos.",
+                    "command": "powershell -Command \"Get-EventLog -LogName System -EntryType Error,Warning -Newest 20 | Format-Table -AutoSize\"",
+                    "args": []
+                },
+                {
+                    "name": "Permisos de Archivo/Carpeta (icacls)",
+                    "description": "Muestra los permisos de control de acceso para el archivo o carpeta especificada.",
+                    "command": "icacls",
+                    "args": [
+                        {
+                            "name": "Archivo o Carpeta",
+                            "flag": "",
+                            "type": "file_entry",
+                            "description": "Selecciona el elemento para ver sus permisos."
+                        }
+                    ]
                 }
             ]
         },
