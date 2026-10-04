@@ -8,18 +8,12 @@ import sys
 import urllib.request
 import urllib.error
 import ctypes
+from functions.utils import get_user_data_path
 
 def get_base_path():
     if getattr(sys, 'frozen', False):
         return sys._MEIPASS
     return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
-def get_user_data_path(filename):
-    if getattr(sys, 'frozen', False):
-        base_dir = os.path.dirname(sys.executable)
-    else:
-        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    return os.path.join(base_dir, filename)
 
 def center_window(window, width, height):
     window.update_idletasks()
@@ -268,6 +262,35 @@ class InterpreterApp(ctk.CTkToplevel):
     def config_api(self):
         ConfigAPIWindow(self)
 
+class CustomDropdownWindow(ctk.CTkToplevel):
+    def __init__(self, master, button, variable, values):
+        super().__init__(master)
+        self.overrideredirect(True)
+        height = min(len(values) * 32 + 10, 320)  # Max ~10 items
+        
+        x = button.winfo_rootx()
+        y = button.winfo_rooty() + button.winfo_height()
+        width = button.winfo_width()
+        
+        self.geometry(f"{width}x{height}+{x}+{y}")
+        self.attributes("-topmost", True)
+        self.grab_set()
+        
+        frame = ctk.CTkScrollableFrame(self, fg_color=("#e0e0e0", "#2b2b2b"), corner_radius=0)
+        frame.pack(fill="both", expand=True)
+        
+        for val in values:
+            b = ctk.CTkButton(frame, text=val, fg_color="transparent", hover_color=("#c8c8c8", "#334155"), 
+                              text_color=("#111", "#eee"), anchor="w", command=lambda v=val: self.select(v, variable))
+            b.pack(fill="x", padx=2, pady=1)
+            
+        self.bind("<FocusOut>", lambda e: self.destroy())
+        self.bind("<Escape>", lambda e: self.destroy())
+
+    def select(self, val, variable):
+        variable.set(val)
+        self.destroy()
+
 
 class ConfigAPIWindow(ctk.CTkToplevel):
     def __init__(self, parent=None):
@@ -335,7 +358,11 @@ class ConfigAPIWindow(ctk.CTkToplevel):
         initial_vals = self.cached_models if self.cached_models else (
             [self.var_model.get()] if self.var_model.get() else ["--- Carga los modelos primero ---"]
         )
-        self.menu_model = ctk.CTkComboBox(self.frame_mod, variable=self.var_model, values=initial_vals, state="readonly")
+        if not self.var_model.get(): self.var_model.set(initial_vals[0])
+        
+        self.menu_model = ctk.CTkButton(self.frame_mod, textvariable=self.var_model, fg_color=("#d9d9d9", "#34495e"), 
+                                        text_color=("#111", "#eee"), hover_color=("#c8c8c8", "#2c3e50"), 
+                                        anchor="w", command=self.open_model_dropdown)
         self.menu_model.pack(side="left", fill="x", expand=True)
         
         self.entry_model = ctk.CTkEntry(self.frame_mod, textvariable=self.var_model)
@@ -366,8 +393,7 @@ class ConfigAPIWindow(ctk.CTkToplevel):
             self.menu_model.pack(side="left", fill="x", expand=True)
             
             if not initial_load: 
-                self.var_model.set("")
-                self.menu_model.configure(values=self.cached_models if self.cached_models else ["--- Carga los modelos primero ---"])
+                self.var_model.set(self.cached_models[0] if self.cached_models else "--- Carga los modelos primero ---")
 
             if val == "Google Gemini":
                 self.btn_link.configure(text="👉 Obtener API Key Gratuita (Google AI Studio)", command=lambda: __import__('webbrowser').open("https://aistudio.google.com/app/apikey"))
@@ -377,6 +403,10 @@ class ConfigAPIWindow(ctk.CTkToplevel):
                 self.btn_link.configure(text="👉 Obtener API Key (Anthropic Console)", command=lambda: __import__('webbrowser').open("https://console.anthropic.com/settings/keys"))
             elif val == "Groq":
                 self.btn_link.configure(text="👉 Obtener API Key Gratuita (Groq Cloud)", command=lambda: __import__('webbrowser').open("https://console.groq.com/keys"))
+
+    def open_model_dropdown(self):
+        vals = self.cached_models if self.cached_models else ["--- Carga los modelos primero ---"]
+        CustomDropdownWindow(self, self.menu_model, self.var_model, vals)
 
     def open_link(self):
         __import__('webbrowser').open("https://aistudio.google.com/app/apikey")
@@ -424,12 +454,8 @@ class ConfigAPIWindow(ctk.CTkToplevel):
 
                 if models:
                     models = sorted(list(set(models)), reverse=True)
-                    # No limit to the number of models, CTkComboBox uses scrollbar automatically
-                    
                     self.cached_models = models
-                    self.after(0, lambda: self.menu_model.configure(values=models))
                     if self.var_model.get() not in models:
-                        # Prioritize popular models
                         if provider == "Google Gemini" and "gemini-1.5-flash" in models: self.after(0, lambda: self.var_model.set("gemini-1.5-flash"))
                         else: self.after(0, lambda: self.var_model.set(models[0]))
                     self.after(0, lambda: self.lbl_verify.configure(text=f"✅ ¡Éxito! Se cargaron {len(models)} modelos disponibles.", text_color="#2ECC71"))
