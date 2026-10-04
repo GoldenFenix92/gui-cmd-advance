@@ -41,12 +41,23 @@ def apply_dark_titlebar(window):
         pass
 
 def get_api_settings():
-    settings_path = get_user_data_path("ai_settings.json")
+    old_settings_path = get_user_data_path("ai_settings.json")
+    tools_dir = get_user_data_path("tools")
+    os.makedirs(tools_dir, exist_ok=True)
+    settings_path = os.path.join(tools_dir, "ai_settings.json")
+    
+    # Migrate old settings if present
+    if os.path.exists(old_settings_path) and not os.path.exists(settings_path):
+        import shutil
+        try: shutil.move(old_settings_path, settings_path)
+        except: pass
+
     default_settings = {
         "provider": "Google Gemini",
         "api_key": "",
         "model": "",
-        "base_url": ""
+        "base_url": "",
+        "cached_models": []
     }
     try:
         if os.path.exists(settings_path):
@@ -277,7 +288,7 @@ class ConfigAPIWindow(ctk.CTkToplevel):
         self.grab_set()
 
         self.settings = get_api_settings()
-        self.models_list = []
+        self.cached_models = self.settings.get("cached_models", [])
 
         lbl1 = ctk.CTkLabel(self, text="Gestor de Modelos de Lenguaje (LLM)", font=("Arial", 18, "bold"))
         lbl1.pack(pady=(20, 10))
@@ -321,7 +332,10 @@ class ConfigAPIWindow(ctk.CTkToplevel):
         ctk.CTkLabel(self.frame_mod, text="Modelo:", width=100, anchor="w").pack(side="left")
         self.var_model = ctk.StringVar(value=self.settings.get("model", ""))
         
-        self.menu_model = ctk.CTkComboBox(self.frame_mod, variable=self.var_model, values=[self.var_model.get()] if self.var_model.get() else ["--- Carga los modelos primero ---"], state="readonly")
+        initial_vals = self.cached_models if self.cached_models else (
+            [self.var_model.get()] if self.var_model.get() else ["--- Carga los modelos primero ---"]
+        )
+        self.menu_model = ctk.CTkComboBox(self.frame_mod, variable=self.var_model, values=initial_vals, state="readonly")
         self.menu_model.pack(side="left", fill="x", expand=True)
         
         self.entry_model = ctk.CTkEntry(self.frame_mod, textvariable=self.var_model)
@@ -353,7 +367,7 @@ class ConfigAPIWindow(ctk.CTkToplevel):
             
             if not initial_load: 
                 self.var_model.set("")
-                self.menu_model.configure(values=["--- Carga los modelos primero ---"])
+                self.menu_model.configure(values=self.cached_models if self.cached_models else ["--- Carga los modelos primero ---"])
 
             if val == "Google Gemini":
                 self.btn_link.configure(text="👉 Obtener API Key Gratuita (Google AI Studio)", command=lambda: __import__('webbrowser').open("https://aistudio.google.com/app/apikey"))
@@ -410,15 +424,9 @@ class ConfigAPIWindow(ctk.CTkToplevel):
 
                 if models:
                     models = sorted(list(set(models)), reverse=True)
-                    # Filter junk models and limit to top 10-12
-                    clean_models = []
-                    for m in models:
-                        ml = m.lower()
-                        if any(x in ml for x in ["vision", "embedding", "tts", "aqa", "bison", "gecko", "audio", "whisper", "dall-e", "davinci", "babbage", "instruct"]): continue
-                        clean_models.append(m)
+                    # No limit to the number of models, CTkComboBox uses scrollbar automatically
                     
-                    models = clean_models[:12] # Limit to top 12 to avoid giant dropdown
-                    
+                    self.cached_models = models
                     self.after(0, lambda: self.menu_model.configure(values=models))
                     if self.var_model.get() not in models:
                         # Prioritize popular models
@@ -438,7 +446,7 @@ class ConfigAPIWindow(ctk.CTkToplevel):
         threading.Thread(target=_fetch, daemon=True).start()
 
     def save(self):
-        settings_path = get_user_data_path("ai_settings.json")
+        settings_path = get_user_data_path(os.path.join("tools", "ai_settings.json"))
         model = self.var_model.get().strip()
         if not model or model.startswith("---"):
             messagebox.showwarning("Modelo Inválido", "Por favor carga y selecciona un modelo válido.")
@@ -448,7 +456,8 @@ class ConfigAPIWindow(ctk.CTkToplevel):
             "provider": self.var_provider.get(),
             "model": model,
             "api_key": self.var_key.get().strip(),
-            "base_url": self.var_url.get().strip()
+            "base_url": self.var_url.get().strip(),
+            "cached_models": self.cached_models
         }
         try:
             with open(settings_path, "w", encoding="utf-8") as f:

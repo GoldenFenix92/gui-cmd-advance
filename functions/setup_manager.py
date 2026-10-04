@@ -9,6 +9,17 @@ from tkinter import messagebox
 from functions.utils import get_user_data_path
 
 PLUGINS = {
+    "ai_vault": {
+        "id": "ai_vault",
+        "name": "Bóveda IA (Configuración Premium)",
+        "filename": "ai_settings.json",
+        "desc": "Archivo local para configurar y guardar de manera confidencial tus claves API y configuración de modelos de IA.",
+        "url": "",
+        "is_zip": False,
+        "is_local_config": True,
+        "size_str": "~1KB",
+        "cmds": []
+    },
     "ffmpeg": {
         "id": "ffmpeg",
         "name": "FFmpeg (Motor Multimedia)",
@@ -85,6 +96,14 @@ class PluginInstaller(ctk.CTkToplevel):
         final_file = os.path.join(tools_dir, self.plugin["filename"])
         
         try:
+            if self.plugin.get("is_local_config"):
+                with open(final_file, "w", encoding="utf-8") as f:
+                    f.write("{}")
+                self.lbl_status.configure(text="¡Bóveda creada exitosamente!")
+                self.btn_cancel.configure(text="Cerrar", command=self.finish_success)
+                self.after(1000, self.finish_success)
+                return
+
             def report(blocknum, blocksize, totalsize):
                 if self.is_cancelled:
                     raise Exception("Cancelado por el usuario")
