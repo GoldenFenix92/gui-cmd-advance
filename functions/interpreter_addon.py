@@ -127,11 +127,18 @@ class InterpreterApp(ctk.CTkToplevel):
         if not content:
             messagebox.showwarning("Vacío", "No hay nada que exportar.")
             return
-        file_path = filedialog.asksaveasfilename(defaultextension=".md", filetypes=[("Markdown", "*.md"), ("Texto plano", "*.txt")], title="Guardar Interpretación")
+        file_path = filedialog.asksaveasfilename(defaultextension=".html", filetypes=[("HTML Document", "*.html"), ("Markdown", "*.md"), ("Texto plano", "*.txt")], title="Guardar Interpretación")
         if file_path:
             try:
                 with open(file_path, "w", encoding="utf-8") as f:
-                    f.write(content)
+                    if file_path.endswith(".html"):
+                        html = content
+                        html = re.sub(r'\*\*(.*?)\*\*', r'<b>\1</b>', html)
+                        html = re.sub(r'\*(.*?)\*', r'<i>\1</i>', html)
+                        html = html.replace('\n', '<br>')
+                        f.write(f"<!DOCTYPE html><html><head><meta charset='utf-8'><style>body{{font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; line-height: 1.6; color: #eee; background-color: #1e1e1e;}} .container{{max-width: 800px; margin: 0 auto; background: #2d2d2d; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.3);}} h2{{color: #4da6ff;}}</style></head><body><div class='container'><h2>✨ Reporte Interpretado</h2>{html}</div></body></html>")
+                    else:
+                        f.write(content)
                 messagebox.showinfo("Guardado", f"Interpretación exportada exitosamente.\n{file_path}")
             except Exception as e:
                 messagebox.showerror("Error", f"No se pudo guardar: {e}")
@@ -403,6 +410,15 @@ class ConfigAPIWindow(ctk.CTkToplevel):
 
                 if models:
                     models = sorted(list(set(models)), reverse=True)
+                    # Filter junk models and limit to top 10-12
+                    clean_models = []
+                    for m in models:
+                        ml = m.lower()
+                        if any(x in ml for x in ["vision", "embedding", "tts", "aqa", "bison", "gecko", "audio", "whisper", "dall-e", "davinci", "babbage", "instruct"]): continue
+                        clean_models.append(m)
+                    
+                    models = clean_models[:12] # Limit to top 12 to avoid giant dropdown
+                    
                     self.after(0, lambda: self.menu_model.configure(values=models))
                     if self.var_model.get() not in models:
                         # Prioritize popular models
