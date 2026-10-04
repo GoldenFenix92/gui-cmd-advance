@@ -2,6 +2,7 @@ import customtkinter as ctk
 import os
 import re
 import json
+import tkinter as tk
 from tkinter import filedialog, messagebox
 import threading
 import sys
@@ -220,25 +221,40 @@ class InterpreterApp(ctk.CTkToplevel):
         if not content: return
         settings = get_api_settings()
         
-        provider = settings.get("current_provider", "Google Gemini")
-        prov_data = settings.get("providers", {}).get(provider, {})
-        
-        if not prov_data.get("api_key") or not prov_data.get("model"):
-            if messagebox.askyesno("API Key", "Falta configurar la API o el modelo. ¿Deseas configurarlos ahora?"):
-                self.config_api()
-            return
+        train = settings.get("model_train", [])
+        if not train:
+            provider = settings.get("current_provider", "Google Gemini")
+            prov_data = settings.get("providers", {}).get(provider, {})
+            if not prov_data.get("api_key") or not prov_data.get("model"):
+                if messagebox.askyesno("API Key", "Falta configurar la API o el modelo. ¿Deseas configurarlos ahora?"):
+                    self.config_api()
+                return
+            train = [{"provider": provider, "model": prov_data.get("model")}]
+            
         self.lbl_status.configure(text="Conectando con IA... Por favor espera.")
         self.set_output("Analizando con IA... ⏳\n\nSi el reporte es muy largo, esto puede tomar unos segundos.")
-        threading.Thread(target=self._call_api, args=(settings, content), daemon=True).start()
+        threading.Thread(target=self._run_train, args=(settings, train, content, 0), daemon=True).start()
 
-    def _call_api(self, settings, content):
-        provider = settings.get("current_provider", "Google Gemini")
+    def _run_train(self, settings, train, content, index):
+        if index >= len(train):
+            self.after(0, self.set_output, "🔴 Error de conexión: Se agotó el Tren de Modelos. Todos los intentos fallaron (Verifica tus llaves API o saldo 429).")
+            self.after(0, lambda: self.lbl_status.configure(text="Error fatal en el Tren de Modelos."))
+            return
+            
+        current = train[index]
+        provider = current["provider"]
+        model = current["model"]
+        
         prov_data = settings.get("providers", {}).get(provider, {})
         api_key = prov_data.get("api_key", "")
-        model = prov_data.get("model", "")
         base_url = prov_data.get("base_url", "")
+        
+        if not api_key:
+            self._run_train(settings, train, content, index + 1)
+            return
 
         prompt = "Instrucción estricta: Traduce este resultado crudo de consola a lenguaje natural, indicando proceso, significado y errores. Usa emojis. ESTÁ ESTRICTAMENTE PROHIBIDO usar formato Markdown (sin asteriscos **, sin numerales ##, sin cursivas). Devuelve texto plano totalmente limpio.\n\n" + content
+        
         try:
             if provider == "Google Gemini":
                 url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
@@ -275,8 +291,8 @@ class InterpreterApp(ctk.CTkToplevel):
             self.after(0, lambda: self.lbl_status.configure(text=f"Análisis completado usando {provider} ({model})."))
 
         except Exception as e:
-            self.after(0, self.set_output, f"🔴 Error de conexión: {str(e)}")
-            self.after(0, lambda: self.lbl_status.configure(text="Error al conectar con IA."))
+            self.after(0, lambda p=provider, m=model: self.lbl_status.configure(text=f"⚠️ {p} ({m}) falló. Saltando al siguiente..."))
+            self._run_train(settings, train, content, index + 1)
 
     def set_output(self, text):
         self.txt_out.configure(state="normal")
@@ -286,6 +302,85 @@ class InterpreterApp(ctk.CTkToplevel):
 
     def config_api(self):
         ConfigAPIWindow(self)
+
+class ModelTrainWindow(ctk.CTkToplevel):
+    def __init__(self, master, settings_ref, save_callback):
+        super().__init__(master)
+        self.title("🚂 Configuración de Tren de Modelos (Fallback)")
+        center_window(self, 700, 450)
+        self.attributes("-topmost", True)
+        self.grab_set()
+
+        self.settings = settings_ref
+        self.save_callback = save_callback
+        self.train_list = list(self.settings.get("model_train", []))
+
+        # Layout
+        left_frame = ctk.CTkFrame(self)
+        left_frame.pack(side="left", fill="both", expand=True, padx=15, pady=15)
+
+        mid_frame = ctk.CTkFrame(self, fg_color="transparent")
+        mid_frame.pack(side="left", fill="y", padx=5, pady=50)
+
+        right_frame = ctk.CTkFrame(self)
+        right_frame.pack(side="left", fill="both", expand=True, padx=15, pady=15)
+
+        # Left Column (Available Models)
+        valid_provs = [p for p, d in self.settings.get("providers", {}).items() if d.get("api_key")]
+        if not valid_provs: valid_provs = ["Ninguno"]
+        
+        self.var_prov = ctk.StringVar(value=valid_provs[0])
+        opt_prov = ctk.CTkOptionMenu(left_frame, variable=self.var_prov, values=valid_provs, command=self.load_models)
+        opt_prov.pack(fill="x", padx=10, pady=10)
+
+        self.lb_avail = tk.Listbox(left_frame, bg="#1e1e1e", fg="#e0e0e0", selectbackground="#3498db", font=("Segoe UI", 11), highlightthickness=0, borderwidth=0)
+        self.lb_avail.pack(fill="both", expand=True, padx=10, pady=(0,10))
+
+        # Mid Column (Arrows)
+        btn_add = ctk.CTkButton(mid_frame, text="▶ Añadir", width=80, fg_color="#3498DB", hover_color="#2980B9", command=self.add_to_train)
+        btn_add.pack(pady=10)
+        btn_rem = ctk.CTkButton(mid_frame, text="◀ Quitar", width=80, fg_color="#E74C3C", hover_color="#C0392B", command=self.rem_from_train)
+        btn_rem.pack(pady=10)
+
+        # Right Column (Train)
+        ctk.CTkLabel(right_frame, text="Vagones del Tren (Orden de ejecución):", font=("Arial", 12, "bold")).pack(pady=10)
+        self.lb_train = tk.Listbox(right_frame, bg="#1e1e1e", fg="#e0e0e0", selectbackground="#3498db", font=("Segoe UI", 11), highlightthickness=0, borderwidth=0)
+        self.lb_train.pack(fill="both", expand=True, padx=10, pady=(0,10))
+
+        btn_save = ctk.CTkButton(self, text="💾 Guardar Tren", fg_color="#27AE60", hover_color="#2ECC71", command=self.save)
+        btn_save.pack(side="bottom", pady=15)
+
+        self.load_models(self.var_prov.get())
+        self.render_train()
+
+    def load_models(self, prov):
+        self.lb_avail.delete(0, tk.END)
+        models = self.settings.get("providers", {}).get(prov, {}).get("cached_models", [])
+        for m in models:
+            self.lb_avail.insert(tk.END, m)
+
+    def render_train(self):
+        self.lb_train.delete(0, tk.END)
+        for item in self.train_list:
+            self.lb_train.insert(tk.END, f"[{item['provider']}] {item['model']}")
+
+    def add_to_train(self):
+        sel = self.lb_avail.curselection()
+        if sel:
+            mod = self.lb_avail.get(sel[0])
+            self.train_list.append({"provider": self.var_prov.get(), "model": mod})
+            self.render_train()
+
+    def rem_from_train(self):
+        sel = self.lb_train.curselection()
+        if sel:
+            self.train_list.pop(sel[0])
+            self.render_train()
+
+    def save(self):
+        self.settings["model_train"] = self.train_list
+        self.save_callback()
+        self.destroy()
 
 class CustomDropdownWindow(ctk.CTkToplevel):
     def __init__(self, master, button, variable, values):
@@ -520,7 +615,14 @@ class ConfigAPIWindow(ctk.CTkToplevel):
         threading.Thread(target=_fetch, daemon=True).start()
 
     def open_train(self):
-        messagebox.showinfo("Próximamente", "La interfaz del Tren de Modelos se implementará en la siguiente fase.")
+        ModelTrainWindow(self, self.settings, self.save_silent)
+
+    def save_silent(self):
+        settings_path = get_user_data_path(os.path.join("tools", "ai_settings.json"))
+        try:
+            with open(settings_path, "w", encoding="utf-8") as f:
+                json.dump(self.settings, f, indent=4)
+        except: pass
 
     def save(self):
         settings_path = get_user_data_path(os.path.join("tools", "ai_settings.json"))
