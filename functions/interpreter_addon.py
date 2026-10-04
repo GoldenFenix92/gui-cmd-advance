@@ -77,7 +77,7 @@ class InterpreterApp(ctk.CTkToplevel):
         self.transient(parent)
         self.grab_set()
 
-        self.grid_rowconfigure(1, weight=1)
+        self.grid_rowconfigure(2, weight=1)
         self.grid_columnconfigure(0, weight=1)
         self.grid_columnconfigure(1, weight=1)
 
@@ -111,8 +111,30 @@ class InterpreterApp(ctk.CTkToplevel):
         self.txt_out.grid(row=2, column=1, padx=15, pady=(0, 15), sticky="nsew")
         self.txt_out.configure(state="disabled")
 
-        self.lbl_status = ctk.CTkLabel(self, text="Listo.", text_color="gray")
-        self.lbl_status.grid(row=3, column=0, columnspan=2, padx=15, pady=(0, 10), sticky="w")
+        # Bottom Frame for Status and Export Buttons
+        self.bottom_frame = ctk.CTkFrame(self, fg_color="transparent")
+        self.bottom_frame.grid(row=3, column=0, columnspan=2, padx=15, pady=(0, 10), sticky="ew")
+        
+        self.lbl_status = ctk.CTkLabel(self.bottom_frame, text="Listo.", text_color="gray")
+        self.lbl_status.pack(side="left")
+
+        self.btn_export = ctk.CTkButton(self.bottom_frame, text="💾 Exportar Interpretación", width=160, fg_color="#27AE60", hover_color="#2ECC71", command=self.export_interpretation)
+        self.btn_export.pack(side="right", padx=(10, 0))
+
+
+    def export_interpretation(self):
+        content = self.txt_out.get("1.0", "end").strip()
+        if not content:
+            messagebox.showwarning("Vacío", "No hay nada que exportar.")
+            return
+        file_path = filedialog.asksaveasfilename(defaultextension=".md", filetypes=[("Markdown", "*.md"), ("Texto plano", "*.txt")], title="Guardar Interpretación")
+        if file_path:
+            try:
+                with open(file_path, "w", encoding="utf-8") as f:
+                    f.write(content)
+                messagebox.showinfo("Guardado", f"Interpretación exportada exitosamente.\n{file_path}")
+            except Exception as e:
+                messagebox.showerror("Error", f"No se pudo guardar: {e}")
 
     def load_file(self):
         file_path = filedialog.askopenfilename(filetypes=[("Archivos de texto/log", "*.txt *.log"), ("Todos los archivos", "*.*")])
