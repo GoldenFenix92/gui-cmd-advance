@@ -291,7 +291,8 @@ class ConfigAPIWindow(ctk.CTkToplevel):
         self.frame_mod.pack(fill="x", padx=40, pady=10)
         ctk.CTkLabel(self.frame_mod, text="Modelo:", width=100, anchor="w").pack(side="left")
         self.var_model = ctk.StringVar(value=self.settings.get("model", ""))
-        self.menu_model = ctk.CTkOptionMenu(self.frame_mod, variable=self.var_model, values=[self.var_model.get()] if self.var_model.get() else ["--- Carga los modelos primero ---"])
+        
+        self.menu_model = ctk.CTkComboBox(self.frame_mod, variable=self.var_model, values=[self.var_model.get()] if self.var_model.get() else ["--- Carga los modelos primero ---"], state="readonly")
         self.menu_model.pack(side="left", fill="x", expand=True)
         
         self.entry_model = ctk.CTkEntry(self.frame_mod, textvariable=self.var_model)
@@ -379,7 +380,7 @@ class ConfigAPIWindow(ctk.CTkToplevel):
                     urllib.request.urlopen(req)
 
                 if models:
-                    models = sorted(list(set(models)))
+                    models = sorted(list(set(models)), reverse=True)
                     self.after(0, lambda: self.menu_model.configure(values=models))
                     if self.var_model.get() not in models:
                         # Prioritize popular models
