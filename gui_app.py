@@ -182,6 +182,10 @@ class App(ctk.CTk):
         
         self.convert_btn = ctk.CTkButton(self.btn_frame, text="Convertir Reporte Antiguo", width=150, command=self.convert_old_report, fg_color="#475569", hover_color="#334155")
         self.convert_btn.pack(side="left")
+
+        self.interpreter_btn = ctk.CTkButton(self.btn_frame, text="✨ Interpretar Resultados", width=150, command=self.run_interpreter, fg_color="#8E44AD", hover_color="#9B59B6")
+        self.interpreter_btn.pack(side="left", padx=(10, 0))
+        if CTkToolTip: CTkToolTip(self.interpreter_btn, message="Analiza el reporte con Inteligencia Artificial o de manera local")
         
         # Dashboard (Status Bar)
         self.status_bar = ctk.CTkFrame(self.right_frame, height=25, fg_color="transparent")
@@ -977,6 +981,13 @@ class App(ctk.CTk):
         
         lbl_title = ctk.CTkLabel(win, text="Complementos Disponibles", font=("Arial", 16, "bold"))
         lbl_title.pack(pady=15)
+
+        def open_ai_config():
+            from functions.interpreter_addon import ConfigAPIWindow
+            ConfigAPIWindow(self)
+
+        btn_ai_config = ctk.CTkButton(win, text="⚙️ Configurar Bóveda IA", fg_color="#8E44AD", hover_color="#9B59B6", command=open_ai_config)
+        btn_ai_config.pack(pady=(0, 15))
         
         frame = ctk.CTkScrollableFrame(win)
         frame.pack(fill="both", expand=True, padx=20, pady=(0, 20))
@@ -1102,6 +1113,12 @@ class App(ctk.CTk):
             self.output_textbox.insert("end", f"\n[!] Reporte Exportado con Plantilla a: {file_path}\n", "success")
             self.output_textbox.see("end")
             self.output_textbox.configure(state="disabled")
+
+
+    def run_interpreter(self):
+        text_content = self.output_textbox.get("1.0", "end")
+        from functions.interpreter_addon import InterpreterApp
+        InterpreterApp(self, initial_text=text_content)
 
     def convert_old_report(self):
         # Abre un archivo antiguo (.txt o .html basico) y lo convierte al nuevo formato
