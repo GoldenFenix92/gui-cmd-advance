@@ -15,6 +15,7 @@
     *   **Limpiador Temp Avanzado:** Escanea de forma asíncrona y vacía cachés de Windows Update, Prefetch y Temp.
     *   **Búsqueda Avanzada de Texto:** Un wrapper ultra-rápido de Findstr que agrupa múltiples coincidencias por archivo, soporta Regex y abre archivos nativamente.
     *   **Visor SMART Avanzado:** Extrae y decodifica a bajo nivel los bloques WMI/CIM de discos SATA y NVMe para diagnosticar la salud de tus discos (temperatura, horas de encendido, sectores reasignados) con una interfaz similar a CrystalDiskInfo.
+    *   **Bóveda IA y Tren de Modelos:** Integración profunda con Google Gemini, OpenAI, Claude, Deepseek y Groq. Permite configurar múltiples llaves simultáneas (Multi-Agente) e implementar un "Tren de Modelos" que salta automáticamente a otros modelos si el primero falla por cuotas excedidas (Error 429), garantizando una interpretación infalible. Además cuenta con un simulador de conexión para testear las cuotas de tu Tren.
     *   **Despliegue de Office (ODT):** Herramienta gráfica interna para descargar, configurar el XML e instalar Microsoft Office LTSC 2019/2021/2024.
 *   **🎨 Interfaz Moderna (CustomTkinter):**
     *   Soporte dinámico para **Modo Claro** y **Modo Oscuro** con un estilo **Flat Design** sin bordes molestos.

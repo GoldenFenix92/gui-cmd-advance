@@ -117,6 +117,10 @@ class InterpreterApp(ctk.CTkToplevel):
         self.btn_online = ctk.CTkButton(self.top_frame, text="🧠 Analizar con IA (Online)", width=160, fg_color="#8E44AD", hover_color="#9B59B6", command=self.run_online)
         self.btn_online.pack(side="left", padx=(0, 10))
 
+        self.var_use_train = ctk.BooleanVar(value=False)
+        self.chk_train = ctk.CTkCheckBox(self.top_frame, text="Usar Tren de Modelos", variable=self.var_use_train)
+        self.chk_train.pack(side="left", padx=(0, 10))
+
         self.btn_config = ctk.CTkButton(self.top_frame, text="⚙️ Configurar API (IA)", width=150, fg_color="#475569", hover_color="#334155", command=self.config_api)
         self.btn_config.pack(side="right")
 
@@ -221,7 +225,9 @@ class InterpreterApp(ctk.CTkToplevel):
         if not content: return
         settings = get_api_settings()
         
-        train = settings.get("model_train", [])
+        use_train = self.var_use_train.get()
+        train = settings.get("model_train", []) if use_train else []
+        
         if not train:
             provider = settings.get("current_provider", "Google Gemini")
             prov_data = settings.get("providers", {}).get(provider, {})
@@ -347,6 +353,9 @@ class ModelTrainWindow(ctk.CTkToplevel):
         self.lb_train = tk.Listbox(right_frame, bg="#1e1e1e", fg="#e0e0e0", selectbackground="#3498db", font=("Segoe UI", 11), highlightthickness=0, borderwidth=0)
         self.lb_train.pack(fill="both", expand=True, padx=10, pady=(0,10))
 
+        btn_test = ctk.CTkButton(right_frame, text="🧪 Testear Tren (Reporte)", fg_color="#F39C12", hover_color="#D68910", command=self.test_train)
+        btn_test.pack(pady=5)
+
         btn_save = ctk.CTkButton(self, text="💾 Guardar Tren", fg_color="#27AE60", hover_color="#2ECC71", command=self.save)
         btn_save.pack(side="bottom", pady=15)
 
@@ -376,6 +385,74 @@ class ModelTrainWindow(ctk.CTkToplevel):
         if sel:
             self.train_list.pop(sel[0])
             self.render_train()
+
+    def test_train(self):
+        if not self.train_list:
+            messagebox.showwarning("Tren Vacío", "No hay modelos en el tren para testear.")
+            return
+
+        test_win = ctk.CTkToplevel(self)
+        test_win.title("🧪 Reporte de Efectividad de Modelos")
+        center_window(test_win, 650, 400)
+        test_win.attributes("-topmost", True)
+        
+        txt = ctk.CTkTextbox(test_win, font=("Consolas", 12))
+        txt.pack(fill="both", expand=True, padx=15, pady=15)
+        txt.insert("end", "Iniciando Test de Conectividad y Cuotas del Tren...\n\n")
+
+        def _run_test():
+            import urllib.request, urllib.error
+            for idx, item in enumerate(self.train_list):
+                prov = item["provider"]
+                mod = item["model"]
+                prov_data = self.settings.get("providers", {}).get(prov, {})
+                api_key = prov_data.get("api_key", "")
+                base_url = prov_data.get("base_url", "")
+                
+                txt.insert("end", f"[{idx+1}] Probando {prov} ({mod})... ")
+                test_win.update()
+                
+                if not api_key:
+                    txt.insert("end", "❌ SIN LLAVE API\n")
+                    continue
+                    
+                prompt = "Responde únicamente con la palabra 'OK'."
+                status = "✅ EFECTIVO (Respuesta Exitosa)"
+                
+                try:
+                    if prov == "Google Gemini":
+                        url = f"https://generativelanguage.googleapis.com/v1beta/models/{mod}:generateContent?key={api_key}"
+                        req = urllib.request.Request(url, data=json.dumps({"contents": [{"parts":[{"text": prompt}]}]}).encode('utf-8'), headers={'Content-Type': 'application/json'}, method='POST')
+                        urllib.request.urlopen(req)
+                    elif prov == "Anthropic Claude":
+                        url = "https://api.anthropic.com/v1/messages"
+                        req = urllib.request.Request(url, data=json.dumps({"model": mod, "max_tokens": 10, "messages": [{"role": "user", "content": prompt}]}).encode('utf-8'), headers={'Content-Type': 'application/json', 'x-api-key': api_key, 'anthropic-version': '2023-06-01'}, method='POST')
+                        urllib.request.urlopen(req)
+                    elif prov in ["OpenAI", "Groq", "Deepseek", "Personalizado"]:
+                        if prov == "OpenAI": url = "https://api.openai.com/v1/chat/completions"
+                        elif prov == "Groq": url = "https://api.groq.com/openai/v1/chat/completions"
+                        elif prov == "Deepseek": url = "https://api.deepseek.com/chat/completions"
+                        else: url = base_url
+                        req = urllib.request.Request(url, data=json.dumps({"model": mod, "messages": [{"role": "user", "content": prompt}]}).encode('utf-8'), headers={'Content-Type': 'application/json', 'Authorization': f'Bearer {api_key}'}, method='POST')
+                        urllib.request.urlopen(req)
+                        
+                except urllib.error.HTTPError as e:
+                    if e.code == 429:
+                        status = "⚠️ ERROR 429 (Límite de cuota excedido - No apto)"
+                    elif e.code == 404:
+                        status = "❌ ERROR 404 (El modelo no existe o sin acceso)"
+                    else:
+                        status = f"❌ ERROR HTTP {e.code}"
+                except Exception as e:
+                    status = f"❌ ERROR ({str(e)[:30]})"
+                
+                txt.insert("end", f"{status}\n")
+                test_win.update()
+                
+            txt.insert("end", "\n--- Test Finalizado ---")
+            txt.configure(state="disabled")
+            
+        threading.Thread(target=_run_test, daemon=True).start()
 
     def save(self):
         self.settings["model_train"] = self.train_list
