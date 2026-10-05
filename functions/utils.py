@@ -13,10 +13,7 @@ def get_resource_path(relative_path):
     return os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), relative_path)
 
 def get_user_data_path(relative_path):
-    if getattr(sys, 'frozen', False):
-        base_dir = os.path.dirname(sys.executable)
-    else:
-        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    base_dir = os.path.join(os.environ.get("SystemDrive", "C:") + os.sep, "GuiCmdAdvance")
     os.makedirs(base_dir, exist_ok=True)
     return os.path.join(base_dir, relative_path)
 
