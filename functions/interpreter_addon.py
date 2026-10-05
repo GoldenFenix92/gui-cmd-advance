@@ -9,7 +9,7 @@ import sys
 import urllib.request
 import urllib.error
 import ctypes
-from functions.utils import get_user_data_path
+from functions.utils import get_user_data_path, apply_window_theme
 
 def get_base_path():
     if getattr(sys, 'frozen', False):
