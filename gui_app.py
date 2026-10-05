@@ -520,7 +520,7 @@ class App(ctk.CTk):
                     lbl = ctk.CTkLabel(row_frame, text=f"{arg_name}:", wraplength=180, justify="left")
                     lbl.pack(side="left", padx=(0, 5))
                     
-                    if arg_type == "directory_entry":
+                    if arg_type in ["directory_entry", "file_entry"]:
                         def browse_folder(v=var):
                             folder = filedialog.askdirectory()
                             if folder:
@@ -528,10 +528,7 @@ class App(ctk.CTk):
                                 if " " in folder and not folder.startswith('"'):
                                     folder = f'"{folder}"'
                                 v.set(folder)
-                        btn_browse = ctk.CTkButton(row_frame, text="Examinar", width=80, command=browse_folder)
-                        btn_browse.pack(side="right", padx=(0, 10))
-                        
-                    elif arg_type == "file_entry":
+                                
                         def browse_file(v=var):
                             file_path = filedialog.askopenfilename()
                             if file_path:
@@ -539,8 +536,15 @@ class App(ctk.CTk):
                                 if " " in file_path and not file_path.startswith('"'):
                                     file_path = f'"{file_path}"'
                                 v.set(file_path)
-                        btn_browse_f = ctk.CTkButton(row_frame, text="Examinar", width=80, command=browse_file)
-                        btn_browse_f.pack(side="right", padx=(0, 10))
+                                
+                        btn_frame_paths = ctk.CTkFrame(row_frame, fg_color="transparent")
+                        btn_frame_paths.pack(side="right", padx=(0, 10))
+                        
+                        btn_browse_file = ctk.CTkButton(btn_frame_paths, text="📄 Archivo", width=60, command=browse_file)
+                        btn_browse_file.pack(side="left", padx=(0, 5))
+                        
+                        btn_browse_folder = ctk.CTkButton(btn_frame_paths, text="📁 Carpeta", width=60, command=browse_folder)
+                        btn_browse_folder.pack(side="left")
                         
                     ent = ctk.CTkEntry(row_frame, textvariable=var, placeholder_text="Escribir...", border_width=0)
                     ent.pack(side="left", fill="x", expand=True, padx=(0, 10))

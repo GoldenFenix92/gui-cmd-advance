@@ -242,7 +242,8 @@ class InterpreterApp(ctk.CTkToplevel):
 
     def _run_train(self, settings, train, content, index):
         if index >= len(train):
-            self.after(0, self.set_output, "🔴 Error de conexión: Se agotó el Tren de Modelos. Todos los intentos fallaron (Verifica tus llaves API o saldo 429).")
+            msg = "🔴 Error de conexión en los modelos.\n\nTodos los intentos fallaron (Verifica tus llaves API o saldo).\n\n💡 Consejo: Si estás usando modelos gratuitos, es posible que los servidores estén saturados. ¡Por favor, inténtalo de nuevo en un minuto mientras se liberan!"
+            self.after(0, self.set_output, msg)
             self.after(0, lambda: self.lbl_status.configure(text="Error fatal en el Tren de Modelos."))
             return
             
