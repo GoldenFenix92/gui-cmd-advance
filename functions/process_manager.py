@@ -27,6 +27,25 @@ CRITICAL_PROCESSES = {
     "searchindexer.exe": "Indexador de búsqueda de Windows."
 }
 
+CRITICAL_SERVICES = {
+    "rpcss": "Llamada a procedimiento remoto (RPC). CRÍTICO. No detener ni modificar.",
+    "dcomlaunch": "Iniciador de procesos de servidor DCOM. CRÍTICO.",
+    "plugplay": "Plug and Play. Reconoce el hardware. CRÍTICO.",
+    "samss": "Administrador de cuentas de seguridad. CRÍTICO.",
+    "eventlog": "Registro de eventos de Windows. CRÍTICO.",
+    "winmgmt": "Instrumental de administración de Windows (WMI).",
+    "dnscache": "Cliente DNS. Si se detiene perderás acceso fluido a internet.",
+    "lanmanserver": "Servidor. Comparte archivos e impresoras en red.",
+    "lanmanworkstation": "Estación de trabajo. Conecta con otros equipos.",
+    "dhcp": "Cliente DHCP. Gestiona tu dirección IP en la red.",
+    "audiosrv": "Audio de Windows. Si se detiene te quedarás sin sonido.",
+    "cryptsvc": "Servicios criptográficos. Requerido para Windows Update.",
+    "windefend": "Microsoft Defender Antivirus.",
+    "mpssvc": "Firewall de Windows Defender. Protege de accesos no autorizados.",
+    "bfe": "Motor de filtrado de base. Crítico para la red y Firewall.",
+    "w32time": "Hora de Windows. Mantiene sincronizada la fecha y hora."
+}
+
 class ProcessManagerApp(ctk.CTk):
     def __init__(self):
         super().__init__()
@@ -156,12 +175,22 @@ class ProcessManagerApp(ctk.CTk):
             status = s.get('status', 'N/A')
             start_type = s.get('start_type', 'N/A')
             
-            ctk.CTkLabel(self.scroll_serv, text=display, width=250, anchor="w").grid(row=i, column=0, padx=5, pady=2, sticky="w")
-            ctk.CTkLabel(self.scroll_serv, text=status, width=100).grid(row=i, column=1, padx=5, pady=2)
-            ctk.CTkLabel(self.scroll_serv, text=start_type, width=100).grid(row=i, column=2, padx=5, pady=2)
+            name_lower = name.lower()
+            is_critical = name_lower in CRITICAL_SERVICES
+            
+            # Color coding
+            text_color = "#E74C3C" if is_critical else "white"
+            
+            ctk.CTkLabel(self.scroll_serv, text=display, width=250, anchor="w", text_color=text_color).grid(row=i, column=0, padx=5, pady=2, sticky="w")
+            ctk.CTkLabel(self.scroll_serv, text=status, width=100, text_color=text_color).grid(row=i, column=1, padx=5, pady=2)
+            ctk.CTkLabel(self.scroll_serv, text=start_type, width=100, text_color=text_color).grid(row=i, column=2, padx=5, pady=2)
             
             btn_frame = ctk.CTkFrame(self.scroll_serv, fg_color="transparent")
             btn_frame.grid(row=i, column=3, padx=5, pady=2)
+            
+            btn_info = ctk.CTkButton(btn_frame, text="ℹ️", width=30, fg_color="#3498DB", hover_color="#2980B9",
+                                     command=lambda n=name_lower: self.show_service_info(n))
+            btn_info.pack(side="left", padx=2)
             
             if start_type != 'manual':
                 ctk.CTkButton(btn_frame, text="A Manual", width=70, fg_color="#F39C12", hover_color="#D68910",
@@ -170,6 +199,13 @@ class ProcessManagerApp(ctk.CTk):
             if status == 'running':
                 ctk.CTkButton(btn_frame, text="Detener", width=70, fg_color="#E74C3C", hover_color="#C0392B",
                               command=lambda n=name: self.stop_service(n)).pack(side="left", padx=2)
+
+    def show_service_info(self, name_lower):
+        if name_lower in CRITICAL_SERVICES:
+            desc = CRITICAL_SERVICES[name_lower]
+            messagebox.showwarning("Servicio Crítico / Delicado", f"Servicio: {name_lower}\n\n{desc}\n\nSe recomienda NO cambiar a Manual ni detener este servicio.", parent=self)
+        else:
+            messagebox.showinfo("Servicio Secundario", f"Servicio: {name_lower}\n\nEste servicio no está catalogado como crítico del núcleo de Windows. Generalmente es seguro cambiarlo a Manual si pertenece a aplicaciones de terceros (como actualizadores) para ahorrar RAM. Si algo deja de funcionar, puedes volver a iniciarlo.", parent=self)
 
     def kill_process(self, pid, name):
         try:
