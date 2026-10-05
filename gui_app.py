@@ -1032,7 +1032,10 @@ class App(ctk.CTk):
                     win.destroy()
                     self.quit()
                     import ctypes
-                    ctypes.windll.shell32.ShellExecuteW(None, "open", sys.executable, "", None, 1)
+                    if getattr(sys, 'frozen', False):
+                        ctypes.windll.shell32.ShellExecuteW(None, "open", sys.executable, "", None, 1)
+                    else:
+                        ctypes.windll.shell32.ShellExecuteW(None, "open", sys.executable, f'"{os.path.abspath(sys.argv[0])}"', None, 1)
                     os._exit(0)
                 except Exception as e:
                     from tkinter import messagebox
