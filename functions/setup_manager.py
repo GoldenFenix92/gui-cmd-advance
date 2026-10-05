@@ -6,7 +6,7 @@ import shutil
 import json
 import customtkinter as ctk
 from tkinter import messagebox
-from functions.utils import get_user_data_path
+from functions.utils import get_user_data_path, apply_window_theme
 
 PLUGINS = {
     "ai_vault": {
@@ -59,13 +59,7 @@ class PluginInstaller(ctk.CTkToplevel):
         self.geometry(f"+{x}+{y}")
         self.protocol("WM_DELETE_WINDOW", self.cancel)
         
-        def set_win_icon():
-            try: 
-                from functions.utils import get_resource_path
-                self.iconbitmap(get_resource_path("resources/app_icon.ico"))
-            except: pass
-        self.after(200, set_win_icon)
-        
+        apply_window_theme(self)
         lbl_title = ctk.CTkLabel(self, text=f"Descargando {self.plugin['name']}", font=("Arial", 16, "bold"))
         lbl_title.pack(pady=(20, 10))
         
@@ -155,13 +149,7 @@ class StartupCheck(ctk.CTkToplevel):
         self.geometry(f"+{x}+{y}")
         self.protocol("WM_DELETE_WINDOW", self.close)
         
-        def set_win_icon():
-            try: 
-                from functions.utils import get_resource_path
-                self.iconbitmap(get_resource_path("resources/app_icon.ico"))
-            except: pass
-        self.after(200, set_win_icon)
-        
+        apply_window_theme(self)
         lbl = ctk.CTkLabel(self, text="Para mantener la app ligera, algunos componentes no vienen incluidos. Algunas funciones estarán bloqueadas hasta que los instales.", wraplength=450, justify="left")
         lbl.pack(pady=10, padx=20)
         

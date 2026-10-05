@@ -957,7 +957,7 @@ class App(ctk.CTk):
             return f"<html><body><h1>{title}</h1><pre>{content}</pre></body></html>"
 
     def show_plugins(self):
-        from functions.utils import get_user_data_path
+        from functions.utils import get_user_data_path, apply_window_theme
         from functions.setup_manager import PLUGINS, PluginInstaller
         import os
         import subprocess
@@ -974,10 +974,7 @@ class App(ctk.CTk):
         y = int(self.winfo_y() + (self.winfo_height() / 2) - (450 / 2))
         win.geometry(f"+{x}+{y}")
         
-        def set_win_icon():
-            try: win.iconbitmap(get_resource_path("resources/app_icon.ico"))
-            except: pass
-        win.after(200, set_win_icon)
+        apply_window_theme(win)
         
         lbl_title = ctk.CTkLabel(win, text="Complementos Disponibles", font=("Arial", 16, "bold"))
         lbl_title.pack(pady=15)

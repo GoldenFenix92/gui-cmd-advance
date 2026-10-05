@@ -25,3 +25,20 @@ def get_ffmpeg_path():
     if os.path.exists(local_ffmpeg):
         return local_ffmpeg
     return "ffmpeg"
+
+def apply_window_theme(window):
+    def _apply():
+        try:
+            window.iconbitmap(get_resource_path('resources/app_icon.ico'))
+        except: pass
+        import customtkinter as ctk
+        if ctk.get_appearance_mode().lower() == 'dark':
+            try:
+                import ctypes
+                window.update()
+                hwnd = ctypes.windll.user32.GetParent(window.winfo_id())
+                DWMWA_USE_IMMERSIVE_DARK_MODE = 20
+                value = ctypes.c_int(2)
+                ctypes.windll.dwmapi.DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, ctypes.byref(value), ctypes.sizeof(value))
+            except: pass
+    window.after(200, _apply)

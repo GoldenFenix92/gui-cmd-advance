@@ -316,6 +316,7 @@ class ModelTrainWindow(ctk.CTkToplevel):
         center_window(self, 700, 450)
         self.attributes("-topmost", True)
         self.grab_set()
+        apply_window_theme(self)
 
         self.settings = settings_ref
         self.save_callback = save_callback
@@ -395,6 +396,8 @@ class ModelTrainWindow(ctk.CTkToplevel):
         test_win.title("🧪 Reporte de Efectividad de Modelos")
         center_window(test_win, 650, 400)
         test_win.attributes("-topmost", True)
+        test_win.grab_set()
+        apply_window_theme(test_win)
         
         txt = ctk.CTkTextbox(test_win, font=("Consolas", 12))
         txt.pack(fill="both", expand=True, padx=15, pady=15)
@@ -495,13 +498,7 @@ class ConfigAPIWindow(ctk.CTkToplevel):
         self.title("⚙️ Configuración API Avanzada (Bóveda IA)")
         center_window(self, 700, 550)
         
-        def _set_icon_and_theme():
-            try:
-                self.iconbitmap(os.path.join(get_base_path(), "resources", "app_icon.ico"))
-            except: pass
-            if ctk.get_appearance_mode().lower() == "dark":
-                apply_dark_titlebar(self)
-        self.after(200, _set_icon_and_theme)
+        apply_window_theme(self)
 
         if parent:
             self.transient(parent)
