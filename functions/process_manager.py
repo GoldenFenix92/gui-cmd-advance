@@ -4,6 +4,29 @@ import subprocess
 import os
 from tkinter import messagebox
 
+CRITICAL_PROCESSES = {
+    "svchost.exe": "Proceso anfitrión de Windows. Aloja servicios vitales del sistema. NUNCA detener.",
+    "system": "Proceso central del kernel de Windows. Muy delicado.",
+    "system idle process": "Mide el tiempo inactivo del procesador.",
+    "csrss.exe": "Subsistema de tiempo de ejecución del cliente/servidor de Windows.",
+    "wininit.exe": "Aplicación de inicio vital de Windows.",
+    "services.exe": "Administrador de servicios del sistema.",
+    "lsass.exe": "Proceso de autoridad de seguridad local.",
+    "smss.exe": "Administrador de sesiones de Windows.",
+    "winlogon.exe": "Controla el inicio de sesión de Windows.",
+    "explorer.exe": "Explorador de Windows (Barra de tareas, escritorio). Si se cierra, la pantalla parpadeará.",
+    "taskmgr.exe": "Administrador de tareas de Windows.",
+    "dwm.exe": "Administrador de ventanas de escritorio (Renderizado de interfaz).",
+    "spoolsv.exe": "Servicio de cola de impresión.",
+    "conhost.exe": "Host de ventana de consola.",
+    "sihost.exe": "Host de experiencia de shell de Windows.",
+    "taskhostw.exe": "Host de tareas para servicios de Windows.",
+    "ctfmon.exe": "Controla la entrada de texto y teclado.",
+    "registry": "Almacenamiento del registro del sistema en RAM.",
+    "memory compression": "Proceso de compresión de memoria de Windows.",
+    "searchindexer.exe": "Indexador de búsqueda de Windows."
+}
+
 class ProcessManagerApp(ctk.CTk):
     def __init__(self):
         super().__init__()
@@ -70,13 +93,33 @@ class ProcessManagerApp(ctk.CTk):
         processes.sort(key=lambda x: x[2], reverse=True)
         
         for i, (pid, name, mem) in enumerate(processes[:50], start=1):
-            ctk.CTkLabel(self.scroll_proc, text=str(pid), width=60).grid(row=i, column=0, padx=5, pady=2)
-            ctk.CTkLabel(self.scroll_proc, text=name, width=200, anchor="w").grid(row=i, column=1, padx=5, pady=2, sticky="w")
-            ctk.CTkLabel(self.scroll_proc, text=f"{mem:.1f} MB", width=80).grid(row=i, column=2, padx=5, pady=2)
+            name_lower = name.lower() if name else ""
+            is_critical = name_lower in CRITICAL_PROCESSES
             
-            btn = ctk.CTkButton(self.scroll_proc, text="Detener", width=80, fg_color="#E74C3C", hover_color="#C0392B", 
-                                command=lambda p=pid, n=name: self.kill_process(p, n))
-            btn.grid(row=i, column=3, padx=5, pady=2)
+            # Color coding
+            text_color = "#E74C3C" if is_critical else "white"
+            
+            ctk.CTkLabel(self.scroll_proc, text=str(pid), width=60, text_color=text_color).grid(row=i, column=0, padx=5, pady=2)
+            ctk.CTkLabel(self.scroll_proc, text=name, width=200, anchor="w", text_color=text_color).grid(row=i, column=1, padx=5, pady=2, sticky="w")
+            ctk.CTkLabel(self.scroll_proc, text=f"{mem:.1f} MB", width=80, text_color=text_color).grid(row=i, column=2, padx=5, pady=2)
+            
+            actions_frame = ctk.CTkFrame(self.scroll_proc, fg_color="transparent")
+            actions_frame.grid(row=i, column=3, padx=5, pady=2)
+            
+            btn_info = ctk.CTkButton(actions_frame, text="ℹ️", width=30, fg_color="#3498DB", hover_color="#2980B9",
+                                     command=lambda n=name_lower: self.show_process_info(n))
+            btn_info.pack(side="left", padx=2)
+            
+            btn_stop = ctk.CTkButton(actions_frame, text="Detener", width=70, fg_color="#E74C3C", hover_color="#C0392B", 
+                                     command=lambda p=pid, n=name: self.kill_process(p, n))
+            btn_stop.pack(side="left", padx=2)
+
+    def show_process_info(self, name_lower):
+        if name_lower in CRITICAL_PROCESSES:
+            desc = CRITICAL_PROCESSES[name_lower]
+            messagebox.showwarning("Proceso Crítico / Delicado", f"Proceso: {name_lower}\n\n{desc}\n\nSe recomienda NO detener este proceso.", parent=self)
+        else:
+            messagebox.showinfo("Proceso de Usuario / Aplicación", f"Proceso: {name_lower}\n\nEste proceso no está en la lista de procesos críticos del sistema. Generalmente es seguro detenerlo si corresponde a una aplicación congelada o que consume mucha RAM, pero podrías perder datos no guardados de esa aplicación.", parent=self)
 
     def load_services(self):
         # Limpiar
