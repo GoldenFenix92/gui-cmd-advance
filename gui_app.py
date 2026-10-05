@@ -994,8 +994,10 @@ class App(ctk.CTk):
         btn_ai_config = ctk.CTkButton(win, text="⚙️ Configurar Bóveda IA", fg_color="#8E44AD", hover_color="#9B59B6", command=open_ai_config)
         btn_ai_config.pack(pady=(0, 15))
         
+        self.backup_vars = {}
+        
         frame = ctk.CTkScrollableFrame(win)
-        frame.pack(fill="both", expand=True, padx=20, pady=(0, 20))
+        frame.pack(fill="both", expand=True, padx=20, pady=(0, 10))
         
         for pid, p in PLUGINS.items():
             path = get_user_data_path(os.path.join("tools", p["filename"]))
@@ -1050,9 +1052,65 @@ class App(ctk.CTk):
                 
                 btn_del = ctk.CTkButton(btn_frame, text="Eliminar", width=80, fg_color="#E74C3C", hover_color="#C0392B", command=delete_plugin)
                 btn_del.pack(side="left")
+
+                self.backup_vars[pid] = ctk.IntVar(value=0)
+                chk_backup = ctk.CTkCheckBox(row, text="Respaldar", variable=self.backup_vars[pid])
+                chk_backup.pack(side="right", padx=10, pady=10)
             else:
                 btn_inst = ctk.CTkButton(btn_frame, text="Instalar", width=80, fg_color="#F39C12", hover_color="#D68910", command=install_plugin)
                 btn_inst.pack(side="left")
+
+        def export_plugins():
+            to_export = [pid for pid, var in self.backup_vars.items() if var.get() == 1]
+            if not to_export:
+                from tkinter import messagebox
+                messagebox.showwarning("Aviso", "Selecciona al menos un complemento instalado para respaldar.")
+                return
+            from tkinter import filedialog
+            zip_path = filedialog.asksaveasfilename(defaultextension=".zip", filetypes=[("Archivos ZIP", "*.zip")], title="Respaldar Complementos")
+            if zip_path:
+                import zipfile
+                try:
+                    with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+                        for pid in to_export:
+                            filename = PLUGINS[pid]["filename"]
+                            filepath = get_user_data_path(os.path.join("tools", filename))
+                            if os.path.exists(filepath):
+                                zipf.write(filepath, arcname=filename)
+                    from tkinter import messagebox
+                    messagebox.showinfo("Éxito", f"Complementos respaldados en:\n{zip_path}")
+                except Exception as e:
+                    from tkinter import messagebox
+                    messagebox.showerror("Error", f"Fallo al respaldar: {e}")
+
+        def import_plugins():
+            from tkinter import filedialog
+            zip_path = filedialog.askopenfilename(filetypes=[("Archivos ZIP", "*.zip")], title="Importar Complementos")
+            if zip_path:
+                import zipfile
+                try:
+                    with zipfile.ZipFile(zip_path, 'r') as zipf:
+                        tools_dir = get_user_data_path("tools")
+                        os.makedirs(tools_dir, exist_ok=True)
+                        for filename in zipf.namelist():
+                            if ".." in filename or filename.startswith("/"): continue
+                            zipf.extract(filename, path=tools_dir)
+                    from tkinter import messagebox
+                    messagebox.showinfo("Éxito", "Complementos importados correctamente. El gestor se recargará.")
+                    win.destroy()
+                    self.show_plugins()
+                except Exception as e:
+                    from tkinter import messagebox
+                    messagebox.showerror("Error", f"Fallo al importar: {e}")
+
+        btn_action_frame = ctk.CTkFrame(win, fg_color="transparent")
+        btn_action_frame.pack(fill="x", padx=20, pady=(0, 20))
+        
+        btn_export = ctk.CTkButton(btn_action_frame, text="📦 Exportar ZIP", fg_color="#2E86C1", hover_color="#2874A6", command=export_plugins)
+        btn_export.pack(side="left", expand=True, padx=5)
+
+        btn_import = ctk.CTkButton(btn_action_frame, text="📥 Importar ZIP", fg_color="#27AE60", hover_color="#229954", command=import_plugins)
+        btn_import.pack(side="right", expand=True, padx=5)
 
     def show_table_view(self):
         content = self.output_textbox.get("1.0", "end-1c").strip()
