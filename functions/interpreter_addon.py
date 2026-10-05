@@ -98,8 +98,7 @@ class InterpreterApp(ctk.CTkToplevel):
                 apply_dark_titlebar(self)
         self.after(200, _set_icon_and_theme)
 
-        self.transient(parent)
-        self.grab_set()
+
 
         self.grid_rowconfigure(2, weight=1)
         self.grid_columnconfigure(0, weight=1)

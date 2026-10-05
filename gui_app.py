@@ -197,12 +197,7 @@ class App(ctk.CTk):
         self.lbl_cpu = ctk.CTkLabel(self.status_bar, text="💻 CPU: --%", font=("Consolas", 12, "bold"))
         self.lbl_cpu.pack(side="right", padx=10)
         
-        # Configurar tags de sintaxis
-        self.output_textbox.tag_config("error", foreground="#FF4C4C")
-        self.output_textbox.tag_config("success", foreground="#4CFF4C")
-        self.output_textbox.tag_config("ip", foreground="#42A5F5")
-        self.output_textbox.tag_config("path", foreground="#FFCA28")
-        self.output_textbox.tag_config("highlight", foreground="#FF4081")
+        self.update_console_tags()
 
         self.update_status_dashboard()
 
@@ -368,6 +363,15 @@ class App(ctk.CTk):
         else:
             ctk.set_appearance_mode("Light")
             self.theme_switch.configure(text="Modo Claro")
+        self.update_console_tags()
+
+    def update_console_tags(self):
+        is_dark = ctk.get_appearance_mode().lower() == "dark"
+        self.output_textbox.tag_config("error", foreground="#FF4C4C" if is_dark else "#D32F2F")
+        self.output_textbox.tag_config("success", foreground="#4CFF4C" if is_dark else "#2E7D32")
+        self.output_textbox.tag_config("ip", foreground="#42A5F5" if is_dark else "#1565C0")
+        self.output_textbox.tag_config("path", foreground="#FFCA28" if is_dark else "#E65100")
+        self.output_textbox.tag_config("highlight", foreground="#FF4081" if is_dark else "#C2185B")
 
     def get_category_data(self, cat_name):
         for cat in self.commands_config.get("categories", []):
