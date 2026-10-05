@@ -1,0 +1,30 @@
+[
+    {
+        "timestamp": "2026-10-05 12:40:19",
+        "action": "A Manual y Detenido (Bloatware)",
+        "type": "Servicio",
+        "name": "SysMain",
+        "extra_info": "automatic"
+    },
+    {
+        "timestamp": "2026-10-05 12:40:17",
+        "action": "A Manual y Detenido (Bloatware)",
+        "type": "Servicio",
+        "name": "MapsBroker",
+        "extra_info": "automatic"
+    },
+    {
+        "timestamp": "2026-10-05 12:40:17",
+        "action": "A Manual y Detenido (Bloatware)",
+        "type": "Servicio",
+        "name": "edgeupdate",
+        "extra_info": "automatic"
+    },
+    {
+        "timestamp": "2026-10-05 12:40:17",
+        "action": "A Manual y Detenido (Bloatware)",
+        "type": "Servicio",
+        "name": "DiagTrack",
+        "extra_info": "automatic"
+    }
+]

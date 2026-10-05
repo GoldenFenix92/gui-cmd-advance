@@ -9,6 +9,7 @@ import urllib.error
 from tkinter import messagebox
 import sys
 import threading
+from functions.utils import apply_window_theme
 
 def get_base_path():
     if getattr(sys, 'frozen', False):
@@ -106,6 +107,8 @@ class ProcessManagerApp(ctk.CTk):
         super().__init__()
         self.title("Administrador de Tareas Avanzado")
         self.geometry("950x650")
+        
+        apply_window_theme(self)
         
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(1, weight=1)
