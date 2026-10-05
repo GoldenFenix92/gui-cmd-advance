@@ -1,0 +1,167 @@
+import customtkinter as ctk
+import psutil
+import subprocess
+import os
+from tkinter import messagebox
+
+class ProcessManagerApp(ctk.CTk):
+    def __init__(self):
+        super().__init__()
+        self.title("Administrador de Tareas Avanzado")
+        self.geometry("900x600")
+        
+        self.grid_columnconfigure(0, weight=1)
+        self.grid_rowconfigure(1, weight=1)
+        
+        # Titulo y botones de actualizacion
+        self.top_frame = ctk.CTkFrame(self, fg_color="transparent")
+        self.top_frame.grid(row=0, column=0, padx=10, pady=10, sticky="ew")
+        
+        ctk.CTkLabel(self.top_frame, text="Gestor de Procesos y Servicios", font=("Arial", 20, "bold")).pack(side="left")
+        
+        self.refresh_btn = ctk.CTkButton(self.top_frame, text="🔄 Actualizar", width=100, command=self.refresh_data)
+        self.refresh_btn.pack(side="right")
+        
+        # Tabs
+        self.tabview = ctk.CTkTabview(self)
+        self.tabview.grid(row=1, column=0, padx=10, pady=(0, 10), sticky="nsew")
+        
+        self.tab_proc = self.tabview.add("Procesos")
+        self.tab_serv = self.tabview.add("Servicios")
+        
+        # Configurar Tab Procesos
+        self.tab_proc.grid_columnconfigure(0, weight=1)
+        self.tab_proc.grid_rowconfigure(0, weight=1)
+        self.scroll_proc = ctk.CTkScrollableFrame(self.tab_proc)
+        self.scroll_proc.grid(row=0, column=0, sticky="nsew", padx=5, pady=5)
+        
+        # Configurar Tab Servicios
+        self.tab_serv.grid_columnconfigure(0, weight=1)
+        self.tab_serv.grid_rowconfigure(0, weight=1)
+        self.scroll_serv = ctk.CTkScrollableFrame(self.tab_serv)
+        self.scroll_serv.grid(row=0, column=0, sticky="nsew", padx=5, pady=5)
+        
+        self.refresh_data()
+        
+    def refresh_data(self):
+        self.load_processes()
+        self.load_services()
+        
+    def load_processes(self):
+        # Limpiar
+        for widget in self.scroll_proc.winfo_children():
+            widget.destroy()
+            
+        # Encabezados
+        ctk.CTkLabel(self.scroll_proc, text="PID", font=("Arial", 12, "bold"), width=60).grid(row=0, column=0, padx=5, pady=5)
+        ctk.CTkLabel(self.scroll_proc, text="Nombre", font=("Arial", 12, "bold"), width=200, anchor="w").grid(row=0, column=1, padx=5, pady=5, sticky="w")
+        ctk.CTkLabel(self.scroll_proc, text="RAM (MB)", font=("Arial", 12, "bold"), width=80).grid(row=0, column=2, padx=5, pady=5)
+        ctk.CTkLabel(self.scroll_proc, text="Acción", font=("Arial", 12, "bold"), width=100).grid(row=0, column=3, padx=5, pady=5)
+        
+        processes = []
+        for p in psutil.process_iter(['pid', 'name', 'memory_info']):
+            try:
+                mem = p.info['memory_info'].rss / (1024 * 1024)
+                processes.append((p.info['pid'], p.info['name'], mem))
+            except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+                pass
+                
+        # Ordenar por uso de RAM (descendente) y tomar los top 50 para no trabar la UI
+        processes.sort(key=lambda x: x[2], reverse=True)
+        
+        for i, (pid, name, mem) in enumerate(processes[:50], start=1):
+            ctk.CTkLabel(self.scroll_proc, text=str(pid), width=60).grid(row=i, column=0, padx=5, pady=2)
+            ctk.CTkLabel(self.scroll_proc, text=name, width=200, anchor="w").grid(row=i, column=1, padx=5, pady=2, sticky="w")
+            ctk.CTkLabel(self.scroll_proc, text=f"{mem:.1f} MB", width=80).grid(row=i, column=2, padx=5, pady=2)
+            
+            btn = ctk.CTkButton(self.scroll_proc, text="Detener", width=80, fg_color="#E74C3C", hover_color="#C0392B", 
+                                command=lambda p=pid, n=name: self.kill_process(p, n))
+            btn.grid(row=i, column=3, padx=5, pady=2)
+
+    def load_services(self):
+        # Limpiar
+        for widget in self.scroll_serv.winfo_children():
+            widget.destroy()
+            
+        # Encabezados
+        ctk.CTkLabel(self.scroll_serv, text="Nombre / Mostrar", font=("Arial", 12, "bold"), width=250, anchor="w").grid(row=0, column=0, padx=5, pady=5, sticky="w")
+        ctk.CTkLabel(self.scroll_serv, text="Estado", font=("Arial", 12, "bold"), width=100).grid(row=0, column=1, padx=5, pady=5)
+        ctk.CTkLabel(self.scroll_serv, text="Tipo Inicio", font=("Arial", 12, "bold"), width=100).grid(row=0, column=2, padx=5, pady=5)
+        ctk.CTkLabel(self.scroll_serv, text="Acción", font=("Arial", 12, "bold"), width=150).grid(row=0, column=3, padx=5, pady=5)
+        
+        services = []
+        try:
+            for s in psutil.win_service_iter():
+                try:
+                    info = s.as_dict()
+                    # Mostrar solo aquellos que se puedan modificar razonablemente y esten running o auto
+                    if info.get('start_type') in ['automatic', 'manual']:
+                        services.append(info)
+                except Exception:
+                    pass
+        except Exception as e:
+            ctk.CTkLabel(self.scroll_serv, text=f"Error cargando servicios: {e}").grid(row=1, column=0)
+            return
+
+        # Filtrar o ordenar si es necesario. Mostrar primeros 50 ejecutandose o auto
+        services = [s for s in services if s.get('status') == 'running' or s.get('start_type') == 'automatic']
+        services.sort(key=lambda x: (x.get('status') != 'running', x.get('display_name')))
+        
+        for i, s in enumerate(services[:50], start=1):
+            name = s.get('name', 'N/A')
+            display = s.get('display_name', name)[:40]
+            status = s.get('status', 'N/A')
+            start_type = s.get('start_type', 'N/A')
+            
+            ctk.CTkLabel(self.scroll_serv, text=display, width=250, anchor="w").grid(row=i, column=0, padx=5, pady=2, sticky="w")
+            ctk.CTkLabel(self.scroll_serv, text=status, width=100).grid(row=i, column=1, padx=5, pady=2)
+            ctk.CTkLabel(self.scroll_serv, text=start_type, width=100).grid(row=i, column=2, padx=5, pady=2)
+            
+            btn_frame = ctk.CTkFrame(self.scroll_serv, fg_color="transparent")
+            btn_frame.grid(row=i, column=3, padx=5, pady=2)
+            
+            if start_type != 'manual':
+                ctk.CTkButton(btn_frame, text="A Manual", width=70, fg_color="#F39C12", hover_color="#D68910",
+                              command=lambda n=name: self.set_service_manual(n)).pack(side="left", padx=2)
+                              
+            if status == 'running':
+                ctk.CTkButton(btn_frame, text="Detener", width=70, fg_color="#E74C3C", hover_color="#C0392B",
+                              command=lambda n=name: self.stop_service(n)).pack(side="left", padx=2)
+
+    def kill_process(self, pid, name):
+        try:
+            p = psutil.Process(pid)
+            p.kill()
+            messagebox.showinfo("Proceso Detenido", f"El proceso {name} (PID: {pid}) ha sido detenido.", parent=self)
+            self.load_processes()
+        except Exception as e:
+            messagebox.showerror("Error", f"No se pudo detener el proceso {name}:\n{e}", parent=self)
+            
+    def set_service_manual(self, name):
+        try:
+            # sc config "name" start= demand
+            subprocess.run(["sc", "config", name, "start=", "demand"], check=True, creationflags=subprocess.CREATE_NO_WINDOW)
+            messagebox.showinfo("Servicio Modificado", f"El servicio {name} ahora está en modo Manual.", parent=self)
+            self.load_services()
+        except subprocess.CalledProcessError:
+            messagebox.showerror("Permisos", f"No se pudo modificar {name}. ¿Ejecutaste el programa como Administrador?", parent=self)
+        except Exception as e:
+            messagebox.showerror("Error", f"Error inesperado: {e}", parent=self)
+
+    def stop_service(self, name):
+        try:
+            # net stop "name" /y
+            subprocess.run(["net", "stop", name, "/y"], check=True, creationflags=subprocess.CREATE_NO_WINDOW)
+            messagebox.showinfo("Servicio Detenido", f"El servicio {name} ha sido detenido.", parent=self)
+            self.load_services()
+        except subprocess.CalledProcessError:
+            messagebox.showerror("Permisos", f"No se pudo detener {name}. Es posible que se requieran permisos de Administrador.", parent=self)
+        except Exception as e:
+            messagebox.showerror("Error", f"Error inesperado: {e}", parent=self)
+
+def main():
+    app = ProcessManagerApp()
+    app.mainloop()
+
+if __name__ == "__main__":
+    main()

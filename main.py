@@ -34,6 +34,11 @@ if __name__ == "__main__":
             app = temp_cleaner.TempCleanerApp()
             app.mainloop()
             sys.exit(0)
+        elif sys.argv[1] == "--run-process-manager":
+            from functions import process_manager
+            sys.argv.pop(1)
+            process_manager.main()
+            sys.exit(0)
         elif sys.argv[1] == "--run-advanced-search":
             from functions import advanced_search
             sys.argv.pop(1)

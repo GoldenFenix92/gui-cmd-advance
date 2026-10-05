@@ -8,6 +8,8 @@ from tkinter import messagebox
 
 import sys
 import webbrowser
+import gc
+import subprocess
 
 try:
     from CTkToolTip import CTkToolTip
@@ -90,6 +92,15 @@ class App(ctk.CTk):
 
         self.plugins_btn = ctk.CTkButton(self.top_bar, text="🧩 Complementos", width=100, height=25, fg_color="#27AE60", hover_color="#2ECC71", command=self.show_plugins)
         self.plugins_btn.pack(side="right", padx=(0, 10))
+
+        self.proc_btn = ctk.CTkButton(self.top_bar, text="⚙️ Procesos", width=80, height=25, fg_color="#3498DB", hover_color="#2980B9", command=self.open_process_manager)
+        self.proc_btn.pack(side="right", padx=(0, 10))
+        if CTkToolTip: CTkToolTip(self.proc_btn, message="Gestor de Procesos y Servicios")
+
+        self.ram_btn = ctk.CTkButton(self.top_bar, text="🚀 RAM", width=60, height=25, fg_color="#E67E22", hover_color="#D35400", command=self.optimize_ram)
+
+        self.ram_btn.pack(side="right", padx=(0, 10))
+        if CTkToolTip: CTkToolTip(self.ram_btn, message="Liberar memoria inactiva (RAM)")
 
         self.search_var = ctk.StringVar()
         self.search_var.trace_add("write", self.on_search)
@@ -468,6 +479,7 @@ class App(ctk.CTk):
         for widget in self.args_frame.winfo_children():
             widget.destroy()
         self.current_args_vars.clear()
+        gc.collect()
 
         cmd_data = self.get_command_data(selected_command)
         if cmd_data:
@@ -1298,3 +1310,26 @@ class App(ctk.CTk):
         close_btn = ctk.CTkButton(credits_win, text="Cerrar", command=credits_win.destroy)
         close_btn.pack(pady=(10, 20))
 
+    def open_process_manager(self):
+        try:
+            subprocess.Popen([sys.executable, sys.argv[0], "--run-process-manager"], creationflags=subprocess.CREATE_NO_WINDOW)
+        except Exception as e:
+            messagebox.showerror("Error", f"No se pudo abrir el Gestor de Procesos:\n{e}")
+
+    def optimize_ram(self):
+        try:
+            import gc
+            gc.collect()
+            
+            vbs_path = os.path.join(get_base_path(), "liberar_ram.vbs")
+            with open(vbs_path, "w") as f:
+                f.write('FreeMem=Space(100000000)')
+                
+            subprocess.run(["cscript", "//nologo", vbs_path], creationflags=subprocess.CREATE_NO_WINDOW)
+            
+            if os.path.exists(vbs_path):
+                os.remove(vbs_path)
+                
+            messagebox.showinfo("RAM Optimizada", "Memoria inactiva liberada y procesos de fondo limpios correctamente.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Ocurrió un error al intentar optimizar la RAM:\n{e}")
