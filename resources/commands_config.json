@@ -572,7 +572,7 @@
                 {
                     "name": "Gestor de Compresión ZIP",
                     "description": "Comprime o descomprime carpetas de forma nativa.",
-                    "command": "powershell -Command \"& {param($op, $orig, $dest) if($orig -eq '' -or $dest -eq ''){ Write-Host 'Especifica origen y destino.'; exit }; if($op -eq 'comprimir'){ Compress-Archive -Path $orig -DestinationPath $dest -Force; Write-Host 'Comprimido en' $dest } else { Expand-Archive -Path $orig -DestinationPath $dest -Force; Write-Host 'Descomprimido en' $dest } }\"",
+                    "command": "powershell -Command \"& {param($op, $orig, $dest) if($op -eq '/?'){ Write-Host 'Utilidad ZIP. Uso: [comprimir|descomprimir] [origen] [destino]'; exit }; if([string]::IsNullOrWhiteSpace($orig) -or [string]::IsNullOrWhiteSpace($dest)){ Write-Host 'Especifica origen y destino validos.'; exit }; if($op -eq 'comprimir'){ Compress-Archive -Path $orig -DestinationPath $dest -Force; Write-Host 'Comprimido en' $dest } elseif($op -eq 'descomprimir') { Expand-Archive -Path $orig -DestinationPath $dest -Force; Write-Host 'Descomprimido en' $dest } }\"",
                     "args": [
                         {
                             "name": "Acción",
