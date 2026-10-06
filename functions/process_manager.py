@@ -102,6 +102,35 @@ BLOATWARE_LIST = {
     "wmpnetworksvc": "Uso compartido de red del Reproductor de Windows Media."
 }
 
+class AIResultWindow(ctk.CTkToplevel):
+    def __init__(self, parent, title, text):
+        super().__init__(parent)
+        self.title(title)
+        self.geometry("750x550")
+        
+        apply_window_theme(self)
+        try:
+            self.iconbitmap(os.path.join(get_base_path(), "resources", "app_icon.ico"))
+        except:
+            pass
+            
+        self.grid_rowconfigure(0, weight=1)
+        self.grid_columnconfigure(0, weight=1)
+        
+        self.textbox = ctk.CTkTextbox(self, font=("Consolas", 13), wrap="word")
+        self.textbox.grid(row=0, column=0, padx=15, pady=15, sticky="nsew")
+        self.textbox.insert("1.0", text)
+        self.textbox.configure(state="disabled")
+        
+        self.btn_close = ctk.CTkButton(self, text="Cerrar", command=self.destroy)
+        self.btn_close.grid(row=1, column=0, pady=(0, 15))
+        
+        # Center the window
+        self.update_idletasks()
+        x = int((self.winfo_screenwidth() / 2) - (750 / 2))
+        y = int((self.winfo_screenheight() / 2) - (550 / 2))
+        self.geometry(f"+{x}+{y}")
+
 class ProcessManagerApp(ctk.CTk):
     def __init__(self):
         super().__init__()
@@ -440,7 +469,7 @@ class ProcessManagerApp(ctk.CTk):
             def _done():
                 self.btn_ai.configure(text="🧠 Analizador IA", state="normal")
                 if res:
-                    messagebox.showinfo("Análisis Inteligente", res)
+                    AIResultWindow(self, "Análisis Inteligente", res)
                     save_to_history("Análisis IA Realizado", "IA", "Optimización", "")
                     self.load_history_ui()
                 else:

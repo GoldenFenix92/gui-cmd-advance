@@ -570,38 +570,10 @@
                     ]
                 },
                 {
-                    "name": "Gestor de Compresión ZIP",
-                    "description": "Comprime o descomprime carpetas de forma nativa.",
-                    "command": "powershell -Command \"& {param($op, $orig, $dest) if($op -eq '/?'){ Write-Host 'Utilidad ZIP. Uso: [comprimir|descomprimir] [origen] [destino]'; exit }; if([string]::IsNullOrWhiteSpace($orig) -or [string]::IsNullOrWhiteSpace($dest)){ Write-Host 'Especifica origen y destino validos.'; exit }; if($op -eq 'comprimir'){ Compress-Archive -Path $orig -DestinationPath $dest -Force; Write-Host 'Comprimido en' $dest } elseif($op -eq 'descomprimir') { Expand-Archive -Path $orig -DestinationPath $dest -Force; Write-Host 'Descomprimido en' $dest } }\"",
-                    "args": [
-                        {
-                            "name": "Acción",
-                            "type": "radio_group",
-                            "options": [
-                                {
-                                    "name": "Comprimir a ZIP",
-                                    "flag": "-op comprimir"
-                                },
-                                {
-                                    "name": "Descomprimir ZIP",
-                                    "flag": "-op descomprimir"
-                                }
-                            ],
-                            "description": "Selecciona si deseas empaquetar o desempaquetar."
-                        },
-                        {
-                            "name": "Ruta de Origen",
-                            "flag": "-orig",
-                            "type": "file_entry",
-                            "description": "Archivo ZIP (si descomprimes) o Carpeta a comprimir."
-                        },
-                        {
-                            "name": "Ruta de Destino",
-                            "flag": "-dest",
-                            "type": "directory_entry",
-                            "description": "Carpeta donde se extraerá o donde se guardará el nuevo ZIP."
-                        }
-                    ]
+                    "name": "Gestor Avanzado de Archivos (ZIP, RAR, 7Z)",
+                    "description": "Abre una utilidad avanzada con soporte para múltiples formatos, contraseñas y reparación de archivos.",
+                    "command": "__INTERNAL__ --run-file-compressor",
+                    "args": []
                 },
                 {
                     "name": "Gestor de Atributos de Archivos (Ocultar/Sistema)",

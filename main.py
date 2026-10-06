@@ -45,6 +45,12 @@ if __name__ == "__main__":
             app = advanced_search.AdvancedSearchApp()
             app.mainloop()
             sys.exit(0)
+        elif sys.argv[1] == "--run-file-compressor":
+            from functions import file_compressor
+            sys.argv.pop(1)
+            app = file_compressor.FileCompressorApp()
+            app.mainloop()
+            sys.exit(0)
         elif sys.argv[1] == "--run-smart-info":
             from functions import smart_info
             sys.argv.pop(1)
