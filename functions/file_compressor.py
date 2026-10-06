@@ -52,30 +52,21 @@ class FileCompressorApp(ctk.CTk):
         self.tab_comp = self.tabview.add("Comprimir")
         self.tab_ext = self.tabview.add("Descomprimir")
         self.tab_rep = self.tabview.add("Reparar")
-        self.tab_plugin = self.tabview.add("Complementos")
         
         self.setup_comp_tab()
         self.setup_ext_tab()
         self.setup_rep_tab()
-        self.setup_plugin_tab()
         
     def check_7z(self):
-        paths = [
-            r"C:\Program Files\7-Zip\7z.exe",
-            r"C:\Program Files (x86)\7-Zip\7z.exe"
-        ]
-        for p in paths:
-            if os.path.exists(p): return p
+        from functions.utils import get_user_data_path
+        p = get_user_data_path(r"tools\7za.exe")
+        if os.path.exists(p): return p
         return None
         
     def check_winrar(self):
-        paths = [
-            r"C:\Program Files\WinRAR\WinRAR.exe",
-            r"C:\Program Files (x86)\WinRAR\WinRAR.exe",
-            r"C:\Program Files\WinRAR\Rar.exe"
-        ]
-        for p in paths:
-            if os.path.exists(p): return p
+        from functions.utils import get_user_data_path
+        p = get_user_data_path(r"tools\rar.exe")
+        if os.path.exists(p): return p
         return None
         
     def setup_comp_tab(self):
@@ -166,49 +157,17 @@ class FileCompressorApp(ctk.CTk):
         if not self.winrar_path:
             r_rar.configure(state="disabled")
             
+        ctk.CTkLabel(frame, text="Contraseña (Si la tiene):").pack(pady=(10,0))
+        self.rep_pwd = ctk.CTkEntry(frame, show="*")
+        self.rep_pwd.pack(pady=5)
+            
         self.rep_btn = ctk.CTkButton(frame, text="🛠️ Intentar Reparar", command=self.do_repair)
         self.rep_btn.pack(pady=20)
         
         self.rep_status = ctk.CTkLabel(frame, text="", text_color="gray")
         self.rep_status.pack()
         
-    def setup_plugin_tab(self):
-        frame = self.tab_plugin
-        
-        ctk.CTkLabel(frame, text="Gestor de Complementos", font=("Arial", 16, "bold")).pack(pady=10)
-        ctk.CTkLabel(frame, text="Tú decides qué complementos usar. Instálalos para habilitar funciones avanzadas.", text_color="gray").pack(pady=5)
-        
-        # 7-Zip
-        f7 = ctk.CTkFrame(frame)
-        f7.pack(fill="x", padx=20, pady=10)
-        
-        st7 = "✅ Instalado" if self.seven_z_path else "❌ No detectado"
-        ctk.CTkLabel(f7, text=f"7-Zip ({st7})", font=("Arial", 14, "bold")).pack(anchor="w", padx=10, pady=5)
-        ctk.CTkLabel(f7, text="Ventajas: Software Libre, alta tasa de compresión, soporta formato .7z, AES-256.", justify="left").pack(anchor="w", padx=10)
-        
-        btn7 = ctk.CTkButton(f7, text="Descargar 7-Zip", command=lambda: __import__('webbrowser').open("https://www.7-zip.org/"))
-        btn7.pack(anchor="w", padx=10, pady=10)
-        if self.seven_z_path: btn7.configure(state="disabled")
-        
-        # WinRAR
-        fr = ctk.CTkFrame(frame)
-        fr.pack(fill="x", padx=20, pady=10)
-        
-        strar = "✅ Instalado" if self.winrar_path else "❌ No detectado"
-        ctk.CTkLabel(fr, text=f"WinRAR ({strar})", font=("Arial", 14, "bold")).pack(anchor="w", padx=10, pady=5)
-        ctk.CTkLabel(fr, text="Ventajas: Soporte exclusivo de compresión .rar, volúmenes de recuperación (.rev), reparación avanzada.", justify="left").pack(anchor="w", padx=10)
-        
-        btnr = ctk.CTkButton(fr, text="Descargar WinRAR", command=lambda: __import__('webbrowser').open("https://www.win-rar.com/download.html"))
-        btnr.pack(anchor="w", padx=10, pady=10)
-        if self.winrar_path: btnr.configure(state="disabled")
-        
-        ctk.CTkButton(frame, text="🔄 Actualizar Estado", command=self.refresh_plugins).pack(pady=20)
-        
-    def refresh_plugins(self):
-        self.seven_z_path = self.check_7z()
-        self.winrar_path = self.check_winrar()
-        messagebox.showinfo("Actualizado", "Por favor reinicia la aplicación para aplicar los cambios en las pestañas.")
-        self.destroy()
+
 
     def do_compress(self):
         src = self.comp_src.get().strip()
@@ -321,6 +280,7 @@ class FileCompressorApp(ctk.CTk):
     def do_repair(self):
         src = self.rep_src.get().strip()
         tool = self.rep_tool_var.get()
+        pwd = self.rep_pwd.get().strip()
         
         if not src:
             return
@@ -337,7 +297,11 @@ class FileCompressorApp(ctk.CTk):
                 if tool == "nativo":
                     success, msg = repair_zip(src, dest)
                 elif tool == "rar":
-                    cmd = [self.winrar_path, "r", src]
+                    cmd = [self.winrar_path, "r"]
+                    if pwd:
+                        cmd.append(f"-p{pwd}")
+                    cmd.append(src)
+                    
                     # WinRAR repara en el mismo directorio con prefijo rebuilt. o fixed.
                     subprocess.run(cmd, check=True, cwd=os.path.dirname(src), creationflags=subprocess.CREATE_NO_WINDOW)
                     success = True

@@ -978,7 +978,7 @@ class App(ctk.CTk):
 
     def show_plugins(self):
         from functions.utils import get_user_data_path, apply_window_theme
-        from functions.setup_manager import PLUGINS, PluginInstaller
+        from functions.setup_manager import PLUGINS, PluginInstaller, is_plugin_installed
         import os
         import subprocess
         import sys
@@ -1013,7 +1013,7 @@ class App(ctk.CTk):
         
         for pid, p in PLUGINS.items():
             path = get_user_data_path(os.path.join("tools", p["filename"]))
-            is_installed = os.path.exists(path)
+            is_installed = is_plugin_installed(p)
             
             row = ctk.CTkFrame(frame)
             row.pack(fill="x", padx=10, pady=10)

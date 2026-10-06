@@ -40,6 +40,31 @@ PLUGINS = {
         "is_zip": False,
         "size_str": "~7MB",
         "cmds": ["__INTERNAL__ --run-office-deploy"]
+    },
+    "7zip": {
+        "id": "7zip",
+        "name": "7-Zip (Motor Avanzado)",
+        "filename": "7za.exe",
+        "desc": "Habilita: Compresión/Descompresión ultra-rápida y formato .7z.",
+        "url": "https://github.com/GoldenFenix92/gui-cmd-advance/raw/main/tools/7za.exe",
+        "is_zip": False,
+        "size_str": "~1MB",
+        "cmds": []
+    },
+    "winrar": {
+        "id": "winrar",
+        "name": "WinRAR (CLI)",
+        "filename": "rar.exe",
+        "desc": "Habilita: Formato .rar y reparación avanzada con volúmenes de recuperación. Descarga e instala WinRAR normalmente.",
+        "url": "https://www.win-rar.com/download.html",
+        "is_zip": False,
+        "is_browser_link": True,
+        "size_str": "~3MB",
+        "cmds": [],
+        "check_paths": [
+            r"C:\Program Files\WinRAR\WinRAR.exe",
+            r"C:\Program Files (x86)\WinRAR\WinRAR.exe"
+        ]
     }
 }
 
@@ -96,6 +121,13 @@ class PluginInstaller(ctk.CTkToplevel):
                 self.lbl_status.configure(text="¡Bóveda creada exitosamente!")
                 self.btn_cancel.configure(text="Cerrar", command=self.finish_success)
                 self.after(1000, self.finish_success)
+                return
+                
+            if self.plugin.get("is_browser_link"):
+                import webbrowser
+                webbrowser.open(url)
+                self.lbl_status.configure(text="Instala el programa desde tu navegador.")
+                self.btn_cancel.configure(text="Entendido", command=self.finish_success)
                 return
 
             def report(blocknum, blocksize, totalsize):
@@ -183,11 +215,20 @@ class StartupCheck(ctk.CTkToplevel):
         self.on_complete()
         self.destroy()
 
+def is_plugin_installed(p):
+    if "check_paths" in p:
+        for path in p["check_paths"]:
+            if os.path.exists(path):
+                return True
+        return False
+    else:
+        return os.path.exists(get_user_data_path(os.path.join("tools", p["filename"])))
+
 def check_dependencies(app):
     hide_path = get_user_data_path("hide_startup_plugins.json")
     missing = []
     for pid, p in PLUGINS.items():
-        if not os.path.exists(get_user_data_path(os.path.join("tools", p["filename"]))):
+        if not is_plugin_installed(p):
             missing.append(pid)
             
     if os.path.exists(hide_path):
@@ -202,6 +243,6 @@ def check_dependencies(app):
 def get_missing_commands():
     missing_cmds = []
     for pid, p in PLUGINS.items():
-        if not os.path.exists(get_user_data_path(os.path.join("tools", p["filename"]))):
+        if not is_plugin_installed(p):
             missing_cmds.extend(p["cmds"])
     return missing_cmds
