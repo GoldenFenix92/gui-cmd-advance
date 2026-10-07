@@ -639,6 +639,66 @@ class App(ctk.CTk):
                         var.set(threads_options[0])
                     dropdown = ctk.CTkOptionMenu(row_frame, variable=var, values=threads_options)
                     dropdown.pack(side="left", fill="x", expand=True, padx=(0, 10))
+                    
+                elif arg_type == "password_single":
+                    lbl = ctk.CTkLabel(row_frame, text=f"{arg_name}:")
+                    lbl.pack(side="left", padx=(0, 5))
+                    
+                    ent = ctk.CTkEntry(row_frame, textvariable=var, show="*", placeholder_text="Contraseña...", border_width=0)
+                    ent.pack(side="left", fill="x", expand=True, padx=(0, 5))
+                    
+                    btn_show_s = ctk.CTkButton(row_frame, text="👁️", width=30, fg_color="transparent", text_color=("black", "white"), hover_color=("#E5E5E5", "#333333"))
+                    def toggle_show_s(b=btn_show_s, e=ent):
+                        if e.cget("show") == "*":
+                            e.configure(show="")
+                            b.configure(text="🙈")
+                        else:
+                            e.configure(show="*")
+                            b.configure(text="👁️")
+                    btn_show_s.configure(command=toggle_show_s)
+                    btn_show_s.pack(side="left", padx=(0, 10))
+                    
+                elif arg_type == "password_double":
+                    lbl = ctk.CTkLabel(row_frame, text=f"{arg_name}:")
+                    lbl.pack(side="top", anchor="w", padx=(0, 5))
+                    
+                    pw_frame = ctk.CTkFrame(row_frame, fg_color="transparent")
+                    pw_frame.pack(side="top", fill="x", expand=True)
+                    
+                    var1 = ctk.StringVar()
+                    var2 = ctk.StringVar()
+                    var.set("") # var is the main one used for command
+                    
+                    ent1 = ctk.CTkEntry(pw_frame, textvariable=var1, show="*", placeholder_text="Contraseña...", border_width=0)
+                    ent1.pack(side="left", fill="x", expand=True, padx=(0, 5))
+                    
+                    ent2 = ctk.CTkEntry(pw_frame, textvariable=var2, show="*", placeholder_text="Confirmar Contraseña...", border_width=0)
+                    ent2.pack(side="left", fill="x", expand=True, padx=(5, 5))
+                    
+                    btn_show = ctk.CTkButton(pw_frame, text="👁️", width=30, fg_color="transparent", text_color=("black", "white"), hover_color=("#E5E5E5", "#333333"))
+                    def toggle_show(b=btn_show, e1=ent1, e2=ent2):
+                        if e1.cget("show") == "*":
+                            e1.configure(show="")
+                            e2.configure(show="")
+                            b.configure(text="🙈")
+                        else:
+                            e1.configure(show="*")
+                            e2.configure(show="*")
+                            b.configure(text="👁️")
+                    btn_show.configure(command=toggle_show)
+                    btn_show.pack(side="left")
+                    
+                    def check_match(*args_cb, v=var, e2=ent2, v1_var=var1, v2_var=var2):
+                        v1 = v1_var.get()
+                        v2 = v2_var.get()
+                        if v1 != v2 or not v1:
+                            e2.configure(border_color="red", border_width=2)
+                            v.set("")
+                        else:
+                            e2.configure(border_color="green", border_width=2)
+                            v.set(v1)
+                    var1.trace_add("write", check_match)
+                    var2.trace_add("write", check_match)
                 
                 self.current_args_vars[arg_name] = {"var": var, "type": arg_type, "flag": arg_flag}
                 
@@ -713,7 +773,10 @@ class App(ctk.CTk):
                     if arg_data["type"] in ["directory_entry", "file_entry", "save_file_entry"]:
                         val = val.replace("/", "\\")
                     if any(c in val for c in [" ", ",", ";", "&", "|", "(", ")", "'"]) and not val.startswith('"'):
-                        val = f'"{val}"'
+                        if "powershell" in command_list[0].lower():
+                            val = f"'\"{val}\"'"
+                        else:
+                            val = f'"{val}"'
                     if arg_data["flag"]:
                         command_list.append(arg_data["flag"])
                     command_list.append(val)
@@ -1012,12 +1075,7 @@ class App(ctk.CTk):
         lbl_title = ctk.CTkLabel(win, text="Complementos Disponibles", font=("Arial", 16, "bold"))
         lbl_title.pack(pady=15)
 
-        def open_ai_config():
-            from functions.interpreter_addon import ConfigAPIWindow
-            ConfigAPIWindow(self)
 
-        btn_ai_config = ctk.CTkButton(win, text="⚙️ Configurar Bóveda IA", fg_color="#8E44AD", hover_color="#9B59B6", command=open_ai_config)
-        btn_ai_config.pack(pady=(0, 15))
         
         self.backup_vars = {}
         
@@ -1080,6 +1138,13 @@ class App(ctk.CTk):
                 
                 btn_del = ctk.CTkButton(btn_frame, text="Eliminar", width=80, fg_color="#E74C3C", hover_color="#C0392B", command=delete_plugin)
                 btn_del.pack(side="left")
+                
+                if pid == "ai_vault":
+                    def open_ai_config():
+                        from functions.interpreter_addon import ConfigAPIWindow
+                        ConfigAPIWindow(self)
+                    btn_ai = ctk.CTkButton(btn_frame, text="⚙️ Configurar Bóveda IA", width=120, fg_color="#8E44AD", hover_color="#9B59B6", command=open_ai_config)
+                    btn_ai.pack(side="left", padx=(10, 0))
 
                 self.backup_vars[pid] = ctk.IntVar(value=0)
                 chk_backup = ctk.CTkCheckBox(row, text="Respaldar", variable=self.backup_vars[pid])

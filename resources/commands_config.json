@@ -150,12 +150,6 @@
                     ]
                 },
                 {
-                    "name": "Credenciales de Red (Bóveda)",
-                    "description": "Abre un gestor propio para listar o eliminar las credenciales guardadas en Windows.",
-                    "command": "__INTERNAL__ --run-vault",
-                    "args": []
-                },
-                {
                     "name": "Gestor Adaptador de Red",
                     "description": "Escanea y lista tus adaptadores de red. Permite deshabilitarlos, habilitarlos o reiniciarlos fácilmente.",
                     "command": "powershell -Command \"& {param($adapterName, $op) if(!$adapterName){ Write-Host 'No seleccionaste adaptador.'; exit }; Write-Host 'Adaptador seleccionado:' $adapterName; if($op -eq 'disable'){ Disable-NetAdapter -Name $adapterName -Confirm:$false; Write-Host 'Deshabilitado.' } elseif($op -eq 'enable'){ Enable-NetAdapter -Name $adapterName -Confirm:$false; Write-Host 'Habilitado.' } elseif($op -eq 'reset'){ Restart-NetAdapter -Name $adapterName -Confirm:$false; Write-Host 'Reiniciado con exito.' } }\"",
@@ -396,13 +390,44 @@
                     "name": "Limpieza Selectiva de Temporales",
                     "description": "Abre una herramienta avanzada para escanear y eliminar basura de Windows con selección individual.",
                     "command": "__INTERNAL__ --run-temp-cleaner",
-                    "args": []
+                    "args": [
+                        {
+                            "name": "Temp de Usuario",
+                            "type": "checkbox",
+                            "flag": "--user-temp",
+                            "description": "Limpia la carpeta Temp del usuario actual."
+                        },
+                        {
+                            "name": "Temp de Windows",
+                            "type": "checkbox",
+                            "flag": "--win-temp",
+                            "description": "Limpia la carpeta Temp del sistema Windows."
+                        },
+                        {
+                            "name": "Prefetch",
+                            "type": "checkbox",
+                            "flag": "--prefetch",
+                            "description": "Limpia los archivos de Prefetch."
+                        },
+                        {
+                            "name": "Windows Update (Descargas)",
+                            "type": "checkbox",
+                            "flag": "--win-update",
+                            "description": "Limpia la caché de descargas de Windows Update."
+                        }
+                    ]
                 }
             ]
         },
         {
             "name": "Seguridad y Privacidad",
             "commands": [
+                {
+                    "name": "Credenciales de Red (Bóveda)",
+                    "description": "Lista las credenciales guardadas en Windows con una explicación detallada.",
+                    "command": "__INTERNAL__ --run-vault",
+                    "args": []
+                },
                 {
                     "name": "Gestor de Firewall",
                     "description": "Habilita o deshabilita el Firewall de Windows para todos los perfiles.",
@@ -589,17 +614,29 @@
                         {
                             "name": "Contraseña (Opcional)",
                             "flag": "--pwd",
-                            "type": "entry",
+                            "type": "password_double",
                             "description": "Escribe una contraseña para cifrar el archivo."
                         },
                         {
                             "name": "Nivel de Compresión",
                             "type": "radio_group",
                             "options": [
-                                { "name": "Normal (Recomendado)", "flag": "--level -mx=5" },
-                                { "name": "Rápida", "flag": "--level -mx=1" },
-                                { "name": "Máxima (Ultra)", "flag": "--level -mx=9" },
-                                { "name": "Sin compresión (Solo guardar)", "flag": "--level -mx=0" }
+                                {
+                                    "name": "Normal (Recomendado)",
+                                    "flag": "--level -mx=5"
+                                },
+                                {
+                                    "name": "Rápida",
+                                    "flag": "--level -mx=1"
+                                },
+                                {
+                                    "name": "Máxima (Ultra)",
+                                    "flag": "--level -mx=9"
+                                },
+                                {
+                                    "name": "Sin compresión (Solo guardar)",
+                                    "flag": "--level -mx=0"
+                                }
                             ],
                             "description": "Selecciona el nivel de compresión."
                         },
@@ -631,7 +668,7 @@
                         {
                             "name": "Contraseña (Si la tiene)",
                             "flag": "--pwd",
-                            "type": "entry",
+                            "type": "password_single",
                             "description": "Escribe la contraseña para desbloquear el archivo."
                         },
                         {

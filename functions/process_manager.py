@@ -335,6 +335,8 @@ class ProcessManagerApp(ctk.CTk):
                     subprocess.run(["sc", "config", name, "start=", "demand"], check=True, creationflags=subprocess.CREATE_NO_WINDOW)
                     subprocess.run(["net", "stop", name, "/y"], creationflags=subprocess.CREATE_NO_WINDOW)
                     save_to_history("A Manual y Detenido (Bloatware)", "Servicio", name, "automatic")
+                    print(f"[ProcessManager] Bloatware optimizado: {name}.")
+                    import sys; sys.stdout.flush()
                     count += 1
                 except: pass
         messagebox.showinfo("Optimización", f"Se optimizaron {count} servicios identificados como Bloatware.")
@@ -381,6 +383,8 @@ class ProcessManagerApp(ctk.CTk):
             except: pass
             p.kill()
             save_to_history("Detenido", "Proceso", name, exe_path)
+            print(f"[ProcessManager] Se detuvo el proceso {name} (PID: {pid}).")
+            import sys; sys.stdout.flush()
             messagebox.showinfo("Proceso Detenido", f"El proceso {name} (PID: {pid}) ha sido detenido.", parent=self)
             self.load_processes()
             self.load_history_ui()
@@ -391,6 +395,8 @@ class ProcessManagerApp(ctk.CTk):
         try:
             subprocess.run(["sc", "config", name, "start=", "demand"], check=True, creationflags=subprocess.CREATE_NO_WINDOW)
             save_to_history("A Manual", "Servicio", name, "automatic")
+            print(f"[ProcessManager] El servicio {name} ha sido puesto en modo Manual.")
+            import sys; sys.stdout.flush()
             messagebox.showinfo("Servicio Modificado", f"El servicio {name} ahora está en modo Manual.", parent=self)
             self.load_services()
             self.load_history_ui()
@@ -403,6 +409,8 @@ class ProcessManagerApp(ctk.CTk):
         try:
             subprocess.run(["net", "stop", name, "/y"], check=True, creationflags=subprocess.CREATE_NO_WINDOW)
             save_to_history("Detenido", "Servicio", name, "")
+            print(f"[ProcessManager] El servicio {name} ha sido detenido.")
+            import sys; sys.stdout.flush()
             messagebox.showinfo("Servicio Detenido", f"El servicio {name} ha sido detenido.", parent=self)
             self.load_services()
             self.load_history_ui()

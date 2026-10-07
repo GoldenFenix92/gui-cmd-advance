@@ -31,8 +31,7 @@ if __name__ == "__main__":
         elif sys.argv[1] == "--run-temp-cleaner":
             from functions import temp_cleaner
             sys.argv.pop(1)
-            app = temp_cleaner.TempCleanerApp()
-            app.mainloop()
+            temp_cleaner.main()
             sys.exit(0)
         elif sys.argv[1] == "--run-process-manager":
             from functions import process_manager
@@ -58,10 +57,9 @@ if __name__ == "__main__":
             app.mainloop()
             sys.exit(0)
         elif sys.argv[1] == "--run-vault":
-            from functions import credentials_vault
+            from functions import credentials_vault_cli
             sys.argv.pop(1)
-            app = credentials_vault.CredentialsVaultApp()
-            app.mainloop()
+            credentials_vault_cli.main_cli()
             sys.exit(0)
         elif sys.argv[1] == "--run-7z":
             from gui_app import get_user_data_path
@@ -86,13 +84,13 @@ if __name__ == "__main__":
                 
             cmd = [exe]
             if args.action == "compress":
-                cmd.extend(["a", args.dest, args.src])
+                cmd.extend(["a", args.dest, args.src, "-bsp1"])
                 if args.pwd: cmd.append(f"-p{args.pwd}")
                 if args.level: cmd.append(args.level)
                 if args.threads: cmd.append(f"-mmt{args.threads}")
                 print("Comprimiendo...")
             elif args.action == "extract":
-                cmd.extend(["x", args.src, f"-o{args.dest}", "-y"])
+                cmd.extend(["x", args.src, f"-o{args.dest}", "-y", "-bsp1"])
                 if args.pwd: cmd.append(f"-p{args.pwd}")
                 if args.threads: cmd.append(f"-mmt{args.threads}")
                 print(f"Descomprimiendo en: {args.dest}")

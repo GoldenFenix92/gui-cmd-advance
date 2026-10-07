@@ -134,8 +134,11 @@ class DuplicateFinderApp(ctk.CTk):
         self.lbl_status.configure(text="Deteniendo el escaneo... por favor espere.")
 
     def update_progress(self, current, total, msg):
-        self.progress_bar.set(current / total if total > 0 else 0)
+        percent = current / total if total > 0 else 0
+        self.progress_bar.set(percent)
         self.lbl_status.configure(text=msg)
+        print(f"{int(percent * 100)}%")
+        import sys; sys.stdout.flush()
 
     def get_hash(self, filepath):
         sha256 = hashlib.sha256()
