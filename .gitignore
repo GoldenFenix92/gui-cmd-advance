@@ -7,4 +7,5 @@ dist/
 version_info.txt
 version.py
 ai_settings.json
-temp_scripts/
+temp_scripts/*
+!temp_scripts/.gitkeep
