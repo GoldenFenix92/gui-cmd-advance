@@ -50,21 +50,6 @@ PLUGINS = {
         "is_zip": False,
         "size_str": "~1MB",
         "cmds": []
-    },
-    "winrar": {
-        "id": "winrar",
-        "name": "WinRAR (CLI)",
-        "filename": "rar.exe",
-        "desc": "Habilita: Formato .rar y reparación avanzada con volúmenes de recuperación. Descarga e instala WinRAR normalmente.",
-        "url": "https://www.win-rar.com/download.html",
-        "is_zip": False,
-        "is_browser_link": True,
-        "size_str": "~3MB",
-        "cmds": [],
-        "check_paths": [
-            r"C:\Program Files\WinRAR\WinRAR.exe",
-            r"C:\Program Files (x86)\WinRAR\WinRAR.exe"
-        ]
     }
 }
 

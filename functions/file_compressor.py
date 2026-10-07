@@ -6,7 +6,37 @@ import subprocess
 import zipfile
 import shutil
 import urllib.request
-from tkinter import filedialog, messagebox
+from tkinter import filedialog
+
+class CustomMessageBox(ctk.CTkToplevel):
+    def __init__(self, master, title, message, is_error=False):
+        super().__init__(master)
+        self.title(title)
+        self.geometry("400x200")
+        self.transient(master)
+        self.grab_set()
+        
+        try:
+            from functions.utils import apply_window_theme
+            apply_window_theme(self)
+        except: pass
+        
+        self.update_idletasks()
+        x = int(master.winfo_x() + (master.winfo_width() / 2) - (400 / 2))
+        y = int(master.winfo_y() + (master.winfo_height() / 2) - (200 / 2))
+        self.geometry(f"+{x}+{y}")
+        
+        icon = "❌" if is_error else "✅"
+        color = "#E74C3C" if is_error else "#2ECC71"
+        
+        lbl_icon = ctk.CTkLabel(self, text=icon, font=("Arial", 40), text_color=color)
+        lbl_icon.pack(pady=(20, 0))
+        
+        lbl_msg = ctk.CTkLabel(self, text=message, font=("Arial", 14), wraplength=350, justify="center")
+        lbl_msg.pack(pady=10, padx=20, fill="both", expand=True)
+        
+        btn_ok = ctk.CTkButton(self, text="Aceptar", command=self.destroy, width=100)
+        btn_ok.pack(pady=(0, 20))
 
 # Fallback basic zip repair
 def repair_zip(input_file, output_file):
@@ -43,7 +73,6 @@ class FileCompressorApp(ctk.CTk):
         except: pass
         
         self.seven_z_path = self.check_7z()
-        self.winrar_path = self.check_winrar()
         
         # Tabs
         self.tabview = ctk.CTkTabview(self)
@@ -63,12 +92,6 @@ class FileCompressorApp(ctk.CTk):
         if os.path.exists(p): return p
         return None
         
-    def check_winrar(self):
-        from functions.utils import get_user_data_path
-        p = get_user_data_path(r"tools\rar.exe")
-        if os.path.exists(p): return p
-        return None
-        
     def setup_comp_tab(self):
         frame = self.tab_comp
         
@@ -82,8 +105,20 @@ class FileCompressorApp(ctk.CTk):
         ctk.CTkButton(btn_frame, text="Elegir Carpeta", command=lambda: self.comp_src.insert(0, filedialog.askdirectory())).pack(side="left", padx=5)
         
         ctk.CTkLabel(frame, text="Destino (Ej. C:\\ruta\\archivo.zip):").pack(pady=(10,0))
-        self.comp_dest = ctk.CTkEntry(frame, width=500)
-        self.comp_dest.pack(pady=5)
+        
+        dest_frame = ctk.CTkFrame(frame, fg_color="transparent")
+        dest_frame.pack(pady=5)
+        
+        self.comp_dest = ctk.CTkEntry(dest_frame, width=400)
+        self.comp_dest.pack(side="left", padx=5)
+        
+        def pick_dest():
+            f = filedialog.asksaveasfilename(defaultextension=".zip", filetypes=[("Archivo ZIP", "*.zip"), ("Archivo 7Z", "*.7z"), ("Todos los archivos", "*.*")])
+            if f:
+                self.comp_dest.delete(0, ctk.END)
+                self.comp_dest.insert(0, f)
+                
+        ctk.CTkButton(dest_frame, text="Guardar Como...", command=pick_dest, width=100).pack(side="left", padx=5)
         
         ctk.CTkLabel(frame, text="Contraseña (Opcional):").pack(pady=(10,0))
         self.comp_pwd = ctk.CTkEntry(frame, show="*")
@@ -102,11 +137,6 @@ class FileCompressorApp(ctk.CTk):
         r_7z.pack(side="left", padx=10)
         if not self.seven_z_path:
             r_7z.configure(state="disabled")
-            
-        r_rar = ctk.CTkRadioButton(tools_frame, text="WinRAR (Soporta .rar)", variable=self.comp_tool_var, value="rar")
-        r_rar.pack(side="left", padx=10)
-        if not self.winrar_path:
-            r_rar.configure(state="disabled")
             
         self.comp_btn = ctk.CTkButton(frame, text="▶ Comenzar Compresión", fg_color="#27AE60", hover_color="#2ECC71", command=self.do_compress)
         self.comp_btn.pack(pady=20)
@@ -152,17 +182,24 @@ class FileCompressorApp(ctk.CTk):
         tools_frame.pack(pady=15, padx=20, fill="x")
         
         ctk.CTkRadioButton(tools_frame, text="Nativo (Reparador de Cabeceras ZIP)", variable=self.rep_tool_var, value="nativo").pack(side="left", padx=10)
-        r_rar = ctk.CTkRadioButton(tools_frame, text="WinRAR (Reparador Inteligente de RAR/ZIP)", variable=self.rep_tool_var, value="rar")
-        r_rar.pack(side="left", padx=10)
-        if not self.winrar_path:
-            r_rar.configure(state="disabled")
+        
+        if self.seven_z_path:
+            ctk.CTkRadioButton(tools_frame, text="7-Zip (Extraer ignorando errores)", variable=self.rep_tool_var, value="7z_force").pack(side="left", padx=10)
             
         ctk.CTkLabel(frame, text="Contraseña (Si la tiene):").pack(pady=(10,0))
         self.rep_pwd = ctk.CTkEntry(frame, show="*")
         self.rep_pwd.pack(pady=5)
             
-        self.rep_btn = ctk.CTkButton(frame, text="🛠️ Intentar Reparar", command=self.do_repair)
-        self.rep_btn.pack(pady=20)
+        buttons_frame = ctk.CTkFrame(frame, fg_color="transparent")
+        buttons_frame.pack(pady=20)
+        
+        self.analyze_btn = ctk.CTkButton(buttons_frame, text="🔍 Analizar Archivo (7-Zip)", fg_color="#F39C12", hover_color="#D68910", command=self.do_analyze)
+        self.analyze_btn.pack(side="left", padx=10)
+        if not self.seven_z_path:
+            self.analyze_btn.configure(state="disabled")
+            
+        self.rep_btn = ctk.CTkButton(buttons_frame, text="🛠️ Intentar Reparar", command=self.do_repair)
+        self.rep_btn.pack(side="left", padx=10)
         
         self.rep_status = ctk.CTkLabel(frame, text="", text_color="gray")
         self.rep_status.pack()
@@ -176,7 +213,7 @@ class FileCompressorApp(ctk.CTk):
         tool = self.comp_tool_var.get()
         
         if not src or not dest:
-            messagebox.showerror("Error", "Debes especificar origen y destino.")
+            CustomMessageBox(self, "Error", "Debes especificar origen y destino.", is_error=True)
             return
             
         self.comp_btn.configure(state="disabled")
@@ -203,11 +240,6 @@ class FileCompressorApp(ctk.CTk):
                     if pwd: cmd.append(f"-p{pwd}")
                     subprocess.run(cmd, check=True, creationflags=subprocess.CREATE_NO_WINDOW)
                     success = True
-                elif tool == "rar":
-                    cmd = [self.winrar_path, "a", dest, src]
-                    if pwd: cmd.append(f"-p{pwd}")
-                    subprocess.run(cmd, check=True, creationflags=subprocess.CREATE_NO_WINDOW)
-                    success = True
             except Exception as e:
                 err = str(e)
                 
@@ -219,10 +251,10 @@ class FileCompressorApp(ctk.CTk):
         self.comp_btn.configure(state="normal")
         if success:
             self.comp_status.configure(text="¡Compresión Finalizada!")
-            messagebox.showinfo("Éxito", "Archivo comprimido correctamente.")
+            CustomMessageBox(self, "Éxito", "Archivo comprimido correctamente.")
         else:
             self.comp_status.configure(text=f"Error: {err}")
-            messagebox.showerror("Error", f"Falló la compresión: {err}")
+            CustomMessageBox(self, "Error", f"Falló la compresión: {err}", is_error=True)
 
     def do_extract(self):
         src = self.ext_src.get().strip()
@@ -230,7 +262,7 @@ class FileCompressorApp(ctk.CTk):
         pwd = self.ext_pwd.get().strip()
         
         if not src or not dest:
-            messagebox.showerror("Error", "Debes especificar origen y destino.")
+            CustomMessageBox(self, "Error", "Debes especificar origen y destino.", is_error=True)
             return
             
         self.ext_btn.configure(state="disabled")
@@ -244,12 +276,6 @@ class FileCompressorApp(ctk.CTk):
                 if self.seven_z_path:
                     cmd = [self.seven_z_path, "x", src, f"-o{dest}", "-y"]
                     if pwd: cmd.append(f"-p{pwd}")
-                    subprocess.run(cmd, check=True, creationflags=subprocess.CREATE_NO_WINDOW)
-                    success = True
-                elif self.winrar_path:
-                    cmd = [self.winrar_path, "x", "-y"]
-                    if pwd: cmd.append(f"-p{pwd}")
-                    cmd.extend([src, dest + "\\"])
                     subprocess.run(cmd, check=True, creationflags=subprocess.CREATE_NO_WINDOW)
                     success = True
                 else:
@@ -272,10 +298,10 @@ class FileCompressorApp(ctk.CTk):
         self.ext_btn.configure(state="normal")
         if success:
             self.ext_status.configure(text="¡Extracción Finalizada!")
-            messagebox.showinfo("Éxito", "Archivo extraído correctamente.")
+            CustomMessageBox(self, "Éxito", "Archivo extraído correctamente.")
         else:
             self.ext_status.configure(text=f"Error: {err}")
-            messagebox.showerror("Error", f"Falló la extracción: {err}")
+            CustomMessageBox(self, "Error", f"Falló la extracción: {err}", is_error=True)
 
     def do_repair(self):
         src = self.rep_src.get().strip()
@@ -296,16 +322,16 @@ class FileCompressorApp(ctk.CTk):
             try:
                 if tool == "nativo":
                     success, msg = repair_zip(src, dest)
-                elif tool == "rar":
-                    cmd = [self.winrar_path, "r"]
-                    if pwd:
-                        cmd.append(f"-p{pwd}")
-                    cmd.append(src)
-                    
-                    # WinRAR repara en el mismo directorio con prefijo rebuilt. o fixed.
-                    subprocess.run(cmd, check=True, cwd=os.path.dirname(src), creationflags=subprocess.CREATE_NO_WINDOW)
+                elif tool == "7z_force":
+                    # 7-Zip no tiene función "repair" pero puede forzar la extracción de lo recuperable ignorando errores
+                    dest_folder = src + "_recuperado"
+                    os.makedirs(dest_folder, exist_ok=True)
+                    cmd = [self.seven_z_path, "x", src, f"-o{dest_folder}", "-y"]
+                    if pwd: cmd.append(f"-p{pwd}")
+                    # Usamos run sin check porque 7-Zip devolverá > 0 si hay errores, pero extraerá lo que pueda.
+                    subprocess.run(cmd, creationflags=subprocess.CREATE_NO_WINDOW)
                     success = True
-                    msg = "WinRAR intentó reparar el archivo. Revisa el directorio original."
+                    msg = f"Se forzó la extracción de archivos recuperables usando 7-Zip. Revisa la carpeta:\n{dest_folder}"
             except Exception as e:
                 msg = str(e)
                 
@@ -317,10 +343,55 @@ class FileCompressorApp(ctk.CTk):
         self.rep_btn.configure(state="normal")
         if success:
             self.rep_status.configure(text=f"Resultado: {msg}")
-            messagebox.showinfo("Reparación", msg)
+            CustomMessageBox(self, "Reparación", msg)
         else:
             self.rep_status.configure(text=f"Error: {msg}")
-            messagebox.showerror("Error", f"Falló la reparación: {msg}")
+            CustomMessageBox(self, "Error", f"Falló la reparación: {msg}", is_error=True)
+
+    def do_analyze(self):
+        src = self.rep_src.get().strip()
+        pwd = self.rep_pwd.get().strip()
+        
+        if not src:
+            CustomMessageBox(self, "Error", "Selecciona un archivo para analizar.", is_error=True)
+            return
+            
+        self.analyze_btn.configure(state="disabled")
+        self.rep_status.configure(text="Analizando integridad con 7-Zip...")
+        
+        def _task():
+            success = False
+            msg = ""
+            try:
+                cmd = [self.seven_z_path, "t", src]
+                if pwd: cmd.append(f"-p{pwd}")
+                
+                result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, creationflags=subprocess.CREATE_NO_WINDOW)
+                
+                if result.returncode == 0:
+                    success = True
+                    msg = "El archivo está en perfectas condiciones. No se encontraron errores."
+                else:
+                    success = False
+                    # Extract last lines of 7z output to show the error
+                    out_lines = result.stdout.strip().split('\n')
+                    err_summary = "\n".join(out_lines[-5:]) if len(out_lines) > 5 else result.stdout
+                    msg = f"El archivo contiene errores o está corrupto:\n\n{err_summary}"
+            except Exception as e:
+                msg = str(e)
+                
+            self.after(0, self.analyze_done, success, msg)
+            
+        threading.Thread(target=_task, daemon=True).start()
+
+    def analyze_done(self, success, msg):
+        self.analyze_btn.configure(state="normal")
+        if success:
+            self.rep_status.configure(text="Análisis completado: Todo OK")
+            CustomMessageBox(self, "Análisis 7-Zip", msg)
+        else:
+            self.rep_status.configure(text="Análisis completado: Archivo dañado")
+            CustomMessageBox(self, "Análisis 7-Zip", msg, is_error=True)
 
 def main():
     app = FileCompressorApp()

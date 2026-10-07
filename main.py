@@ -63,6 +63,53 @@ if __name__ == "__main__":
             app = credentials_vault.CredentialsVaultApp()
             app.mainloop()
             sys.exit(0)
+        elif sys.argv[1] == "--run-7z":
+            from gui_app import get_user_data_path
+            sys.argv.pop(1)
+            import argparse
+            parser = argparse.ArgumentParser()
+            parser.add_argument("--action")
+            parser.add_argument("--src")
+            parser.add_argument("--dest")
+            parser.add_argument("--pwd", default="")
+            parser.add_argument("--level", default="")
+            parser.add_argument("--threads", default="")
+            args, _ = parser.parse_known_args()
+            
+            import subprocess, os
+            import sys
+            
+            exe = get_user_data_path("tools\\7za.exe")
+            if not os.path.exists(exe):
+                print("Error: No se encontro 7za.exe en tools\\.")
+                sys.exit(1)
+                
+            cmd = [exe]
+            if args.action == "compress":
+                cmd.extend(["a", args.dest, args.src])
+                if args.pwd: cmd.append(f"-p{args.pwd}")
+                if args.level: cmd.append(args.level)
+                if args.threads: cmd.append(f"-mmt{args.threads}")
+                print("Comprimiendo...")
+            elif args.action == "extract":
+                cmd.extend(["x", args.src, f"-o{args.dest}", "-y"])
+                if args.pwd: cmd.append(f"-p{args.pwd}")
+                if args.threads: cmd.append(f"-mmt{args.threads}")
+                print(f"Descomprimiendo en: {args.dest}")
+            elif args.action == "analyze":
+                cmd.extend(["t", args.src])
+                if args.pwd: cmd.append(f"-p{args.pwd}")
+                if args.threads: cmd.append(f"-mmt{args.threads}")
+                print("Analizando integridad...")
+                
+            try:
+                proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1)
+                for line in proc.stdout:
+                    print(line, end="")
+                proc.wait()
+            except Exception as e:
+                print(f"Error ejecutando 7z: {e}")
+            sys.exit(0)
         elif sys.argv[1] == "--run-media-repair":
             from functions import media_repair
             sys.argv.pop(1)

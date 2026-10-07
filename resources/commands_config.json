@@ -570,10 +570,102 @@
                     ]
                 },
                 {
-                    "name": "Gestor Avanzado de Archivos (ZIP, RAR, 7Z)",
-                    "description": "Abre una utilidad avanzada con soporte para múltiples formatos, contraseñas y reparación de archivos.",
-                    "command": "__INTERNAL__ --run-file-compressor",
-                    "args": []
+                    "name": "Comprimir Archivos (7-Zip)",
+                    "description": "Comprime una ruta seleccionada usando el motor 7-Zip con opciones avanzadas.",
+                    "command": "__INTERNAL__ --run-7z --action compress",
+                    "args": [
+                        {
+                            "name": "Ruta Origen (Archivo o Carpeta)",
+                            "flag": "--src",
+                            "type": "directory_entry",
+                            "description": "Selecciona la carpeta o archivo que vas a comprimir."
+                        },
+                        {
+                            "name": "Guardar Como (Destino)",
+                            "flag": "--dest",
+                            "type": "save_file_entry",
+                            "description": "Ruta donde se guardará el archivo (Ej. archivo.zip o archivo.7z)."
+                        },
+                        {
+                            "name": "Contraseña (Opcional)",
+                            "flag": "--pwd",
+                            "type": "entry",
+                            "description": "Escribe una contraseña para cifrar el archivo."
+                        },
+                        {
+                            "name": "Nivel de Compresión",
+                            "type": "radio_group",
+                            "options": [
+                                { "name": "Normal (Recomendado)", "flag": "--level -mx=5" },
+                                { "name": "Rápida", "flag": "--level -mx=1" },
+                                { "name": "Máxima (Ultra)", "flag": "--level -mx=9" },
+                                { "name": "Sin compresión (Solo guardar)", "flag": "--level -mx=0" }
+                            ],
+                            "description": "Selecciona el nivel de compresión."
+                        },
+                        {
+                            "name": "Hilos de CPU (Hardware)",
+                            "flag": "--threads",
+                            "type": "threads_dropdown",
+                            "description": "Controla cuántos núcleos del procesador usar para acelerar la compresión (0 = Automático/Todos)."
+                        }
+                    ]
+                },
+                {
+                    "name": "Descomprimir Archivo (7-Zip)",
+                    "description": "Extrae el contenido de un archivo comprimido a una carpeta destino.",
+                    "command": "__INTERNAL__ --run-7z --action extract",
+                    "args": [
+                        {
+                            "name": "Archivo Comprimido (Origen)",
+                            "flag": "--src",
+                            "type": "file_entry",
+                            "description": "Selecciona el archivo (.zip, .7z) a extraer."
+                        },
+                        {
+                            "name": "Carpeta Destino",
+                            "flag": "--dest",
+                            "type": "directory_entry",
+                            "description": "Ruta donde se extraerán los archivos."
+                        },
+                        {
+                            "name": "Contraseña (Si la tiene)",
+                            "flag": "--pwd",
+                            "type": "entry",
+                            "description": "Escribe la contraseña para desbloquear el archivo."
+                        },
+                        {
+                            "name": "Hilos de CPU (Hardware)",
+                            "flag": "--threads",
+                            "type": "threads_dropdown",
+                            "description": "Controla cuántos núcleos del procesador usar para acelerar la extracción (0 = Automático)."
+                        }
+                    ]
+                },
+                {
+                    "name": "Analizar Integridad de Archivo",
+                    "description": "Comprueba si un archivo comprimido está corrupto sin necesidad de extraerlo.",
+                    "command": "__INTERNAL__ --run-7z --action analyze",
+                    "args": [
+                        {
+                            "name": "Archivo a Analizar",
+                            "flag": "--src",
+                            "type": "file_entry",
+                            "description": "Selecciona el archivo comprimido."
+                        },
+                        {
+                            "name": "Contraseña (Si la tiene)",
+                            "flag": "--pwd",
+                            "type": "entry",
+                            "description": "Si el archivo está cifrado, se necesita la contraseña para analizar los datos."
+                        },
+                        {
+                            "name": "Hilos de CPU (Hardware)",
+                            "flag": "--threads",
+                            "type": "threads_dropdown",
+                            "description": "Controla cuántos núcleos del procesador usar para acelerar el análisis (0 = Automático)."
+                        }
+                    ]
                 },
                 {
                     "name": "Gestor de Atributos de Archivos (Ocultar/Sistema)",

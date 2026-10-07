@@ -528,11 +528,11 @@ class App(ctk.CTk):
                 if arg_type == "checkbox":
                     chk = ctk.CTkCheckBox(row_frame, text=arg_name, variable=var, onvalue=arg_flag, offvalue="")
                     chk.pack(side="left", padx=(0, 10))
-                elif arg_type in ["entry", "directory_entry", "file_entry"]:
+                elif arg_type in ["entry", "directory_entry", "file_entry", "save_file_entry"]:
                     lbl = ctk.CTkLabel(row_frame, text=f"{arg_name}:", wraplength=180, justify="left")
                     lbl.pack(side="left", padx=(0, 5))
                     
-                    if arg_type in ["directory_entry", "file_entry"]:
+                    if arg_type in ["directory_entry", "file_entry", "save_file_entry"]:
                         def browse_folder(v=var):
                             folder = filedialog.askdirectory()
                             if folder:
@@ -548,15 +548,28 @@ class App(ctk.CTk):
                                 if " " in file_path and not file_path.startswith('"'):
                                     file_path = f'"{file_path}"'
                                 v.set(file_path)
+
+                        def browse_save_file(v=var):
+                            file_path = filedialog.asksaveasfilename(defaultextension="*.*", filetypes=[("Todos los archivos", "*.*")])
+                            if file_path:
+                                file_path = file_path.replace("/", "\\")
+                                if " " in file_path and not file_path.startswith('"'):
+                                    file_path = f'"{file_path}"'
+                                v.set(file_path)
                                 
                         btn_frame_paths = ctk.CTkFrame(row_frame, fg_color="transparent")
                         btn_frame_paths.pack(side="right", padx=(0, 10))
                         
-                        btn_browse_file = ctk.CTkButton(btn_frame_paths, text="📄 Archivo", width=60, command=browse_file)
-                        btn_browse_file.pack(side="left", padx=(0, 5))
+                        if arg_type == "save_file_entry":
+                            btn_browse_save = ctk.CTkButton(btn_frame_paths, text="💾 Guardar Como...", width=60, command=browse_save_file)
+                            btn_browse_save.pack(side="left", padx=(0, 5))
+                        elif arg_type == "file_entry":
+                            btn_browse_file = ctk.CTkButton(btn_frame_paths, text="📄 Archivo", width=60, command=browse_file)
+                            btn_browse_file.pack(side="left", padx=(0, 5))
                         
-                        btn_browse_folder = ctk.CTkButton(btn_frame_paths, text="📁 Carpeta", width=60, command=browse_folder)
-                        btn_browse_folder.pack(side="left")
+                        if arg_type in ["directory_entry", "file_entry"]:
+                            btn_browse_folder = ctk.CTkButton(btn_frame_paths, text="📁 Carpeta", width=60, command=browse_folder)
+                            btn_browse_folder.pack(side="left")
                         
                     ent = ctk.CTkEntry(row_frame, textvariable=var, placeholder_text="Escribir...", border_width=0)
                     ent.pack(side="left", fill="x", expand=True, padx=(0, 10))
@@ -696,8 +709,8 @@ class App(ctk.CTk):
                     if arg_data["type"] == "checkbox" and val != arg_data["flag"]:
                         continue
                     command_list.append(val)
-                elif arg_data["type"] in ["entry", "directory_entry", "file_entry", "wifi_radio_group", "netadapter_dropdown"]:
-                    if arg_data["type"] in ["directory_entry", "file_entry"]:
+                elif arg_data["type"] in ["entry", "directory_entry", "file_entry", "save_file_entry", "wifi_radio_group", "netadapter_dropdown"]:
+                    if arg_data["type"] in ["directory_entry", "file_entry", "save_file_entry"]:
                         val = val.replace("/", "\\")
                     if any(c in val for c in [" ", ",", ";", "&", "|", "(", ")", "'"]) and not val.startswith('"'):
                         val = f'"{val}"'
