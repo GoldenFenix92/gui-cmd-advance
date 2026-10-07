@@ -148,6 +148,9 @@ class App(ctk.CTk):
         self.execute_btn.pack(side="left", fill="x", expand=True, padx=(0, 5))
         if CTkToolTip: CTkToolTip(self.execute_btn, message="Ejecutar el comando en segundo plano (Ctrl+Enter)")
         
+        self.pause_btn = ctk.CTkButton(self.btn_frame, text="⏸️ Posponer", width=80, fg_color="#F39C12", hover_color="#D68910", command=self.pause_execution)
+        # self.pause_btn.pack(side="left", padx=(0, 5)) # Se oculta por defecto
+        
         self.fav_btn = ctk.CTkButton(self.btn_frame, text="⭐", width=40, font=("Segoe UI Emoji", 15), anchor="center", command=self.save_favorite, fg_color="#F39C12", hover_color="#D68910")
         self.fav_btn.pack(side="right")
         if CTkToolTip: CTkToolTip(self.fav_btn, message="Guardar o remover de Favoritos")
@@ -789,6 +792,18 @@ class App(ctk.CTk):
         full_command_str = " ".join(command_list)
         self.preview_var.set(full_command_str)
 
+    def pause_execution(self):
+        if not self.is_running: return
+        import os
+        appdata = os.environ.get('APPDATA', '')
+        flag_file = os.path.join(appdata, "cmd_gui_advance", "pause.flag")
+        try:
+            with open(flag_file, "w") as f: f.write("1")
+            self.append_output("\n[SISTEMA] Señal de pausa enviada. El proceso se detendrá al terminar su tarea actual...\n")
+            self.pause_btn.configure(state="disabled", text="Pausando...")
+        except Exception as e:
+            self.append_output(f"\nError enviando señal de pausa: {e}\n")
+
     def run_help(self):
         if self.is_running:
             return
@@ -948,12 +963,21 @@ class App(ctk.CTk):
         self.execute_btn.configure(text="Detener ejecución", fg_color="red", hover_color="#8B0000")
         self.cat_menu.configure(state="disabled")
         self.cmd_menu.configure(state="disabled")
+        self.pause_btn.pack(side="left", padx=(0, 5), before=self.fav_btn)
+        
+        # Limpiar archivo de pausa viejo si existe
+        appdata = os.environ.get('APPDATA', '')
+        flag_file = os.path.join(appdata, "cmd_gui_advance", "pause.flag")
+        if os.path.exists(flag_file):
+            try: os.remove(flag_file)
+            except: pass
         
         def on_finish():
             self.is_running = False
             self.execute_btn.configure(text="Ejecutar Comando", fg_color=["#1F883D", "#238636"], hover_color=["#1A7F37", "#2EA043"])
             self.cat_menu.configure(state="normal")
             self.cmd_menu.configure(state="normal")
+            self.pause_btn.pack_forget()
 
         cmd_executor.execute_command_async(
             command_string=command_str,
