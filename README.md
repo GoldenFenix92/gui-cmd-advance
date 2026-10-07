@@ -4,6 +4,24 @@
 
 ¡Un panel de control "todo en uno" para administradores de sistemas, técnicos y power users!
 
+## 🌟 Funciones Estelares (Lo Mejor de la App)
+
+🔥 **1. Memoria de Tareas Persistente (Pausa Inteligente)**
+¿Estás procesando miles de archivos o gigabytes de información y necesitas apagar tu PC? ¡No hay problema! El sistema cuenta con un motor de **Memoria Local**, permitiéndote **Posponer** cualquier operación pesada (como compresión de multimedia o reparación de datos). El programa guarda tu progreso exacto y reanudará automáticamente omitiendo los archivos ya procesados en tu próxima sesión.
+
+🛡️ **2. Blindaje Anti-Corrupción (Copia de Grado Servidor)**
+Atrás quedaron los días de copias fallidas y archivos corruptos en Windows. La herramienta integra defensas exclusivas que:
+* Leen y copian archivos aunque estén siendo usados por otros programas (gracias al soporte inyectado de **Volume Shadow Copy (-ssw)**).
+* Cuenta con un **Clonado Seguro (Robocopy)** interno a prueba de interrupciones de red, limites de rutas largas (MAX_PATH) y bucles infinitos del sistema operativo.
+
+🧠 **3. Bóveda IA y "Tren de Modelos" (Multi-Agente)**
+Integra a los cerebros más potentes del mundo (Google Gemini, OpenAI, Claude, Deepseek, Groq) en tu consola local para interpretar fallos. Su exclusivo sistema de **Tren de Modelos** asegura que si una IA se satura o agota sus cuotas (Error 429), la app saltará silenciosa y automáticamente a tu siguiente IA configurada. ¡Nunca te quedarás sin respuestas!
+
+🔍 **4. Visor S.M.A.R.T. de Bajo Nivel**
+Tu propio CrystalDiskInfo incorporado. Se conecta directamente al núcleo WMI/CIM de Windows para leer la salud, temperatura y vida útil restante de discos mecánicos SATA y los modernos SSD NVMe.
+
+---
+
 ## ✨ Características Principales
 
 *   **⚡ Motor Híbrido CMD/PowerShell:** Ejecuta código directamente en el sistema operativo mediante un motor asíncrono y seguro (no congela la interfaz).
