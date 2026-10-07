@@ -645,6 +645,22 @@
                             "flag": "--threads",
                             "type": "threads_dropdown",
                             "description": "Controla cuántos núcleos del procesador usar para acelerar la compresión (0 = Automático/Todos)."
+                        },
+                        {
+                            "name": "Dividir Archivo por Volúmenes",
+                            "flag": "--split",
+                            "type": "dropdown",
+                            "options": [
+                                "Sin dividir",
+                                "10m (10 Megabytes)",
+                                "50m (50 Megabytes)",
+                                "100m (100 Megabytes)",
+                                "500m (500 Megabytes)",
+                                "1g (1 Gigabyte)",
+                                "2g (2 Gigabytes)",
+                                "4g (4 Gigabytes - Límite FAT32)"
+                            ],
+                            "description": "Si deseas dividir el archivo resultante en varias partes más pequeñas."
                         }
                     ]
                 },

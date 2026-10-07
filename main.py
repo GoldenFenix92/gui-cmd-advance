@@ -72,6 +72,7 @@ if __name__ == "__main__":
             parser.add_argument("--pwd", default="")
             parser.add_argument("--level", default="")
             parser.add_argument("--threads", default="")
+            parser.add_argument("--split", default="")
             args, _ = parser.parse_known_args()
             
             import subprocess, os
