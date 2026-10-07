@@ -768,6 +768,56 @@
                     "description": "Abre un buscador ultra rápido basado en findstr para localizar texto dentro de archivos con regex y filtros.",
                     "command": "__INTERNAL__ --run-advanced-search",
                     "args": []
+                },
+                {
+                    "name": "Clonado/Copia Segura (Robocopy)",
+                    "description": "Copia carpetas de forma segura usando Robocopy. Ignora enlaces simbólicos (Junctions) y es resistente a fallos.",
+                    "command": "robocopy",
+                    "args": [
+                        {
+                            "name": "Carpeta Origen",
+                            "flag": "",
+                            "type": "directory_entry",
+                            "description": "Directorio que deseas copiar."
+                        },
+                        {
+                            "name": "Carpeta Destino",
+                            "flag": "",
+                            "type": "directory_entry",
+                            "description": "Directorio donde se pegará el contenido."
+                        },
+                        {
+                            "name": "Modo de Copia",
+                            "type": "radio_group",
+                            "options": [
+                                {
+                                    "name": "Espejo (Clon Exacto - Elimina extras en destino)",
+                                    "flag": "/MIR"
+                                },
+                                {
+                                    "name": "Copia Completa (No elimina nada en destino)",
+                                    "flag": "/E"
+                                }
+                            ],
+                            "description": "El modo Espejo borrará archivos en el destino que ya no existan en el origen."
+                        },
+                        {
+                            "name": "Reintentos en Error",
+                            "type": "dropdown",
+                            "options": [
+                                "/R:3 /W:1 (Recomendado)",
+                                "/R:0 /W:0 (Sin reintentos)",
+                                "/R:10 /W:3 (Redes inestables)"
+                            ],
+                            "description": "Número de reintentos y segundos de espera si un archivo está bloqueado o la red falla."
+                        },
+                        {
+                            "name": "Excluir Enlaces Simbólicos",
+                            "type": "checkbox",
+                            "flag": "/XJ",
+                            "description": "Ignora Junctions para evitar bucles infinitos (Recomendado activarlo)."
+                        }
+                    ]
                 }
             ]
         },

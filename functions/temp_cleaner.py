@@ -45,6 +45,8 @@ def main():
         path = t["path"]
         if os.path.exists(path):
             for root, dirs, files in os.walk(path):
+                # Remover junctions/symlinks para no entrar en bucles
+                dirs[:] = [d for d in dirs if not os.path.islink(os.path.join(root, d)) and not (hasattr(os.path, 'isjunction') and os.path.isjunction(os.path.join(root, d)))]
                 for f in files:
                     fp = os.path.join(root, f)
                     try:

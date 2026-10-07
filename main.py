@@ -85,10 +85,13 @@ if __name__ == "__main__":
                 
             cmd = [exe]
             if args.action == "compress":
-                cmd.extend(["a", args.dest, args.src, "-bsp1"])
+                cmd.extend(["a", args.dest, args.src, "-bsp1", "-ssw"])
                 if args.pwd: cmd.append(f"-p{args.pwd}")
                 if args.level: cmd.append(args.level)
                 if args.threads: cmd.append(f"-mmt{args.threads}")
+                if args.split and args.split != "Sin dividir":
+                    split_val = args.split.split(" ")[0]
+                    cmd.append(f"-v{split_val}")
                 print("Comprimiendo...")
             elif args.action == "extract":
                 cmd.extend(["x", args.src, f"-o{args.dest}", "-y", "-bsp1"])

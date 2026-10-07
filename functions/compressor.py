@@ -213,9 +213,11 @@ def main():
         if input_path.is_file():
             files_to_process.append(input_path)
         elif input_path.is_dir():
-            for f in input_path.rglob("*"):
-                if f.is_file():
-                    files_to_process.append(f)
+            for root, dirs, files in os.walk(input_path):
+                # Prevenir bucles infinitos en Windows
+                dirs[:] = [d for d in dirs if not os.path.islink(os.path.join(root, d)) and not (hasattr(os.path, 'isjunction') and os.path.isjunction(os.path.join(root, d)))]
+                for f in files:
+                    files_to_process.append(Path(os.path.join(root, f)))
         else:
             print(f"[ERROR] La ruta de entrada no existe: {inp}")
         
