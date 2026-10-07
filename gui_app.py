@@ -634,6 +634,14 @@ class App(ctk.CTk):
                         rb = ctk.CTkRadioButton(rb_frame, text=prof, variable=var, value=prof)
                         rb.pack(side="top", anchor="w", pady=(0, 5))
                     
+                elif arg_type == "dropdown":
+                    lbl = ctk.CTkLabel(row_frame, text=f"{arg_name}:")
+                    lbl.pack(side="left", padx=(0, 5))
+                    opts = arg.get("options", [])
+                    dropdown = ctk.CTkOptionMenu(row_frame, variable=var, values=opts)
+                    dropdown.pack(side="left", fill="x", expand=True, padx=(0, 10))
+                    if opts and not var.get():
+                        var.set(opts[0])
                 elif arg_type == "threads_dropdown":
                     lbl = ctk.CTkLabel(row_frame, text=f"{arg_name}:")
                     lbl.pack(side="left", padx=(0, 5))
