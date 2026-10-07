@@ -783,7 +783,7 @@ class App(ctk.CTk):
                     if arg_data["flag"]:
                         command_list.append(arg_data["flag"])
                     command_list.append(val)
-                elif arg_data["type"] in ["drive_dropdown", "disk_dropdown", "threads_dropdown"]:
+                elif arg_data["type"] in ["drive_dropdown", "disk_dropdown", "threads_dropdown", "dropdown"]:
                     val_to_use = val.split(" ")[0]
                     if arg_data["flag"]:
                         command_list.append(arg_data["flag"])
