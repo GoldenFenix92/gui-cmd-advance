@@ -88,7 +88,7 @@ def compress_video(input_path, output_path, crf=23, hw="auto", preset="fast", th
         print(f"Hardware Encoder: {encoder} | Preset: {preset} | CRF: {crf}")
         
         cmd = [
-            get_ffmpeg_path(), "-y", "-i", input_path,
+            get_ffmpeg_path(), "-y", "-nostdin", "-i", input_path,
             "-vcodec", encoder, "-crf", str(crf) if encoder == "libx264" else str(crf),
             "-preset", preset
         ]
@@ -101,13 +101,13 @@ def compress_video(input_path, output_path, crf=23, hw="auto", preset="fast", th
         # Ajuste para encoders especificos
         if encoder == "h264_nvenc":
             cmd = [
-                get_ffmpeg_path(), "-y", "-i", input_path,
+                get_ffmpeg_path(), "-y", "-nostdin", "-i", input_path,
                 "-vcodec", "h264_nvenc", "-cq", str(crf), "-rc", "vbr",
                 "-preset", preset, output_path
             ]
         elif encoder == "h264_amf":
             cmd = [
-                get_ffmpeg_path(), "-y", "-i", input_path,
+                get_ffmpeg_path(), "-y", "-nostdin", "-i", input_path,
                 "-vcodec", "h264_amf", "-rc", "cqp", "-qp_i", str(crf), "-qp_p", str(crf),
                 "-quality", "speed" if preset == "fast" else "balanced", output_path
             ]
@@ -252,9 +252,6 @@ def main():
             out = get_output_path(f, args.output, args.suffix, force_ext=".mp4", base_dir=base_dir)
             
         is_processed = memory.is_processed(fp_str)
-        if not is_processed and out and os.path.exists(out) and os.path.getsize(out) > 0:
-            is_processed = True
-            memory.mark_processed(fp_str)
             
         if is_processed:
             already_processed += 1
