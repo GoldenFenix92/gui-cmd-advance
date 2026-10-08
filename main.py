@@ -61,6 +61,12 @@ if __name__ == "__main__":
             sys.argv.pop(1)
             credentials_vault_cli.main_cli()
             sys.exit(0)
+        elif sys.argv[1] == "--run-name-sanitizer":
+            from functions import name_sanitizer
+            sys.argv.pop(1)
+            app = name_sanitizer.NameSanitizerApp()
+            app.mainloop()
+            sys.exit(0)
         elif sys.argv[1] == "--run-7z":
             from gui_app import get_user_data_path
             sys.argv.pop(1)
