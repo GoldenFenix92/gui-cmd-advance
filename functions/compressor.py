@@ -65,7 +65,7 @@ def detect_best_encoder():
         pass
     return 'libx264'
 
-def compress_video(input_path, output_path, crf=23, hw="auto", preset="fast", threads=0, file_index=0, total_files=1):
+def compress_video(input_path, output_path, crf=23, hw="auto", preset="fast", threads=0, file_index=0, total_files=1, attempt=1):
     if not is_ffmpeg_installed():
         print("[ERROR] FFmpeg no esta instalado o no esta en el PATH del sistema.")
         print("Por favor, instala FFmpeg para poder comprimir videos (https://ffmpeg.org/download.html).")
@@ -84,14 +84,23 @@ def compress_video(input_path, output_path, crf=23, hw="auto", preset="fast", th
             encoder = "h264_qsv"
             
         import re
-        print(f"Comprimiendo video: {input_path}")
-        print(f"Hardware Encoder: {encoder} | Preset: {preset} | CRF: {crf}")
+        if attempt == 1:
+            print(f"Comprimiendo video: {input_path}")
+            print(f"Hardware Encoder: {encoder} | Preset: {preset} | CRF: {crf}")
+        else:
+            print(f"Reintentando video (Intento {attempt}/3): {input_path}")
         
-        cmd = [
-            get_ffmpeg_path(), "-y", "-nostdin", "-i", input_path,
+        if attempt == 1:
+            cmd = [get_ffmpeg_path(), "-y", "-nostdin", "-i", input_path]
+        elif attempt == 2:
+            cmd = [get_ffmpeg_path(), "-y", "-nostdin", "-fflags", "+genpts", "-i", input_path, "-async", "1", "-vsync", "1"]
+        else:
+            cmd = [get_ffmpeg_path(), "-y", "-nostdin", "-err_detect", "ignore_err", "-i", input_path]
+            
+        cmd.extend([
             "-vcodec", encoder, "-crf", str(crf) if encoder == "libx264" else str(crf),
             "-preset", preset
-        ]
+        ])
         
         if threads > 0:
             cmd.extend(["-threads", str(threads)])
@@ -100,17 +109,15 @@ def compress_video(input_path, output_path, crf=23, hw="auto", preset="fast", th
         
         # Ajuste para encoders especificos
         if encoder == "h264_nvenc":
-            cmd = [
-                get_ffmpeg_path(), "-y", "-nostdin", "-i", input_path,
-                "-vcodec", "h264_nvenc", "-cq", str(crf), "-rc", "vbr",
-                "-preset", preset, output_path
-            ]
+            cmd = [get_ffmpeg_path(), "-y", "-nostdin"]
+            if attempt == 2: cmd.extend(["-fflags", "+genpts"])
+            elif attempt == 3: cmd.extend(["-err_detect", "ignore_err"])
+            cmd.extend(["-i", input_path, "-vcodec", "h264_nvenc", "-cq", str(crf), "-rc", "vbr", "-preset", preset, output_path])
         elif encoder == "h264_amf":
-            cmd = [
-                get_ffmpeg_path(), "-y", "-nostdin", "-i", input_path,
-                "-vcodec", "h264_amf", "-rc", "cqp", "-qp_i", str(crf), "-qp_p", str(crf),
-                "-quality", "speed" if preset == "fast" else "balanced", output_path
-            ]
+            cmd = [get_ffmpeg_path(), "-y", "-nostdin"]
+            if attempt == 2: cmd.extend(["-fflags", "+genpts"])
+            elif attempt == 3: cmd.extend(["-err_detect", "ignore_err"])
+            cmd.extend(["-i", input_path, "-vcodec", "h264_amf", "-rc", "cqp", "-qp_i", str(crf), "-qp_p", str(crf), "-quality", "speed" if preset == "fast" else "balanced", output_path])
             
         startupinfo = subprocess.STARTUPINFO()
         startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
@@ -127,7 +134,7 @@ def compress_video(input_path, output_path, crf=23, hw="auto", preset="fast", th
         
         last_progress_time = time.time()
         last_time_str = None
-        timeout_seconds = 120
+        timeout_seconds = 120 if attempt < 3 else 60
         
         for line in process.stdout:
             print(line, end='', flush=True)
@@ -175,16 +182,24 @@ def compress_video(input_path, output_path, crf=23, hw="auto", preset="fast", th
             print(f"Progreso Total: {overall_pct}%\r", end='', flush=True)
             return {"status": "success", "file": input_path, "out_file": output_path, "type": "video"}
         else:
-            if encoder != "libx264":
+            if encoder != "libx264" and attempt == 1:
                 print(f"\n[WARNING] Fallo la compresion con {encoder}. Reintentando automaticamente con CPU...")
-                return compress_video(input_path, output_path, crf, "cpu", preset, threads, file_index, total_files)
-            print(f"\n[ERROR] Fallo la compresion de {input_path}")
+                return compress_video(input_path, output_path, crf, "cpu", preset, threads, file_index, total_files, attempt=1)
+            elif attempt < 3:
+                print(f"\n[WARNING] Fallo la compresion (Intento {attempt}/3). Reintentando en modo de compatibilidad...")
+                return compress_video(input_path, output_path, crf, hw, preset, threads, file_index, total_files, attempt=attempt+1)
+                
+            print(f"\n[ERROR] Fallo definitivo en la compresion de {input_path}")
             return {"status": "error", "file": input_path, "msg": last_error, "type": "video"}
     except Exception as e:
-        if 'encoder' in locals() and encoder != "libx264":
+        if 'encoder' in locals() and encoder != "libx264" and attempt == 1:
             print(f"\n[WARNING] Excepcion con {encoder}. Reintentando automaticamente con CPU...")
-            return compress_video(input_path, output_path, crf, "cpu", preset, threads, file_index, total_files)
-        print(f"\n[ERROR] Excepcion al comprimir {input_path}: {e}")
+            return compress_video(input_path, output_path, crf, "cpu", preset, threads, file_index, total_files, attempt=1)
+        elif attempt < 3:
+            print(f"\n[WARNING] Excepcion al comprimir (Intento {attempt}/3). Reintentando en modo de compatibilidad...")
+            return compress_video(input_path, output_path, crf, hw, preset, threads, file_index, total_files, attempt=attempt+1)
+            
+        print(f"\n[ERROR] Excepcion definitiva al comprimir {input_path}: {e}")
         return {"status": "error", "file": input_path, "msg": str(e), "type": "video"}
 
 def get_output_path(input_path, output_dir, suffix="", force_ext=None, base_dir=None):
