@@ -272,6 +272,9 @@ def main():
             out = get_output_path(f, args.output, args.suffix, force_ext=".mp4", base_dir=base_dir)
             
         is_processed = memory.is_processed(fp_str)
+        if not is_processed and out and os.path.exists(out) and os.path.getsize(out) > 0:
+            is_processed = True
+            memory.mark_processed(fp_str)
             
         if is_processed:
             already_processed += 1
