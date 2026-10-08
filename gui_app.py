@@ -308,11 +308,31 @@ class App(ctk.CTk):
                 bitmask >>= 1
         return drives if drives else ["C:"]
 
-    def get_physical_disks(self):
+    def get_physical_disks(self, filter_status=None):
         import subprocess
         disks = []
         try:
-            cmd = "Get-PhysicalDisk | ForEach-Object { $num = $_.DeviceId; $friendly = $_.FriendlyName; $vStr=''; try{ $v=Get-Partition -DiskNumber $num -ErrorAction SilentlyContinue | Where-Object DriveLetter | Select-Object -ExpandProperty DriveLetter; if($v){$vStr = ' (' + ($v -join ', ') + ':)'} }catch{}; $num + ' - ' + $friendly + $vStr }"
+            status_filter = ""
+            if filter_status == "Online":
+                status_filter = " | Where-Object { $_.OperationalStatus -match 'Online|Ok' -and $_.IsOffline -eq $false }"
+            elif filter_status == "Offline":
+                status_filter = " | Where-Object { $_.OperationalStatus -match 'Offline' -or $_.IsOffline -eq $true }"
+
+            cmd = (
+                "Get-Disk" + status_filter + " | ForEach-Object { "
+                "$num = $_.Number; "
+                "$friendly = $_.FriendlyName; "
+                "$vStr=''; "
+                "try { "
+                "$vols = Get-Partition -DiskNumber $num -ErrorAction SilentlyContinue | Get-Volume -ErrorAction SilentlyContinue | Where-Object DriveLetter; "
+                "if($vols){ "
+                "$lbls = $vols | ForEach-Object { $_.DriveLetter + ':\\ [' + $_.FileSystemLabel + ']' }; "
+                "$vStr = ' (' + ($lbls -join ', ') + ')' "
+                "} "
+                "} catch {}; "
+                "$num.ToString() + ' - ' + $friendly + $vStr "
+                "}"
+            )
             output = subprocess.check_output(
                 ["powershell", "-Command", cmd],
                 creationflags=subprocess.CREATE_NO_WINDOW
@@ -323,7 +343,7 @@ class App(ctk.CTk):
         except:
             pass
         if not disks:
-            disks = ["0", "1", "2"]
+            disks = ["(Ningun disco)"]
         return disks
 
     def get_wifi_profiles(self):
@@ -602,10 +622,17 @@ class App(ctk.CTk):
                     dropdown = ctk.CTkOptionMenu(row_frame, variable=var, values=drives)
                     dropdown.pack(side="left", fill="x", expand=True, padx=(0, 10))
                     
-                elif arg_type == "disk_dropdown":
+                elif arg_type in ["disk_dropdown", "disk_online_dropdown", "disk_offline_dropdown"]:
                     lbl = ctk.CTkLabel(row_frame, text=f"{arg_name}:")
                     lbl.pack(side="left", padx=(0, 5))
-                    pdisks = self.get_physical_disks()
+                    
+                    if arg_type == "disk_online_dropdown":
+                        pdisks = self.get_physical_disks(filter_status="Online")
+                    elif arg_type == "disk_offline_dropdown":
+                        pdisks = self.get_physical_disks(filter_status="Offline")
+                    else:
+                        pdisks = self.get_physical_disks()
+                        
                     if pdisks:
                         var.set(pdisks[0])
                     dropdown = ctk.CTkOptionMenu(row_frame, variable=var, values=pdisks)
@@ -791,8 +818,10 @@ class App(ctk.CTk):
                     if arg_data["flag"]:
                         command_list.append(arg_data["flag"])
                     command_list.append(val)
-                elif arg_data["type"] in ["drive_dropdown", "disk_dropdown", "threads_dropdown", "dropdown"]:
+                elif arg_data["type"] in ["drive_dropdown", "disk_dropdown", "disk_online_dropdown", "disk_offline_dropdown", "threads_dropdown", "dropdown"]:
                     val_to_use = val.split(" ")[0]
+                    if arg_data["type"] in ["disk_dropdown", "disk_online_dropdown", "disk_offline_dropdown"] and val_to_use == "(Ningun":
+                        continue
                     if arg_data["flag"]:
                         command_list.append(arg_data["flag"])
                     command_list.append(val_to_use)

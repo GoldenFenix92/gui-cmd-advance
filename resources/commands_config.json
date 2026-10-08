@@ -934,7 +934,7 @@
                         {
                             "name": "Número de Disco",
                             "flag": "-num",
-                            "type": "disk_dropdown",
+                            "type": "disk_online_dropdown",
                             "description": "Selecciona el disco a desconectar."
                         }
                     ]
@@ -947,7 +947,7 @@
                         {
                             "name": "Número de Disco",
                             "flag": "-num",
-                            "type": "disk_dropdown",
+                            "type": "disk_offline_dropdown",
                             "description": "Selecciona el disco a conectar."
                         }
                     ]
