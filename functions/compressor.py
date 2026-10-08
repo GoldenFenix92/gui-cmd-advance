@@ -42,7 +42,7 @@ def compress_image(input_path, output_path, quality=75, file_index=0, total_file
             img.save(output_path, "JPEG", quality=quality, optimize=True)
         print(f"[SUCCESS] Imagen comprimida: {output_path}")
         overall_pct = int(((file_index + 1) * 100) / total_files)
-        print(f" {overall_pct}%", end='', flush=True)
+        print(f"Progreso Total: {overall_pct}%\r", end='', flush=True)
         return {'status': 'success', 'file': input_path, 'out_file': output_path, 'type': 'image'}
     except Exception as e:
         print(f"[ERROR] No se pudo comprimir {input_path}: {e}")
@@ -145,14 +145,14 @@ def compress_video(input_path, output_path, crf=23, hw="auto", preset="fast", th
                     current_sec = int(h)*3600 + int(m)*60 + float(s)
                     pct = int((current_sec / duration_sec) * 100)
                     overall_pct = int(((file_index * 100) + pct) / total_files)
-                    print(f" {overall_pct}%", end='', flush=True)
+                    print(f"Progreso Total: {overall_pct}%\r", end='', flush=True)
             
         process.wait()
         
         if process.returncode == 0:
             print(f"\n[SUCCESS] Video comprimido: {output_path}")
             overall_pct = int(((file_index + 1) * 100) / total_files)
-            print(f" {overall_pct}%", end='', flush=True)
+            print(f"Progreso Total: {overall_pct}%\r", end='', flush=True)
             return {"status": "success", "file": input_path, "out_file": output_path, "type": "video"}
         else:
             if encoder != "libx264":
@@ -245,7 +245,7 @@ def main():
         if memory.is_processed(fp_str):
             skipped += 1
             if (i+1) == total_files or (i+1) % 10 == 0:
-                print(f"{int(((i+1)/total_files)*100)}%")
+                print(f"Progreso Total: {int(((i+1)/total_files)*100)}%\r", end='', flush=True)
             continue
             
         ext = f.suffix.lower()
