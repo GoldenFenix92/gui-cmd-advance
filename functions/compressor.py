@@ -167,20 +167,28 @@ def compress_video(input_path, output_path, crf=23, hw="auto", preset="fast", th
         print(f"\n[ERROR] Excepcion al comprimir {input_path}: {e}")
         return {"status": "error", "file": input_path, "msg": str(e), "type": "video"}
 
-def get_output_path(input_path, output_dir, suffix="_comprimido", force_ext=None):
+def get_output_path(input_path, output_dir, suffix="", force_ext=None, base_dir=None):
     p = Path(input_path)
     if not output_dir:
-        output_dir = p.parent
+        output_dir_path = p.parent
     else:
-        output_dir = Path(output_dir)
-        output_dir.mkdir(parents=True, exist_ok=True)
+        output_dir_path = Path(output_dir)
+        if base_dir:
+            try:
+                rel = p.parent.relative_to(base_dir)
+                output_dir_path = output_dir_path / rel
+            except ValueError:
+                pass
+        output_dir_path.mkdir(parents=True, exist_ok=True)
         
     ext = force_ext if force_ext else p.suffix
     
-    # Prevenir que el archivo de salida sobrescriba el archivo original
-    out_path = output_dir / f"{p.stem}{suffix}{ext}"
+    if suffix and (suffix.strip() == '""' or suffix.strip() == "''"):
+        suffix = ""
+        
+    out_path = output_dir_path / f"{p.stem}{suffix}{ext}"
     if out_path.resolve() == p.resolve():
-        out_path = output_dir / f"{p.stem}_out{ext}"
+        out_path = output_dir_path / f"{p.stem}_out{ext}"
         
     return str(out_path)
 
@@ -188,7 +196,7 @@ def main():
     parser = argparse.ArgumentParser(description="Compresor de Video e Imagenes")
     parser.add_argument("--input", action='append', required=True, help="Archivo o carpeta de entrada")
     parser.add_argument("--output", default="", help="Carpeta de salida (opcional)")
-    parser.add_argument("--suffix", default="_comprimido", help="Sufijo para archivos comprimidos")
+    parser.add_argument("--suffix", default="", help="Sufijo para archivos comprimidos")
     parser.add_argument("--quality", type=int, default=75, help="Calidad de imagen (0-100)")
     parser.add_argument("--crf", type=int, default=23, help="CRF para video (menor = mejor calidad, 18-28 recomendado)")
     
@@ -211,13 +219,13 @@ def main():
     for inp in args.input:
         input_path = Path(inp)
         if input_path.is_file():
-            files_to_process.append(input_path)
+            files_to_process.append((input_path, input_path.parent))
         elif input_path.is_dir():
             for root, dirs, files in os.walk(input_path):
                 # Prevenir bucles infinitos en Windows
                 dirs[:] = [d for d in dirs if not os.path.islink(os.path.join(root, d)) and not (hasattr(os.path, 'isjunction') and os.path.isjunction(os.path.join(root, d)))]
                 for f in files:
-                    files_to_process.append(Path(os.path.join(root, f)))
+                    files_to_process.append((Path(os.path.join(root, f)), input_path))
         else:
             print(f"[ERROR] La ruta de entrada no existe: {inp}")
         
@@ -232,7 +240,7 @@ def main():
     total_files = len(files_to_process)
     skipped = 0
     
-    for i, f in enumerate(files_to_process):
+    for i, (f, base_dir) in enumerate(files_to_process):
         fp_str = str(f)
         if memory.is_processed(fp_str):
             skipped += 1
@@ -243,11 +251,11 @@ def main():
         ext = f.suffix.lower()
         res = None
         if ext in image_exts:
-            out = get_output_path(f, args.output, args.suffix)
+            out = get_output_path(f, args.output, args.suffix, base_dir=base_dir)
             res = compress_image(fp_str, out, quality=args.quality, file_index=i, total_files=total_files)
             if res: results.append(res)
         elif ext in video_exts:
-            out = get_output_path(f, args.output, args.suffix, force_ext=".mp4")
+            out = get_output_path(f, args.output, args.suffix, force_ext=".mp4", base_dir=base_dir)
             res = compress_video(fp_str, out, crf=args.crf, hw=args.hw, preset=args.preset, threads=args.threads, file_index=i, total_files=total_files)
             if res: results.append(res)
             

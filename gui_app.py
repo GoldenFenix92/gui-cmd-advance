@@ -825,9 +825,39 @@ class App(ctk.CTk):
                     if arg_data["flag"]:
                         command_list.append(arg_data["flag"])
                     command_list.append(val_to_use)
-        
         full_command_str = " ".join(command_list)
         self.preview_var.set(full_command_str)
+
+        # Validación para Compresor de Multimedia
+        if selected_command == "Compresor de Multimedia":
+            args_map = {}
+            for arg_name, arg_data in self.current_args_vars.items():
+                args_map[arg_name] = arg_data["var"].get().strip()
+                
+            input_val = args_map.get("Seleccionar Carpeta (Lote)", "")
+            if not input_val:
+                input_val = args_map.get("Seleccionar Archivo (Individual)", "")
+                
+            out_val = args_map.get("Salida (Carpeta opcional)", "")
+            suffix = args_map.get("Sufijo de archivo", "")
+            
+            # Limpiar comillas
+            input_val = input_val.strip('"\'')
+            out_val = out_val.strip('"\'')
+            
+            # Si no hay ruta de salida definida, la salida es la misma carpeta que la de entrada
+            if not out_val and input_val:
+                import os
+                if os.path.isfile(input_val):
+                    out_val = os.path.dirname(input_val)
+                else:
+                    out_val = input_val
+            
+            if input_val and out_val and input_val.lower() == out_val.lower() and not suffix:
+                self.execute_btn.configure(state="disabled", text="❌ Falta sufijo (Evitará sobrescribir originales)")
+            else:
+                if not self.is_running:
+                    self.execute_btn.configure(state="normal", text="Ejecutar Comando")
 
     def pause_execution(self):
         if not self.is_running: return
