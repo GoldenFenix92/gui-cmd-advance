@@ -478,7 +478,14 @@
                     "name": "Sanitizador de Nombres",
                     "description": "Herramienta para reparar nombres de archivos y carpetas importados de Mac/Linux (con caracteres inv\u00e1lidos) que Windows marca como corruptos o con error.",
                     "command": "__INTERNAL__ --run-name-sanitizer",
-                    "args": []
+                    "args": [
+                        {
+                            "name": "Ruta",
+                            "flag": "",
+                            "type": "directory_entry",
+                            "description": "Carpeta a sanitizar"
+                        }
+                    ]
                 },
                 {
                     "name": "dir",

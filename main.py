@@ -64,8 +64,11 @@ if __name__ == "__main__":
         elif sys.argv[1] == "--run-name-sanitizer":
             from functions import name_sanitizer
             sys.argv.pop(1)
-            app = name_sanitizer.NameSanitizerApp()
-            app.mainloop()
+            import argparse
+            parser = argparse.ArgumentParser()
+            parser.add_argument("folder", nargs="?", default="")
+            args, _ = parser.parse_known_args(sys.argv[1:])
+            name_sanitizer.main(args.folder)
             sys.exit(0)
         elif sys.argv[1] == "--run-7z":
             from gui_app import get_user_data_path
