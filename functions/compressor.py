@@ -236,27 +236,53 @@ def main():
     if resumed_count > 0:
         print(f"Reanudando tarea... Se omitirán {resumed_count} archivos previamente procesados.\n")
 
-    results = []
+    print("\n[INFO] Realizando analisis previo de archivos...")
+    files_to_compress = []
+    already_processed = 0
     total_files = len(files_to_process)
-    skipped = 0
     
-    for i, (f, base_dir) in enumerate(files_to_process):
+    for f, base_dir in files_to_process:
         fp_str = str(f)
-        if memory.is_processed(fp_str):
-            skipped += 1
-            if (i+1) == total_files or (i+1) % 10 == 0:
-                print(f"Progreso Total: {int(((i+1)/total_files)*100)}%\r", end='', flush=True)
-            continue
+        ext = f.suffix.lower()
+        
+        out = None
+        if ext in image_exts:
+            out = get_output_path(f, args.output, args.suffix, base_dir=base_dir)
+        elif ext in video_exts:
+            out = get_output_path(f, args.output, args.suffix, force_ext=".mp4", base_dir=base_dir)
+            
+        is_processed = memory.is_processed(fp_str)
+        if not is_processed and out and os.path.exists(out) and os.path.getsize(out) > 0:
+            is_processed = True
+            memory.mark_processed(fp_str)
+            
+        if is_processed:
+            already_processed += 1
+        else:
+            files_to_compress.append((f, base_dir))
+            
+    print(f"[ANALISIS] Total encontrados: {total_files} | Ya procesados: {already_processed} | Pendientes: {len(files_to_compress)}\n")
+    
+    results = []
+    skipped = already_processed
+    
+    # Enviar progreso inicial si ya hay archivos procesados
+    if total_files > 0 and skipped > 0:
+        print(f"Progreso Total: {int((skipped/total_files)*100)}%\r", end='', flush=True)
+    
+    for i, (f, base_dir) in enumerate(files_to_compress):
+        real_index = skipped + i
+        fp_str = str(f)
             
         ext = f.suffix.lower()
         res = None
         if ext in image_exts:
             out = get_output_path(f, args.output, args.suffix, base_dir=base_dir)
-            res = compress_image(fp_str, out, quality=args.quality, file_index=i, total_files=total_files)
+            res = compress_image(fp_str, out, quality=args.quality, file_index=real_index, total_files=total_files)
             if res: results.append(res)
         elif ext in video_exts:
             out = get_output_path(f, args.output, args.suffix, force_ext=".mp4", base_dir=base_dir)
-            res = compress_video(fp_str, out, crf=args.crf, hw=args.hw, preset=args.preset, threads=args.threads, file_index=i, total_files=total_files)
+            res = compress_video(fp_str, out, crf=args.crf, hw=args.hw, preset=args.preset, threads=args.threads, file_index=real_index, total_files=total_files)
             if res: results.append(res)
             
         if ext in image_exts or ext in video_exts:
