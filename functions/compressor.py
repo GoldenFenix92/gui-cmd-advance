@@ -123,10 +123,30 @@ def compress_video(input_path, output_path, crf=23, hw="auto", preset="fast", th
         duration_re = re.compile(r"Duration: (\d{2}):(\d{2}):(\d{2}\.\d{2})")
         time_re = re.compile(r"time=(\d{2}):(\d{2}):(\d{2}\.\d{2})")
         
-        
         last_error = "Error desconocido"
+        
+        last_progress_time = time.time()
+        last_time_str = None
+        timeout_seconds = 120
+        
         for line in process.stdout:
             print(line, end='', flush=True)
+            
+            # Watchdog anti-cuelgues
+            if "time=" in line:
+                match_time_check = time_re.search(line)
+                if match_time_check:
+                    current_time_str = match_time_check.group(0)
+                    if current_time_str != last_time_str:
+                        last_time_str = current_time_str
+                        last_progress_time = time.time()
+                        
+            if time.time() - last_progress_time > timeout_seconds:
+                print(f"\n[ERROR] FFmpeg se ha colgado (timeout de {timeout_seconds}s sin avance en el video). Abortando...")
+                last_error = "El archivo original esta corrupto o el codificador se ha atascado (Timeout de seguridad excedido)"
+                process.kill()
+                break
+                
             if "Error" in line or "error" in line or "Cannot" in line:
                 last_error = line.strip()
                 
