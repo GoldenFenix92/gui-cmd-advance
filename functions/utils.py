@@ -42,3 +42,22 @@ def apply_window_theme(window):
                 ctypes.windll.dwmapi.DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, ctypes.byref(value), ctypes.sizeof(value))
             except: pass
     window.after(200, _apply)
+
+# Monkey-patching para aplicar el icono y tema a TODAS las ventanas automáticamente
+import customtkinter as ctk
+
+if not hasattr(ctk, '_theme_patched'):
+    ctk._theme_patched = True
+    _original_ctk_init = ctk.CTk.__init__
+    _original_toplevel_init = ctk.CTkToplevel.__init__
+
+    def _patched_ctk_init(self, *args, **kwargs):
+        _original_ctk_init(self, *args, **kwargs)
+        apply_window_theme(self)
+
+    def _patched_toplevel_init(self, *args, **kwargs):
+        _original_toplevel_init(self, *args, **kwargs)
+        apply_window_theme(self)
+
+    ctk.CTk.__init__ = _patched_ctk_init
+    ctk.CTkToplevel.__init__ = _patched_toplevel_init
