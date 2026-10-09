@@ -3,6 +3,8 @@ import sys
 import argparse
 import subprocess
 from pathlib import Path
+import time
+import multiprocessing
 
 # Forzar UTF-8 en la salida estándar para evitar errores de codificación con emojis en los nombres de archivo
 if hasattr(sys.stdout, 'reconfigure'):
@@ -102,8 +104,12 @@ def compress_video(input_path, output_path, crf=23, hw="auto", preset="fast", th
             "-preset", preset
         ])
         
-        if threads > 0:
-            cmd.extend(["-threads", str(threads)])
+        calc_threads = threads
+        if calc_threads <= 0 and encoder == "libx264":
+            calc_threads = max(1, multiprocessing.cpu_count() - 2)
+            
+        if calc_threads > 0:
+            cmd.extend(["-threads", str(calc_threads)])
             
         cmd.append(output_path)
         
@@ -122,7 +128,9 @@ def compress_video(input_path, output_path, crf=23, hw="auto", preset="fast", th
         startupinfo = subprocess.STARTUPINFO()
         startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
         
-        process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, startupinfo=startupinfo)
+        BELOW_NORMAL_PRIORITY_CLASS = 0x00004000
+        
+        process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, startupinfo=startupinfo, creationflags=BELOW_NORMAL_PRIORITY_CLASS)
         
         duration_sec = 0
         
@@ -192,6 +200,13 @@ def compress_video(input_path, output_path, crf=23, hw="auto", preset="fast", th
             print(f"\n[ERROR] Fallo definitivo en la compresion de {input_path}")
             return {"status": "error", "file": input_path, "msg": last_error, "type": "video"}
     except Exception as e:
+        if 'process' in locals() and process:
+            try:
+                process.kill()
+                process.wait(timeout=2)
+            except:
+                pass
+                
         if 'encoder' in locals() and encoder != "libx264" and attempt == 1:
             print(f"\n[WARNING] Excepcion con {encoder}. Reintentando automaticamente con CPU...")
             return compress_video(input_path, output_path, crf, "cpu", preset, threads, file_index, total_files, attempt=1)
