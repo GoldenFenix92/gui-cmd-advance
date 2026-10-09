@@ -2,10 +2,28 @@ import os
 import re
 import sys
 
+def safe_str(s):
+    try:
+        s.encode(sys.stdout.encoding or 'utf-8')
+        return s
+    except UnicodeEncodeError:
+        return s.encode('ascii', errors='replace').decode('ascii')
+
 def sanitize_name(name):
     # Caracteres inválidos en Windows: < > : " / \ | ? *
     invalid_chars = r'[<>:"/\\|?*]'
     new_name = re.sub(invalid_chars, '_', name)
+    
+    # Reemplazar caracteres que no se pueden imprimir en consola (como emojis)
+    sys_enc = sys.stdout.encoding or 'cp1252'
+    safe_chars = []
+    for char in new_name:
+        try:
+            char.encode(sys_enc)
+            safe_chars.append(char)
+        except UnicodeEncodeError:
+            safe_chars.append('_')
+    new_name = "".join(safe_chars)
     
     # Windows no permite puntos o espacios al final
     new_name = new_name.rstrip(' .')
@@ -20,7 +38,7 @@ def main(folder, recursive=False):
         print(f"Error: La ruta '{folder}' no es una carpeta válida.")
         sys.exit(1)
         
-    print(f"Iniciando escaneo y reparación de nombres en: {folder}\n")
+    print(f"Iniciando escaneo y reparación de nombres en: {safe_str(folder)}\n")
     renamed_count = 0
     error_count = 0
     
@@ -56,10 +74,10 @@ def main(folder, recursive=False):
                     
                 try:
                     os.rename(old_path, new_path)
-                    print(f"[OK] Archivo renombrado: {name} -> {os.path.basename(new_path)}")
+                    print(f"[OK] Archivo renombrado: {safe_str(name)} -> {os.path.basename(new_path)}")
                     renamed_count += 1
                 except Exception as e:
-                    print(f"[ERROR] No se pudo renombrar el archivo '{name}': {e}")
+                    print(f"[ERROR] No se pudo renombrar el archivo '{safe_str(name)}': {e}")
                     error_count += 1
                     
         # Carpetas
@@ -76,10 +94,10 @@ def main(folder, recursive=False):
                     
                 try:
                     os.rename(old_path, new_path)
-                    print(f"[OK] Carpeta renombrada: {name} -> {os.path.basename(new_path)}")
+                    print(f"[OK] Carpeta renombrada: {safe_str(name)} -> {os.path.basename(new_path)}")
                     renamed_count += 1
                 except Exception as e:
-                    print(f"[ERROR] No se pudo renombrar la carpeta '{name}': {e}")
+                    print(f"[ERROR] No se pudo renombrar la carpeta '{safe_str(name)}': {e}")
                     error_count += 1
                     
     print(f"\nProceso finalizado. Total analizados: {analyzed_count} | Renombrados: {renamed_count} | Errores: {error_count}")

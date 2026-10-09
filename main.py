@@ -71,6 +71,18 @@ if __name__ == "__main__":
             args, _ = parser.parse_known_args(sys.argv[1:])
             name_sanitizer.main(args.folder, recursive=args.recursive)
             sys.exit(0)
+        elif sys.argv[1] == "--run-health-analyzer":
+            from functions import health_analyzer
+            sys.argv.pop(1)
+            import argparse
+            parser = argparse.ArgumentParser()
+            parser.add_argument("folder", nargs="?", default="")
+            parser.add_argument("--recursive", action="store_true")
+            parser.add_argument("--threads", type=int, default=0)
+            parser.add_argument("--quick", action="store_true")
+            args, _ = parser.parse_known_args(sys.argv[1:])
+            health_analyzer.main(args.folder, recursive=args.recursive, threads=args.threads, quick_mode=args.quick)
+            sys.exit(0)
         elif sys.argv[1] == "--run-7z":
             from gui_app import get_user_data_path
             sys.argv.pop(1)

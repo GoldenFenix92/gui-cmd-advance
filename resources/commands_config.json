@@ -476,7 +476,7 @@
             "commands": [
                 {
                     "name": "Sanitizador de Nombres",
-                    "description": "Herramienta para reparar nombres de archivos y carpetas importados de Mac/Linux (con caracteres inválidos) que Windows marca como corruptos o con error.",
+                    "description": "Herramienta para reparar nombres de archivos y carpetas importados de Mac/Linux (con caracteres inv\u00e1lidos) que Windows marca como corruptos o con error.",
                     "command": "__INTERNAL__ --run-name-sanitizer",
                     "args": [
                         {
@@ -489,7 +489,7 @@
                             "name": "Incluir subcarpetas",
                             "flag": "--recursive",
                             "type": "checkbox",
-                            "description": "Si se marca, aplicará el sanitizado a todos los archivos y carpetas dentro de la ruta elegida (modo recursivo)."
+                            "description": "Si se marca, aplicar\u00e1 el sanitizado a todos los archivos y carpetas dentro de la ruta elegida (modo recursivo)."
                         }
                     ]
                 },
@@ -1365,6 +1365,37 @@
                             "flag": "--threads",
                             "type": "threads_dropdown",
                             "description": "Numero de hilos paralelos para procesar archivos."
+                        }
+                    ]
+                },
+                {
+                    "name": "Analizador de Salud Multimedia",
+                    "description": "Escanea im\u00e1genes y videos en busca de archivos corruptos. Cuenta con protecci\u00f3n de CPU y m\u00faltiples modos de an\u00e1lisis.",
+                    "command": "__INTERNAL__ --run-health-analyzer",
+                    "args": [
+                        {
+                            "name": "Ruta a Analizar",
+                            "flag": "",
+                            "type": "directory_entry",
+                            "description": "Carpeta que contiene los archivos multimedia a analizar."
+                        },
+                        {
+                            "name": "Incluir subcarpetas",
+                            "flag": "--recursive",
+                            "type": "checkbox",
+                            "description": "Si se marca, escanear\u00e1 de manera recursiva todos los archivos en todas las subcarpetas."
+                        },
+                        {
+                            "name": "Hilos de CPU (Hardware)",
+                            "flag": "--threads",
+                            "type": "threads_dropdown",
+                            "description": "Controla cu\u00e1ntos hilos usar para analizar videos. Limitarlos previene el congelamiento (0 = Auto)."
+                        },
+                        {
+                            "name": "Escaneo R\u00e1pido",
+                            "flag": "--quick",
+                            "type": "checkbox",
+                            "description": "Si se marca, solo analiza las cabeceras y los primeros frames (mucho m\u00e1s r\u00e1pido, pero menos exhaustivo)."
                         }
                     ]
                 }
