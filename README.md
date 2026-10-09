@@ -45,6 +45,101 @@ Tu propio CrystalDiskInfo incorporado. Se conecta directamente al núcleo WMI/CI
 *   **🧹 Limpieza Inteligente:** Casilla de *Auto-Limpiar* para mantener los resultados siempre claros.
 *   **📦 100% Portable (Zero-Install):** Desarrollado para compilarse en un único archivo `.exe` ultraligero (sin dependencias). Puedes llevar la herramienta en una USB, y el programa creará automáticamente su entorno aislado de persistencia en `C:\GuiCmdAdvance`, protegiendo tus datos contra eliminaciones accidentales y permitiendo un uso offline total.
 
+## 📚 Índice de Comandos Documentados
+
+Este índice lleva el control del progreso en la creación de la documentación técnica detallada del programa.
+
+### 1. Redes
+- [ ] ipconfig
+- [ ] ping
+- [ ] tracert
+- [ ] netstat
+- [ ] getmac
+- [ ] arp
+- [ ] Limpiar Caché DNS (Flush DNS)
+- [ ] Consultar DNS (nslookup)
+- [ ] Contraseñas WiFi Guardadas
+- [ ] Gestor Adaptador de Red
+- [ ] pathping
+- [ ] Tabla de Enrutamiento
+- [ ] Conexiones TCP en Vivo
+
+### 2. Sistema
+- [ ] sfc
+- [ ] dism
+- [ ] chkdsk
+- [ ] systeminfo
+- [ ] tasklist
+- [ ] taskkill
+- [ ] Reporte de Batería (Laptops)
+- [ ] Administrador de Apagado Programado
+- [ ] Limpieza Selectiva de Temporales
+
+### 3. Seguridad y Privacidad
+- [ ] Credenciales de Red (Bóveda)
+- [ ] Gestor de Firewall
+- [ ] Visor de Eventos de Seguridad
+- [ ] Permisos de Archivo/Carpeta (icacls)
+
+### 4. Archivos
+- [ ] Sanitizador de Nombres
+- [ ] dir
+- [ ] tree
+- [ ] robocopy
+- [ ] xcopy
+- [ ] Comprimir Archivos (7-Zip)
+- [ ] Descomprimir Archivo (7-Zip)
+- [ ] Analizar Integridad de Archivo
+- [ ] Gestor de Atributos de Archivos (Ocultar/Sistema)
+- [ ] Búsqueda Avanzada de Texto
+- [ ] Clonado/Copia Segura (Robocopy)
+
+### 5. Almacenamiento
+- [ ] Get-PhysicalDisk
+- [ ] Get-Disk
+- [ ] Get-Volume
+- [ ] Initialize-Disk
+- [ ] New-Partition & Format
+- [ ] Clear-Disk (Formateo Completo)
+- [ ] Info Discos Físicos
+- [ ] Explorar Disco (Abrir Carpeta)
+- [ ] Asignar Letra (Montar)
+- [ ] Quitar Letra (Desmontar)
+- [ ] Desconectar Disco (Offline)
+- [ ] Conectar Disco (Online)
+- [ ] Expulsar Unidad Seguramente
+- [ ] Formatear Disco (Avanzado estilo Rufus)
+- [ ] Optimizar / TRIM / Desfragmentar Discos
+- [ ] Estado de Salud SMART Avanzado
+
+### 6. Recuperación de Datos
+- [ ] CHKDSK (Reparar Sistema de Archivos)
+- [ ] Recuperación de Archivos (WINFR)
+- [ ] PhotoRec Código Abierto (Descargar y Abrir)
+- [ ] PhotoRec Código Abierto (Desinstalar)
+
+### 7. Multimedia
+- [ ] Compresor de Multimedia
+- [ ] Reparador de Multimedia
+- [ ] Buscador de Duplicados
+- [ ] Analizador de Salud Multimedia
+
+### 8. Permisos y Seguridad
+- [ ] Quitar Solo Lectura (attrib)
+- [ ] Tomar Posesion (takeown)
+- [ ] Conceder Control Total (icacls)
+- [ ] Verificar Permisos de Carpeta (icacls)
+- [ ] Forzar Desbloqueo de Archivos
+
+### 9. Reparación y Mantenimiento (NUEVO)
+- [ ] Reiniciar Explorador de Windows
+- [ ] Reparar Windows Update
+
+### 10. Instaladores Oficiales (Microsoft)
+- [ ] Descargar ISO Windows 11
+- [ ] Descargar ISO Windows 10
+- [ ] Desplegar Microsoft Office (ODT)
+
 ## 🚀 Instalación y Uso (Modo Portable)
 
 Si solo quieres usar la aplicación, no necesitas instalar Python.
