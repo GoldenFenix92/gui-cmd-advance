@@ -476,7 +476,7 @@
             "commands": [
                 {
                     "name": "Sanitizador de Nombres",
-                    "description": "Herramienta para reparar nombres de archivos y carpetas importados de Mac/Linux (con caracteres inv\u00e1lidos) que Windows marca como corruptos o con error.",
+                    "description": "Herramienta para reparar nombres de archivos y carpetas importados de Mac/Linux (con caracteres inválidos) que Windows marca como corruptos o con error.",
                     "command": "__INTERNAL__ --run-name-sanitizer",
                     "args": [
                         {
@@ -484,6 +484,12 @@
                             "flag": "",
                             "type": "directory_entry",
                             "description": "Carpeta a sanitizar"
+                        },
+                        {
+                            "name": "Incluir subcarpetas",
+                            "flag": "--recursive",
+                            "type": "checkbox",
+                            "description": "Si se marca, aplicará el sanitizado a todos los archivos y carpetas dentro de la ruta elegida (modo recursivo)."
                         }
                     ]
                 },

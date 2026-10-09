@@ -15,7 +15,7 @@ def sanitize_name(name):
         
     return new_name if new_name != name else None
 
-def main(folder):
+def main(folder, recursive=False):
     if not folder or not os.path.isdir(folder):
         print(f"Error: La ruta '{folder}' no es una carpeta válida.")
         sys.exit(1)
@@ -24,8 +24,22 @@ def main(folder):
     renamed_count = 0
     error_count = 0
     
-    # Renombrar desde abajo hacia arriba (bottom-up) para evitar romper rutas
-    for root, dirs, files in os.walk(folder, topdown=False):
+    if recursive:
+        items_to_process = list(os.walk(folder, topdown=False))
+    else:
+        try:
+            items = os.listdir(folder)
+            files = [f for f in items if os.path.isfile(os.path.join(folder, f))]
+            dirs = [d for d in items if os.path.isdir(os.path.join(folder, d))]
+            items_to_process = [(folder, dirs, files)]
+        except Exception as e:
+            print(f"Error accediendo a la carpeta: {e}")
+            sys.exit(1)
+            
+    # Renombrar (bottom-up si es recursivo) para evitar romper rutas
+    analyzed_count = 0
+    for root, dirs, files in items_to_process:
+        analyzed_count += len(files) + len(dirs)
         # Archivos
         for name in files:
             new_name = sanitize_name(name)
@@ -68,7 +82,7 @@ def main(folder):
                     print(f"[ERROR] No se pudo renombrar la carpeta '{name}': {e}")
                     error_count += 1
                     
-    print(f"\nProceso finalizado. Total renombrados: {renamed_count}, Errores: {error_count}")
+    print(f"\nProceso finalizado. Total analizados: {analyzed_count} | Renombrados: {renamed_count} | Errores: {error_count}")
 
 if __name__ == "__main__":
     import argparse
