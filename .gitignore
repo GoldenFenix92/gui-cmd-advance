@@ -7,5 +7,7 @@ dist/
 version_info.txt
 version.py
 ai_settings.json
-temp_scripts/*
-!temp_scripts/.gitkeep
+favorites.json
+process_history.json
+crash.log
+config.xml

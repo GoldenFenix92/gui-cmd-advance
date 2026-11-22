@@ -3,7 +3,7 @@ import subprocess
 import threading
 import json
 import re
-from gui_app import center_window, get_resource_path
+from functions.utils import center_window, get_resource_path
 
 def parse_smart_data(vendor_specific):
     attributes = []

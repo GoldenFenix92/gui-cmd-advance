@@ -4,12 +4,15 @@ import argparse
 import subprocess
 from pathlib import Path
 import time
-from functions.utils import get_ffmpeg_path
+from functions.utils import get_ffmpeg_path, safe_print
 
 def ensure_requirements():
     try:
         from PIL import Image
     except ImportError:
+        if getattr(sys, "frozen", False):
+            safe_print("Error: Pillow no está disponible en el paquete compilado.")
+            sys.exit(1)
         subprocess.check_call([sys.executable, "-m", "pip", "install", "Pillow"])
 
 def check_image(file_path):
@@ -73,6 +76,11 @@ def main(folder, recursive=False, threads=0, quick_mode=False):
     
     if recursive:
         for root, dirs, files in os.walk(folder):
+            dirs[:] = [
+                d for d in dirs
+                if not os.path.islink(os.path.join(root, d))
+                and not (hasattr(os.path, "isjunction") and os.path.isjunction(os.path.join(root, d)))
+            ]
             for f in files:
                 ext = Path(f).suffix.lower()
                 if ext in image_exts or ext in video_exts:

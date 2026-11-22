@@ -8,12 +8,12 @@ from PIL import Image, ImageFile
 # Habilitar la carga de imágenes truncadas/corruptas en Pillow
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
-from functions.utils import get_ffmpeg_path
+from functions.utils import get_ffmpeg_path, safe_print
 from functions.task_memory import TaskMemory
 
 def repair_image(input_path, output_path, reference_path=None):
     try:
-        print(f"[{'REFERENCE' if reference_path else 'BASIC'} REPAIR] Intentando reparar imagen: {input_path}")
+        safe_print(f"[{'REFERENCE' if reference_path else 'BASIC'} REPAIR] Intentando reparar imagen: {input_path}")
         # Abrir la imagen, Pillow intentará rellenar los datos faltantes porque LOAD_TRUNCATED_IMAGES = True
         img = Image.open(input_path)
         
@@ -25,17 +25,18 @@ def repair_image(input_path, output_path, reference_path=None):
             img = img.convert('RGB')
             
         img.save(output_path, "JPEG", quality=95)
-        print(f" [OK] Imagen reparada guardada en: {output_path}")
+        safe_print(f" [OK] Imagen reparada guardada en: {output_path}")
         return True
     except Exception as e:
-        print(f" [ERROR] No se pudo reparar la imagen: {e}")
+        safe_print(f" [ERROR] No se pudo reparar la imagen: {e}")
         return False
 
 def repair_video(input_path, output_path, reference_path=None):
     ffmpeg = get_ffmpeg_path()
+    creation_flags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
     
     # Intento 1: Remuxing ignorando errores (Copia directa, rápido)
-    print(f"[{'REFERENCE' if reference_path else 'BASIC'} REPAIR] Intento 1 (Remux) en video: {input_path}")
+    safe_print(f"[{'REFERENCE' if reference_path else 'BASIC'} REPAIR] Intento 1 (Remux) en video: {input_path}")
     cmd_remux = [
         ffmpeg, "-y", 
         "-err_detect", "ignore_err", 
@@ -45,15 +46,15 @@ def repair_video(input_path, output_path, reference_path=None):
     ]
     
     try:
-        result = subprocess.run(cmd_remux, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        result = subprocess.run(cmd_remux, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, creationflags=creation_flags)
         if result.returncode == 0 and Path(output_path).exists() and Path(output_path).stat().st_size > 1024:
-            print(f" [OK] Video reparado (Remux) guardado en: {output_path}")
+            safe_print(f" [OK] Video reparado (Remux) guardado en: {output_path}")
             return True
     except Exception as e:
-        print(f" [WARN] Fallo el Intento 1: {e}")
+        safe_print(f" [WARN] Fallo el Intento 1: {e}")
 
     # Intento 2: Re-codificación forzada (Más lento, pero rescata frames viables)
-    print(f"[REPAIR] Intento 2 (Re-encode) en video: {input_path}")
+    safe_print(f"[REPAIR] Intento 2 (Re-encode) en video: {input_path}")
     cmd_reencode = [
         ffmpeg, "-y", 
         "-err_detect", "ignore_err",
@@ -64,17 +65,17 @@ def repair_video(input_path, output_path, reference_path=None):
     ]
     
     try:
-        result = subprocess.run(cmd_reencode, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        result = subprocess.run(cmd_reencode, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, creationflags=creation_flags)
         if result.returncode == 0 and Path(output_path).exists() and Path(output_path).stat().st_size > 1024:
-            print(f" [OK] Video reparado (Re-encode) guardado en: {output_path}")
+            safe_print(f" [OK] Video reparado (Re-encode) guardado en: {output_path}")
             return True
         else:
-            print(f" [ERROR] FFmpeg no pudo reparar el video de forma nativa.")
+            safe_print(" [ERROR] FFmpeg no pudo reparar el video de forma nativa.")
             if reference_path:
-                print(f" [INFO] Nota: Se proporcionó un archivo de referencia. Para reparaciones profundas de la cabecera 'moov', se requiere una herramienta externa especializada como 'untrunc'.")
+                safe_print(" [INFO] Nota: Se proporcionó un archivo de referencia. Para reparaciones profundas de la cabecera 'moov', se requiere una herramienta externa especializada como 'untrunc'.")
             return False
     except Exception as e:
-        print(f" [ERROR] Ocurrió un error en la re-codificación: {e}")
+        safe_print(f" [ERROR] Ocurrió un error en la re-codificación: {e}")
         return False
 
 def get_output_path(input_path, output_dir, suffix="_reparado", force_ext=None):
@@ -157,35 +158,34 @@ def main():
                 success_count += 1
             else:
                 fail_count += 1
+            memory.mark_processed(fp_str)
         elif ext in video_exts:
             if repair_video(fp_str, out_path, args.reference):
                 success_count += 1
             else:
                 fail_count += 1
-                
-        if ext in image_exts or ext in video_exts:
             memory.mark_processed(fp_str)
-            
+        else:
+            safe_print(f"[SKIP] Formato no soportado: {f.name}")
+
         # Verificar pausa
         if TaskMemory.check_pause_signal():
-            print("\n=======================================================")
-            print("🛑 PROCESO POSPUESTO POR EL USUARIO 🛑")
-            print(f"Estado guardado. Archivos procesados hasta ahora: {memory.get_processed_count()}")
-            print("Puedes reanudar este proceso más tarde ejecutando el mismo comando.")
-            print("=======================================================")
-            import sys
+            memory.flush()
+            safe_print("\n=======================================================")
+            safe_print("[PAUSA] PROCESO POSPUESTO POR EL USUARIO")
+            safe_print(f"Estado guardado. Archivos procesados hasta ahora: {memory.get_processed_count()}")
+            safe_print("Puedes reanudar este proceso más tarde ejecutando el mismo comando.")
+            safe_print("=======================================================")
             sys.exit(0)
 
     memory.clear()
-        else:
-            print(f"[SKIP] Formato no soportado: {f.name}")
 
-    print("\n==================================================================================")
-    print(" RESUMEN DE REPARACIÓN")
-    print("==================================================================================")
-    print(f" Exitosos: {success_count}")
-    print(f" Fallidos: {fail_count}")
-    print("==================================================================================")
+    safe_print("\n==================================================================================")
+    safe_print(" RESUMEN DE REPARACIÓN")
+    safe_print("==================================================================================")
+    safe_print(f" Exitosos: {success_count}")
+    safe_print(f" Fallidos: {fail_count}")
+    safe_print("==================================================================================")
 
 if __name__ == "__main__":
     main()

@@ -18,8 +18,8 @@ except ImportError:
 # CONFIGURACIÓN DEL DESARROLLADOR
 # ==============================================================
 GITHUB_REPO = "GoldenFenix92/gui-cmd-advance"
-# Pon aquí tu URL del Webhook de Discord. Si está vacío, no se enviará nada.
-DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1556016800335007804/F6DCAMgpvrkVwIQVFPsdR_Kx5JYdunfCY_3xdgwNN5FcauFsDeSroYnb5-OhPU6CgHfy" 
+# Se lee desde variable de entorno para no exponer secretos en el repositorio.
+DISCORD_WEBHOOK_URL = os.environ.get("GUI_CMD_DISCORD_WEBHOOK", "")
 # ==============================================================
 
 def check_for_updates(master_win):

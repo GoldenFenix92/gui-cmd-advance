@@ -170,10 +170,10 @@ pip install -r requirements.txt
 *(Nota: Si `requirements.txt` no existe, asegúrate de instalar `customtkinter`, `pillow`, `psutil`, `pymupdf`)*
 
 ### Compilación (Crear tu propio .EXE Portable)
-El proyecto incluye un script de automatización (`build_exe.py`) que detecta automáticamente la versión de los commits de Git, inyecta los metadatos de autoría y construye el `.exe` como `--onefile` (ya no adjunta binarios grandes como FFmpeg, manteniendo la build ligera).
+El proyecto incluye un script de automatización (`scripts/build_exe.py`) que detecta automáticamente la versión de los commits de Git, inyecta los metadatos de autoría y construye el `.exe` como `--onefile` (ya no adjunta binarios grandes como FFmpeg, manteniendo la build ligera).
 
 ```bash
-python build_exe.py
+python scripts/build_exe.py
 ```
 Te preguntará si es una versión Beta. Tras unos segundos, tendrás tu ejecutable pulido en la carpeta `dist/`.
 

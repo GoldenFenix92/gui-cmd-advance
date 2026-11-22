@@ -1,23 +1,55 @@
 import os
-import sys
 import threading
 import subprocess
-import urllib.request
 import customtkinter as ctk
-from tkinter import messagebox, filedialog
-import xml.etree.ElementTree as ET
+from tkinter import messagebox
+from functions.utils import center_window, get_user_data_path
 
-def get_resource_path(relative_path):
-    if getattr(sys, 'frozen', False):
-        return os.path.join(sys._MEIPASS, relative_path)
-    return os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), relative_path)
 
-def center_window(window, width, height):
-    screen_width = window.winfo_screenwidth()
-    screen_height = window.winfo_screenheight()
-    x = int((screen_width / 2) - (width / 2))
-    y = int((screen_height / 2) - (height / 2))
-    window.geometry(f"{width}x{height}+{x}+{y}")
+def get_channel_for_suite(suite_id):
+    if "2024" in suite_id:
+        return "PerpetualVL2024"
+    if "2019" in suite_id:
+        return "PerpetualVL2019"
+    return "PerpetualVL2021"
+
+
+def build_office_xml(suite_id, arch, lang, include_visio=False, include_project=False):
+    channel = get_channel_for_suite(suite_id)
+    xml_content = f"""<Configuration>
+  <Add OfficeClientEdition="{arch}" Channel="{channel}">
+    <Product ID="{suite_id}">
+      <Language ID="{lang}" />
+    </Product>"""
+
+    if include_visio:
+        visio_id = "VisioPro2021Volume" if "2021" in suite_id else ("VisioPro2024Volume" if "2024" in suite_id else "VisioPro2019Volume")
+        xml_content += f"""\n    <Product ID="{visio_id}">
+      <Language ID="{lang}" />
+    </Product>"""
+
+    if include_project:
+        proj_id = "ProjectPro2021Volume" if "2021" in suite_id else ("ProjectPro2024Volume" if "2024" in suite_id else "ProjectPro2019Volume")
+        xml_content += f"""\n    <Product ID="{proj_id}">
+      <Language ID="{lang}" />
+    </Product>"""
+
+    xml_content += """
+  </Add>
+  <Property Name="SharedComputerLicensing" Value="0" />
+  <Property Name="FORCEAPPSHUTDOWN" Value="TRUE" />
+  <Property Name="DeviceBasedLicensing" Value="0" />
+  <Property Name="SCLCacheOverride" Value="0" />
+  <RemoveMSI />
+  <Display Level="Full" AcceptEULA="TRUE" />
+</Configuration>"""
+    return xml_content
+
+
+def get_config_xml_path():
+    tools_dir = get_user_data_path("tools")
+    os.makedirs(tools_dir, exist_ok=True)
+    return os.path.join(tools_dir, "config.xml")
 
 class OfficeDeployApp(ctk.CTk):
     def __init__(self):
@@ -93,8 +125,13 @@ class OfficeDeployApp(ctk.CTk):
         self.log("Sistema listo. Elige tu configuración y genera el XML.")
 
     def log(self, text):
-        self.log_textbox.insert("end", text + "\n")
-        self.log_textbox.see("end")
+        def _append():
+            self.log_textbox.insert("end", text + "\n")
+            self.log_textbox.see("end")
+        if threading.current_thread() is threading.main_thread():
+            _append()
+        else:
+            self.after(0, _append)
 
     def generate_xml(self):
         try:
@@ -102,58 +139,42 @@ class OfficeDeployApp(ctk.CTk):
             arch = self.arch_var.get()
             lang = self.languages[self.lang_var.get()]
 
-            xml_content = f"""<Configuration>
-  <Add OfficeClientEdition="{arch}" Channel="PerpetualVL2021">
-    <Product ID="{suite_id}">
-      <Language ID="{lang}" />
-    </Product>"""
+            xml_content = build_office_xml(
+                suite_id=suite_id,
+                arch=arch,
+                lang=lang,
+                include_visio=self.visio_var.get(),
+                include_project=self.project_var.get(),
+            )
 
-            if self.visio_var.get():
-                visio_id = "VisioPro2021Volume" if "2021" in suite_id else ("VisioPro2024Volume" if "2024" in suite_id else "VisioPro2019Volume")
-                xml_content += f"""\n    <Product ID="{visio_id}">
-      <Language ID="{lang}" />
-    </Product>"""
-                
-            if self.project_var.get():
-                proj_id = "ProjectPro2021Volume" if "2021" in suite_id else ("ProjectPro2024Volume" if "2024" in suite_id else "ProjectPro2019Volume")
-                xml_content += f"""\n    <Product ID="{proj_id}">
-      <Language ID="{lang}" />
-    </Product>"""
-
-            xml_content += """
-  </Add>
-  <Property Name="SharedComputerLicensing" Value="0" />
-  <Property Name="FORCEAPPSHUTDOWN" Value="TRUE" />
-  <Property Name="DeviceBasedLicensing" Value="0" />
-  <Property Name="SCLCacheOverride" Value="0" />
-  <RemoveMSI />
-  <Display Level="Full" AcceptEULA="TRUE" />
-</Configuration>"""
-
-            with open("config.xml", "w", encoding="utf-8") as f:
+            config_path = get_config_xml_path()
+            with open(config_path, "w", encoding="utf-8") as f:
                 f.write(xml_content)
             
-            self.log("[+] config.xml generado exitosamente en el directorio actual.")
-            messagebox.showinfo("Éxito", "config.xml ha sido generado correctamente.")
+            self.log(f"[+] config.xml generado exitosamente en: {config_path}")
+            messagebox.showinfo("Éxito", f"config.xml ha sido generado correctamente en:\n{config_path}")
         except Exception as e:
             self.log(f"[-] Error al generar XML: {str(e)}")
 
     def download_odt(self):
         self.log("[*] Abriendo página oficial para descargar ODT...")
-        subprocess.Popen(["powershell", "-Command", "Start-Process 'https://www.microsoft.com/en-us/download/details.aspx?id=49117'"])
-        self.log("Por favor, descarga la herramienta, ejecútala y extrae el archivo 'setup.exe' en la misma carpeta donde está este programa.")
+        subprocess.Popen(
+            ["powershell", "-Command", "Start-Process 'https://www.microsoft.com/en-us/download/details.aspx?id=49117'"],
+            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+        )
+        self.log("Por favor, descarga la herramienta, ejecútala y extrae el archivo 'setup.exe' en la carpeta de herramientas del programa.")
 
     def install_office(self):
-        from functions.utils import get_user_data_path
-        setup_path = "setup.exe"
-        if not os.path.exists(setup_path):
-            setup_path = get_user_data_path(os.path.join("tools", "setup.exe"))
+        setup_path = get_user_data_path(os.path.join("tools", "setup.exe"))
+        if not os.path.exists(setup_path) and os.path.exists("setup.exe"):
+            setup_path = "setup.exe"
             
         if not os.path.exists(setup_path):
             messagebox.showerror("Error", "No se encontró 'setup.exe'. Por favor asegúrate de instalar el complemento ODT.")
             return
             
-        if not os.path.exists("config.xml"):
+        config_path = get_config_xml_path()
+        if not os.path.exists(config_path):
             messagebox.showerror("Error", "Primero debes generar el archivo config.xml.")
             return
 
@@ -161,8 +182,7 @@ class OfficeDeployApp(ctk.CTk):
         
         def run_install():
             try:
-                # Ocultar consola y ejecutar
-                subprocess.run([setup_path, "/configure", "config.xml"], check=True)
+                subprocess.run([setup_path, "/configure", config_path], check=True)
                 self.log("[+] Instalación finalizada exitosamente (o proceso delegado a Windows).")
             except Exception as e:
                 self.log(f"[-] Ocurrió un error en la instalación: {str(e)}")

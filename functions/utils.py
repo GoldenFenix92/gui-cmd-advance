@@ -26,6 +26,25 @@ def get_ffmpeg_path():
         return local_ffmpeg
     return "ffmpeg"
 
+
+def safe_print(text="", end="\n", flush=True):
+    """Imprime texto en consola de forma segura en Windows evitando UnicodeEncodeError."""
+    try:
+        print(text, end=end, flush=flush)
+    except UnicodeEncodeError:
+        enc = getattr(sys.stdout, "encoding", None) or "cp1252"
+        safe_text = str(text).encode(enc, errors="replace").decode(enc, errors="replace")
+        print(safe_text, end=end, flush=flush)
+
+
+def center_window(window, width, height):
+    """Centra una ventana Tkinter/CustomTkinter en la pantalla."""
+    screen_width = window.winfo_screenwidth()
+    screen_height = window.winfo_screenheight()
+    x = int((screen_width / 2) - (width / 2))
+    y = int((screen_height / 2) - (height / 2))
+    window.geometry(f"{width}x{height}+{x}+{y}")
+
 def apply_window_theme(window):
     def _apply():
         try:

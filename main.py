@@ -44,12 +44,6 @@ if __name__ == "__main__":
             app = advanced_search.AdvancedSearchApp()
             app.mainloop()
             sys.exit(0)
-        elif sys.argv[1] == "--run-file-compressor":
-            from functions import file_compressor
-            sys.argv.pop(1)
-            app = file_compressor.FileCompressorApp()
-            app.mainloop()
-            sys.exit(0)
         elif sys.argv[1] == "--run-smart-info":
             from functions import smart_info
             sys.argv.pop(1)
@@ -84,7 +78,7 @@ if __name__ == "__main__":
             health_analyzer.main(args.folder, recursive=args.recursive, threads=args.threads, quick_mode=args.quick)
             sys.exit(0)
         elif sys.argv[1] == "--run-7z":
-            from gui_app import get_user_data_path
+            from functions.utils import get_user_data_path, safe_print
             sys.argv.pop(1)
             import argparse
             parser = argparse.ArgumentParser()
@@ -98,11 +92,10 @@ if __name__ == "__main__":
             args, _ = parser.parse_known_args()
             
             import subprocess, os
-            import sys
             
             exe = get_user_data_path("tools\\7za.exe")
             if not os.path.exists(exe):
-                print("Error: No se encontro 7za.exe en tools\\.")
+                safe_print("Error: No se encontro 7za.exe en tools\\.")
                 sys.exit(1)
                 
             cmd = [exe]
@@ -114,25 +107,25 @@ if __name__ == "__main__":
                 if args.split and args.split != "Sin dividir":
                     split_val = args.split.split(" ")[0]
                     cmd.append(f"-v{split_val}")
-                print("Comprimiendo...")
+                safe_print("Comprimiendo...")
             elif args.action == "extract":
                 cmd.extend(["x", args.src, f"-o{args.dest}", "-y", "-bsp1"])
                 if args.pwd: cmd.append(f"-p{args.pwd}")
                 if args.threads: cmd.append(f"-mmt{args.threads}")
-                print(f"Descomprimiendo en: {args.dest}")
+                safe_print(f"Descomprimiendo en: {args.dest}")
             elif args.action == "analyze":
                 cmd.extend(["t", args.src])
                 if args.pwd: cmd.append(f"-p{args.pwd}")
                 if args.threads: cmd.append(f"-mmt{args.threads}")
-                print("Analizando integridad...")
+                safe_print("Analizando integridad...")
                 
             try:
-                proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1)
+                proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, encoding="utf-8", errors="replace", bufsize=1, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
                 for line in proc.stdout:
-                    print(line, end="")
+                    safe_print(line, end="")
                 proc.wait()
             except Exception as e:
-                print(f"Error ejecutando 7z: {e}")
+                safe_print(f"Error ejecutando 7z: {e}")
             sys.exit(0)
         elif sys.argv[1] == "--run-media-repair":
             from functions import media_repair

@@ -49,7 +49,7 @@ PLUGINS = {
         "url": "https://github.com/GoldenFenix92/gui-cmd-advance/raw/main/tools/7za.exe",
         "is_zip": False,
         "size_str": "~1MB",
-        "cmds": []
+        "cmds": ["__INTERNAL__ --run-7z"]
     }
 }
 
@@ -103,16 +103,16 @@ class PluginInstaller(ctk.CTkToplevel):
             if self.plugin.get("is_local_config"):
                 with open(final_file, "w", encoding="utf-8") as f:
                     f.write("{}")
-                self.lbl_status.configure(text="¡Bóveda creada exitosamente!")
-                self.btn_cancel.configure(text="Cerrar", command=self.finish_success)
+                self.after(0, lambda: self.lbl_status.configure(text="¡Bóveda creada exitosamente!"))
+                self.after(0, lambda: self.btn_cancel.configure(text="Cerrar", command=self.finish_success))
                 self.after(1000, self.finish_success)
                 return
                 
             if self.plugin.get("is_browser_link"):
                 import webbrowser
                 webbrowser.open(url)
-                self.lbl_status.configure(text="Instala el programa desde tu navegador.")
-                self.btn_cancel.configure(text="Entendido", command=self.finish_success)
+                self.after(0, lambda: self.lbl_status.configure(text="Instala el programa desde tu navegador."))
+                self.after(0, lambda: self.btn_cancel.configure(text="Entendido", command=self.finish_success))
                 return
 
             def report(blocknum, blocksize, totalsize):

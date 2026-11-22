@@ -2,6 +2,7 @@ import os
 import argparse
 import sys
 from functions.task_memory import TaskMemory
+from functions.utils import safe_print
 
 def get_targets(args):
     targets = []
@@ -80,11 +81,12 @@ def main():
         
         # Verificar pausa
         if TaskMemory.check_pause_signal():
-            print("\n=======================================================")
-            print("🛑 PROCESO POSPUESTO POR EL USUARIO 🛑")
-            print(f"Estado guardado. Archivos procesados hasta ahora: {memory.get_processed_count()}")
-            print("Puedes reanudar este proceso más tarde ejecutando el mismo comando.")
-            print("=======================================================")
+            memory.flush()
+            safe_print("\n=======================================================")
+            safe_print("[PAUSA] PROCESO POSPUESTO POR EL USUARIO")
+            safe_print(f"Estado guardado. Archivos procesados hasta ahora: {memory.get_processed_count()}")
+            safe_print("Puedes reanudar este proceso más tarde ejecutando el mismo comando.")
+            safe_print("=======================================================")
             sys.exit(0)
         
         # Actualizar progreso

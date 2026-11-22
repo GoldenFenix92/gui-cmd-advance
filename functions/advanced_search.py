@@ -3,7 +3,7 @@ import subprocess
 import threading
 import os
 from tkinter import filedialog
-from gui_app import center_window, get_resource_path
+from functions.utils import center_window, get_resource_path
 
 class MultiSelectDropdown(ctk.CTkButton):
     def __init__(self, master, options, **kwargs):
