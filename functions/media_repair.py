@@ -168,6 +168,9 @@ def main():
         else:
             safe_print(f"[SKIP] Formato no soportado: {f.name}")
 
+        pct = int(((i + 1) / max(1, total_files)) * 100)
+        safe_print(f"Progreso Total: {pct}%")
+
         # Verificar pausa
         if TaskMemory.check_pause_signal():
             memory.flush()

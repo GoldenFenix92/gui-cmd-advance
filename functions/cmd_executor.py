@@ -17,8 +17,10 @@ def resolve_internal_command(command_string):
 class CommandRunner:
     def __init__(self):
         self.process = None
+        self.last_returncode = 0
 
     def execute_command_async(self, command_string, output_callback, finished_callback):
+        self.last_returncode = None
         is_internal = "__INTERNAL__" in command_string
         command_string = resolve_internal_command(command_string)
         proc_env = None
@@ -63,12 +65,14 @@ class CommandRunner:
                         buffer.clear()
                         
                 self.process.wait()
+                self.last_returncode = self.process.returncode
                 if self.process.returncode != 0 and self.process.returncode is not None:
                     output_callback(f"\n--- Comando finalizado o detenido (código {self.process.returncode}) ---")
                 else:
                     output_callback(f"\n--- Comando finalizado con éxito ---")
                 
             except Exception as e:
+                self.last_returncode = 1
                 output_callback(f"\nError al ejecutar el comando: {str(e)}")
                 
             finally:
@@ -94,3 +98,6 @@ def execute_command_async(command_string, output_callback, finished_callback):
 
 def stop_command():
     _runner.stop_command()
+
+def get_last_returncode():
+    return _runner.last_returncode

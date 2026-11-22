@@ -180,8 +180,8 @@ class App(ctk.CTk):
         self.progressbar.grid(row=0, column=0, sticky="ew")
         self.progressbar.set(0)
         
-        self.lbl_progress = ctk.CTkLabel(self.progress_frame, text="0%", width=40, font=("Consolas", 12, "bold"))
-        self.lbl_progress.grid(row=0, column=1, padx=(10, 0))
+        self.lbl_progress = ctk.CTkLabel(self.progress_frame, text="Listo (0%)", font=("Consolas", 12, "bold"), anchor="e")
+        self.lbl_progress.grid(row=0, column=1, padx=(10, 0), sticky="e")
 
         # Export Buttons
         self.btn_frame = ctk.CTkFrame(self.right_frame, fg_color="transparent")
@@ -1030,30 +1030,200 @@ class App(ctk.CTk):
             return
         self.execute_external(self.preview_var.get())
 
+    @staticmethod
+    def extract_progress_from_text(text):
+        """Extrae porcentaje (0-100) desde salida de consola (enteros, decimales o fracciones [i/total])."""
+        if not text:
+            return None
+        lower = text.lower()
+        # Ignorar porcentajes de reportes de resumen que no representan progreso
+        if any(k in lower for k in ("espacio ahorrado", "incremento de peso", "ram:", "cpu:")):
+            return None
+
+        # 1. Porcentaje explícito: 45%, 12.5%, 12,5%
+        m_pct = re.search(r'(?<!\d)(\d{1,3}(?:[.,]\d+)?)\s*%', text)
+        if m_pct:
+            try:
+                val = float(m_pct.group(1).replace(',', '.'))
+                if 0.0 <= val <= 100.0:
+                    return val
+            except ValueError:
+                pass
+
+        # 2. Fracción de avance tipo [15/200] o (15/200)
+        m_frac = re.search(r'[\[\(](\d+)\s*/\s*(\d+)[\]\)]', text)
+        if m_frac:
+            try:
+                cur, tot = int(m_frac.group(1)), int(m_frac.group(2))
+                if tot > 0 and 0 <= cur <= tot:
+                    return (cur / tot) * 100.0
+            except ValueError:
+                pass
+
+        return None
+
+    @staticmethod
+    def parse_storage_job_json(raw_json):
+        """Parsea la salida JSON de Get-StorageJob y retorna (nombre, porcentaje) del trabajo activo."""
+        if not raw_json or not raw_json.strip():
+            return None
+        try:
+            data = json.loads(raw_json)
+            jobs = data if isinstance(data, list) else [data]
+            for job in jobs:
+                if not isinstance(job, dict):
+                    continue
+                state = str(job.get("JobState", "")).lower()
+                if state in ("running", "starting", "new", "4"):
+                    pct = job.get("PercentComplete")
+                    name = str(job.get("Name") or "Almacenamiento")
+                    if pct is not None:
+                        return name, max(0.0, min(100.0, float(pct)))
+        except Exception:
+            pass
+        return None
+
+    def _format_elapsed(self):
+        import time
+        elapsed = int(max(0, time.time() - getattr(self, "_cmd_start_time", time.time())))
+        h, rem = divmod(elapsed, 3600)
+        m, s = divmod(rem, 60)
+        return f"{h:02d}:{m:02d}:{s:02d}" if h > 0 else f"{m:02d}:{s:02d}"
+
+    def _set_determinate_progress(self, pct, detail=None):
+        if not hasattr(self, 'progressbar'):
+            return
+        pct_clamped = max(0.0, min(100.0, float(pct)))
+        if not getattr(self, "_has_determinate_progress", False):
+            self._has_determinate_progress = True
+            try:
+                self.progressbar.stop()
+                self.progressbar.configure(mode="determinate")
+            except Exception:
+                pass
+        self._last_progress_pct = pct_clamped
+        self._last_progress_detail = detail
+        self.progressbar.set(pct_clamped / 100.0)
+        if hasattr(self, 'lbl_progress'):
+            elapsed = self._format_elapsed()
+            prefix = f"{detail}: " if detail else ""
+            self.lbl_progress.configure(text=f"{prefix}{pct_clamped:.0f}% ({elapsed})")
+
+    def _tick_progress_timer(self):
+        if not getattr(self, "is_running", False):
+            return
+        if hasattr(self, 'lbl_progress'):
+            elapsed = self._format_elapsed()
+            if getattr(self, "_has_determinate_progress", False):
+                pct = getattr(self, "_last_progress_pct", 0.0)
+                detail = getattr(self, "_last_progress_detail", None)
+                prefix = f"{detail}: " if detail else ""
+                self.lbl_progress.configure(text=f"{prefix}{pct:.0f}% ({elapsed})")
+            else:
+                self.lbl_progress.configure(text=f"Ejecutando... ({elapsed})")
+        self._progress_timer_id = self.after(1000, self._tick_progress_timer)
+
+    def _start_storage_job_monitor(self, command_str):
+        """Monitorea Get-StorageJob en segundo plano para comandos de formateo/disco de PowerShell."""
+        storage_keywords = ("Format-Volume", "Clear-Disk", "Optimize-Volume", "Initialize-Disk", "New-Partition")
+        if not any(k.lower() in command_str.lower() for k in storage_keywords):
+            return
+
+        import threading, time
+
+        def _poll():
+            ps_cmd = (
+                "Get-StorageJob -ErrorAction SilentlyContinue | "
+                "Select-Object Name, @{N='JobState';E={[string]$_.JobState}}, PercentComplete | "
+                "ConvertTo-Json -Compress"
+            )
+            while getattr(self, "is_running", False):
+                try:
+                    proc = subprocess.run(
+                        ["powershell", "-NoProfile", "-Command", ps_cmd],
+                        capture_output=True,
+                        text=True,
+                        encoding="utf-8",
+                        errors="replace",
+                        creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+                        timeout=8,
+                    )
+                    parsed = self.parse_storage_job_json(proc.stdout)
+                    if parsed and getattr(self, "is_running", False):
+                        job_name, pct = parsed
+                        self.after(0, lambda n=job_name, p=pct: self._set_determinate_progress(p, detail=n))
+                except Exception:
+                    pass
+                for _ in range(6):
+                    if not getattr(self, "is_running", False):
+                        return
+                    time.sleep(0.5)
+
+        threading.Thread(target=_poll, daemon=True).start()
+
     def execute_external(self, command_str):
+        import time
         if hasattr(self, 'auto_clear_var') and self.auto_clear_var.get():
             self.clear_output()
-            
+
+        self._cmd_start_time = time.time()
+        self._has_determinate_progress = False
+        self._last_progress_pct = 0.0
+        self._last_progress_detail = None
+
         if hasattr(self, 'progressbar'):
-            self.progressbar.set(0)
+            try:
+                self.progressbar.configure(mode="indeterminate")
+                self.progressbar.start()
+            except Exception:
+                self.progressbar.set(0)
             if hasattr(self, 'lbl_progress'):
-                self.lbl_progress.configure(text="0%")
+                self.lbl_progress.configure(text="Ejecutando... (00:00)")
+
         self.append_output(f"\n> {command_str}\n")
         self.is_running = True
         self.execute_btn.configure(text="Detener ejecución", fg_color="red", hover_color="#8B0000")
         self.cat_menu.configure(state="disabled")
         self.cmd_menu.configure(state="disabled")
         self.pause_btn.pack(side="left", padx=(0, 5), before=self.fav_btn)
-        
+
         # Limpiar archivo de pausa viejo si existe
         appdata = os.environ.get('APPDATA', '')
         flag_file = os.path.join(appdata, "cmd_gui_advance", "pause.flag")
         if os.path.exists(flag_file):
             try: os.remove(flag_file)
             except: pass
-        
+
+        self._tick_progress_timer()
+        self._start_storage_job_monitor(command_str)
+
         def on_finish():
             self.is_running = False
+            if getattr(self, "_progress_timer_id", None):
+                try:
+                    self.after_cancel(self._progress_timer_id)
+                except Exception:
+                    pass
+                self._progress_timer_id = None
+
+            elapsed = self._format_elapsed()
+            rc = cmd_executor.get_last_returncode()
+            if hasattr(self, 'progressbar'):
+                try:
+                    self.progressbar.stop()
+                    self.progressbar.configure(mode="determinate")
+                except Exception:
+                    pass
+                if rc == 0:
+                    self.progressbar.set(1.0)
+                    if hasattr(self, 'lbl_progress'):
+                        self.lbl_progress.configure(text=f"100% Completado ({elapsed})")
+                else:
+                    last_pct = getattr(self, "_last_progress_pct", 0.0) if getattr(self, "_has_determinate_progress", False) else 0.0
+                    self.progressbar.set(last_pct / 100.0)
+                    if hasattr(self, 'lbl_progress'):
+                        self.lbl_progress.configure(text=f"Detenido / Error ({elapsed})")
+
             self.execute_btn.configure(text="Ejecutar Comando", fg_color=["#1F883D", "#238636"], hover_color=["#1A7F37", "#2EA043"])
             self.cat_menu.configure(state="normal")
             self.cmd_menu.configure(state="normal")
@@ -1118,16 +1288,9 @@ class App(ctk.CTk):
 
                 self.output_textbox.see("end")
                 
-                match = re.search(r'\b(\d{1,3})%', text)
-                if match and hasattr(self, 'progressbar'):
-                    try:
-                        val = int(match.group(1))
-                        if 0 <= val <= 100:
-                            self.progressbar.set(val / 100.0)
-                            if hasattr(self, 'lbl_progress'):
-                                self.lbl_progress.configure(text=f"{val}%")
-                    except:
-                        pass
+                pct = self.extract_progress_from_text(text)
+                if pct is not None and hasattr(self, 'progressbar'):
+                    self._set_determinate_progress(pct)
                         
             self.output_textbox.configure(state="disabled")
         self.after(0, _append)

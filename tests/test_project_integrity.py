@@ -162,6 +162,19 @@ class TestProjectIntegrity(unittest.TestCase):
             self.assertNotIn("sys.stdout.flush()", src, f"Uso sin protección de sys.stdout.flush() en {path}")
             self.assertNotIn("sys.stdout.encoding", src, f"Uso sin protección de sys.stdout.encoding en {path}")
 
+    def test_progress_parser_and_storage_job_parser(self):
+        from gui_app import App
+
+        self.assertEqual(App.extract_progress_from_text("Progreso Total: 45%"), 45.0)
+        self.assertAlmostEqual(App.extract_progress_from_text("[==== 12.5% ====]"), 12.5)
+        self.assertAlmostEqual(App.extract_progress_from_text("Analizando [25/100]: video.mp4"), 25.0)
+        self.assertIsNone(App.extract_progress_from_text("Espacio Ahorrado: 10 MB (39.3%)"))
+        self.assertIsNone(App.extract_progress_from_text("Incremento de Peso: +6.88 KB (+47.5%)"))
+
+        job_json = '{"Name":"Format Volume","JobState":"Running","PercentComplete":18}'
+        self.assertEqual(App.parse_storage_job_json(job_json), ("Format Volume", 18.0))
+        self.assertIsNone(App.parse_storage_job_json('{"Name":"Format Volume","JobState":"Completed","PercentComplete":100}'))
+
 
 if __name__ == "__main__":
     unittest.main()
