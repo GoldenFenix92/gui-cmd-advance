@@ -145,6 +145,11 @@ if __name__ == "__main__":
             app = office_deploy.OfficeDeployApp()
             app.mainloop()
             sys.exit(0)
+        elif sys.argv[1] == "--run-disk-attributes":
+            from functions import disk_attributes
+            sys.argv.pop(1)
+            disk_attributes.main()
+            sys.exit(0)
             
     if is_admin():
         hwnd = ctypes.windll.kernel32.GetConsoleWindow()

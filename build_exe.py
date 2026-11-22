@@ -126,6 +126,7 @@ def main():
         "--hidden-import", "functions.cmd_executor",
         "--hidden-import", "functions.office_deploy",
         "--hidden-import", "functions.telemetry",
+        "--hidden-import", "functions.disk_attributes",
         "--icon", icon,
         "main.py"
     ]

@@ -1061,6 +1061,82 @@
                     "description": "Abre un visor estilo CrystalDiskInfo para evaluar la salud f\u00edsica y temperatura de tus discos.",
                     "command": "__INTERNAL__ --run-smart-info",
                     "args": []
+                },
+                {
+                    "name": "Gestor de Atributos de Discos (HDD/SSD/USB)",
+                    "description": "Lee y gestiona atributos de discos duros, SSD y memorias USB mediante Diskpart (ej. attributes disk clear readonly, solo lectura, ocultar volumen, etc.).",
+                    "command": "__INTERNAL__ --run-disk-attributes",
+                    "args": [
+                        {
+                            "name": "Disco F\u00edsico (HDD / SSD / USB)",
+                            "flag": "--disk",
+                            "type": "disk_dropdown",
+                            "description": "Selecciona el disco f\u00edsico o memoria USB a consultar o modificar."
+                        },
+                        {
+                            "name": "Acci\u00f3n",
+                            "type": "radio_group",
+                            "options": [
+                                {
+                                    "name": "Leer / Inspeccionar atributos actuales",
+                                    "flag": "--action inspect"
+                                },
+                                {
+                                    "name": "Quitar atributo (clear)",
+                                    "flag": "--action clear"
+                                },
+                                {
+                                    "name": "Colocar atributo (set)",
+                                    "flag": "--action set"
+                                }
+                            ],
+                            "description": "Elige si deseas consultar los atributos actuales o quitar/colocar un atributo."
+                        },
+                        {
+                            "name": "\u00c1mbito (Nivel)",
+                            "type": "radio_group",
+                            "options": [
+                                {
+                                    "name": "Disco completo (attributes disk)",
+                                    "flag": "--scope disk"
+                                },
+                                {
+                                    "name": "Disco y sus Vol\u00famenes (Recomendado para Solo Lectura)",
+                                    "flag": "--scope both"
+                                },
+                                {
+                                    "name": "Solo Vol\u00famenes del disco (attributes volume)",
+                                    "flag": "--scope volume"
+                                }
+                            ],
+                            "description": "Define si el cambio se aplica al disco f\u00edsico, a sus vol\u00famenes o a ambos."
+                        },
+                        {
+                            "name": "Atributo",
+                            "type": "radio_group",
+                            "options": [
+                                {
+                                    "name": "Solo Lectura (readonly)",
+                                    "flag": "--attr readonly"
+                                },
+                                {
+                                    "name": "Oculto (hidden - solo volumen)",
+                                    "flag": "--attr hidden"
+                                },
+                                {
+                                    "name": "Sin letra autom\u00e1tica (nodefaultdriveletter - solo volumen)",
+                                    "flag": "--attr nodefaultdriveletter"
+                                }
+                            ],
+                            "description": "Atributo a colocar o quitar (solo aplica cuando Acci\u00f3n es Quitar o Colocar)."
+                        },
+                        {
+                            "name": "Letra de Volumen Espec\u00edfica (Opcional)",
+                            "flag": "--volume",
+                            "type": "entry",
+                            "description": "Opcional: escribe una letra (ej. E) para modificar solo ese volumen. Si se deja vac\u00edo, aplica a todos los vol\u00famenes del disco."
+                        }
+                    ]
                 }
             ]
         },

@@ -312,29 +312,42 @@ class App(ctk.CTk):
         import subprocess
         disks = []
         try:
-            status_filter = ""
-            if filter_status == "Online":
-                status_filter = " | Where-Object { $_.OperationalStatus -match 'Online|Ok' -and $_.IsOffline -eq $false }"
-            elif filter_status == "Offline":
-                status_filter = " | Where-Object { $_.OperationalStatus -match 'Offline' -or $_.IsOffline -eq $true }"
-
+            filter_mode = filter_status or "All"
             cmd = (
-                "Get-Disk" + status_filter + " | ForEach-Object { "
-                "$num = $_.Number; "
-                "$friendly = $_.FriendlyName; "
-                "$vStr=''; "
-                "try { "
-                "$vols = Get-Partition -DiskNumber $num -ErrorAction SilentlyContinue | Get-Volume -ErrorAction SilentlyContinue | Where-Object DriveLetter; "
-                "if($vols){ "
-                "$lbls = $vols | ForEach-Object { $_.DriveLetter + ':\\ [' + $_.FileSystemLabel + ']' }; "
-                "$vStr = ' (' + ($lbls -join ', ') + ')' "
-                "} "
-                "} catch {}; "
-                "$num.ToString() + ' - ' + $friendly + $vStr "
+                f"$filter = '{filter_mode}'; "
+                "$pDisks = @{}; "
+                "try { Get-PhysicalDisk -ErrorAction SilentlyContinue | ForEach-Object { $pDisks[[string]$_.DeviceId] = $_ } } catch {}; "
+                "$msftDisks = @{}; "
+                "try { Get-Disk -ErrorAction SilentlyContinue | ForEach-Object { $msftDisks[[string]$_.Number] = $_ } } catch {}; "
+                "$wmiDisks = @{}; "
+                "try { Get-CimInstance Win32_DiskDrive -ErrorAction SilentlyContinue | ForEach-Object { $wmiDisks[[string]$_.Index] = $_ } } catch {}; "
+                "$allIds = @($pDisks.Keys + $msftDisks.Keys + $wmiDisks.Keys) | Sort-Object { [int]$_ } -Unique; "
+                "foreach ($id in $allIds) { "
+                "  $d = $msftDisks[$id]; $pd = $pDisks[$id]; $wmi = $wmiDisks[$id]; "
+                "  $isOffline = if ($d) { [bool]$d.IsOffline -or ($d.OperationalStatus -match 'Offline') } else { $false }; "
+                "  if ($filter -eq 'Online' -and $isOffline) { continue }; "
+                "  if ($filter -eq 'Offline' -and -not $isOffline) { continue }; "
+                "  $friendly = if ($d -and $d.FriendlyName) { [string]$d.FriendlyName } elseif ($pd -and $pd.FriendlyName) { [string]$pd.FriendlyName } elseif ($wmi -and $wmi.Model) { [string]$wmi.Model } else { 'Disco ' + $id }; "
+                "  $bus = if ($d -and $d.BusType) { [string]$d.BusType } elseif ($pd -and $pd.BusType) { [string]$pd.BusType } elseif ($wmi -and $wmi.InterfaceType) { [string]$wmi.InterfaceType } else { '' }; "
+                "  $media = if ($pd -and $pd.MediaType) { [string]$pd.MediaType } else { '' }; "
+                "  if ($bus -eq 'USB') { $kind = 'USB' } elseif ($media -eq 'SSD' -or $media -eq 'HDD') { $kind = $media } elseif ($bus -and $bus -ne 'Unspecified') { $kind = $bus } else { $kind = 'Disco' }; "
+                "  $sizeVal = if ($d -and $d.Size) { $d.Size } elseif ($pd -and $pd.Size) { $pd.Size } elseif ($wmi -and $wmi.Size) { $wmi.Size } else { 0 }; "
+                "  $gb = [math]::Round($sizeVal / 1GB, 1); "
+                "  $dynTag = if (-not $d) { ' | Dinamico' } else { '' }; "
+                "  $tag = ' [' + $kind + ' | ' + $gb + ' GB' + $dynTag + ']'; "
+                "  $vStr = ''; "
+                "  try { "
+                "    $vols = Get-Partition -DiskNumber ([int]$id) -ErrorAction SilentlyContinue | Get-Volume -ErrorAction SilentlyContinue | Where-Object DriveLetter; "
+                "    if ($vols) { "
+                "      $lbls = $vols | ForEach-Object { $_.DriveLetter + ':\\ [' + $_.FileSystemLabel + ']' }; "
+                "      $vStr = ' (' + ($lbls -join ', ') + ')' "
+                "    } "
+                "  } catch {}; "
+                "  $id + ' - ' + $friendly + $tag + $vStr "
                 "}"
             )
             output = subprocess.check_output(
-                ["powershell", "-Command", cmd],
+                ["powershell", "-NoProfile", "-Command", cmd],
                 creationflags=subprocess.CREATE_NO_WINDOW
             ).decode('mbcs', errors='ignore').strip().split('\n')
             for line in output:
