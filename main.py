@@ -1,5 +1,13 @@
 import ctypes
 import sys
+
+for _stream in (sys.stdout, sys.stderr):
+    if _stream is not None and hasattr(_stream, "reconfigure"):
+        try:
+            _stream.reconfigure(encoding="utf-8", errors="replace")
+        except Exception:
+            pass
+
 from gui_app import App
 
 def is_admin():
@@ -100,6 +108,9 @@ if __name__ == "__main__":
                 
             cmd = [exe]
             if args.action == "compress":
+                if not args.src or not args.dest:
+                    safe_print("Error: Debes seleccionar la ruta origen (--src) y el archivo destino (--dest).")
+                    sys.exit(1)
                 cmd.extend(["a", args.dest, args.src, "-bsp1", "-ssw"])
                 if args.pwd: cmd.append(f"-p{args.pwd}")
                 if args.level: cmd.append(args.level)
@@ -109,15 +120,24 @@ if __name__ == "__main__":
                     cmd.append(f"-v{split_val}")
                 safe_print("Comprimiendo...")
             elif args.action == "extract":
+                if not args.src or not args.dest:
+                    safe_print("Error: Debes seleccionar el archivo comprimido (--src) y la carpeta destino (--dest).")
+                    sys.exit(1)
                 cmd.extend(["x", args.src, f"-o{args.dest}", "-y", "-bsp1"])
                 if args.pwd: cmd.append(f"-p{args.pwd}")
                 if args.threads: cmd.append(f"-mmt{args.threads}")
                 safe_print(f"Descomprimiendo en: {args.dest}")
             elif args.action == "analyze":
+                if not args.src:
+                    safe_print("Error: Debes seleccionar el archivo a analizar (--src).")
+                    sys.exit(1)
                 cmd.extend(["t", args.src])
                 if args.pwd: cmd.append(f"-p{args.pwd}")
                 if args.threads: cmd.append(f"-mmt{args.threads}")
                 safe_print("Analizando integridad...")
+            else:
+                safe_print(f"Error: Acción de 7-Zip no reconocida: {args.action}")
+                sys.exit(1)
                 
             try:
                 proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, encoding="utf-8", errors="replace", bufsize=1, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))

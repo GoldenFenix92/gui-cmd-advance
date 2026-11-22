@@ -129,6 +129,39 @@ class TestProjectIntegrity(unittest.TestCase):
             src = f.read()
         self.assertNotIn("https://discord.com/api/webhooks/", src)
 
+    def test_safe_print_and_windowed_stdout_none(self):
+        import sys
+        from unittest.mock import patch
+        from functions import utils, disk_attributes, duplicate_finder, health_analyzer, name_sanitizer
+
+        with patch.object(sys, "stdout", None):
+            utils.safe_print("hola \U0001f451")
+            disk_attributes.safe_print("hola \U0001f451")
+            duplicate_finder.safe_print("hola \U0001f451")
+            self.assertEqual(health_analyzer.safe_str("test"), "test")
+            self.assertEqual(name_sanitizer.safe_str("test"), "test")
+
+    def test_cmd_executor_resolve_internal_frozen_and_dev(self):
+        import sys
+        from unittest.mock import patch
+        from functions.cmd_executor import resolve_internal_command
+
+        with patch.object(sys, "frozen", True, create=True), patch.object(sys, "executable", r"C:\App\Gui.exe"):
+            resolved = resolve_internal_command("__INTERNAL__ --run-vault")
+            self.assertEqual(resolved, r'"C:\App\Gui.exe" --run-vault')
+
+        with patch.object(sys, "frozen", False, create=True), patch.object(sys, "executable", r"C:\Py\python.exe"), patch.object(sys, "argv", [r"C:\Proj\main.py"]):
+            resolved = resolve_internal_command("__INTERNAL__ --run-vault")
+            self.assertEqual(resolved, r'"C:\Py\python.exe" "C:\Proj\main.py" --run-vault')
+
+    def test_no_unprotected_stdout_flush_or_encoding_in_functions(self):
+        func_files = sorted(glob.glob(os.path.join(PROJECT_ROOT, "functions", "*.py")))
+        for path in func_files:
+            with open(path, "r", encoding="utf-8", errors="replace") as f:
+                src = f.read()
+            self.assertNotIn("sys.stdout.flush()", src, f"Uso sin protección de sys.stdout.flush() en {path}")
+            self.assertNotIn("sys.stdout.encoding", src, f"Uso sin protección de sys.stdout.encoding en {path}")
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -51,7 +51,7 @@ def check_video(file_path, threads=0, quick_mode=False):
 
 def safe_str(s):
     try:
-        s.encode(sys.stdout.encoding or 'utf-8')
+        s.encode(getattr(sys.stdout, "encoding", None) or 'utf-8')
         return s
     except UnicodeEncodeError:
         return s.encode('ascii', errors='replace').decode('ascii')

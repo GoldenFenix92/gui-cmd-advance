@@ -25,13 +25,17 @@ for _stream in (sys.stdout, sys.stderr):
             pass
 
 def safe_print(text=""):
-    """Imprime texto de forma segura en Windows evitando UnicodeEncodeError con emojis."""
+    """Imprime texto de forma segura en Windows evitando UnicodeEncodeError y sys.stdout=None."""
+    if sys.stdout is None:
+        return
     try:
         print(text, flush=True)
     except UnicodeEncodeError:
         enc = getattr(sys.stdout, "encoding", None) or "cp1252"
         safe_text = str(text).encode(enc, errors="replace").decode(enc, errors="replace")
         print(safe_text, flush=True)
+    except Exception:
+        pass
 
 def center_window(window, width, height):
     screen_width = window.winfo_screenwidth()
@@ -153,8 +157,7 @@ class DuplicateFinderApp(ctk.CTk):
         percent = current / total if total > 0 else 0
         self.progress_bar.set(percent)
         self.lbl_status.configure(text=msg)
-        print(f"{int(percent * 100)}%")
-        import sys; sys.stdout.flush()
+        safe_print(f"{int(percent * 100)}%")
 
     def get_hash(self, filepath):
         sha256 = hashlib.sha256()

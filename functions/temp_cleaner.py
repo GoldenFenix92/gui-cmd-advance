@@ -92,8 +92,7 @@ def main():
         # Actualizar progreso
         if (i - skipped) % 20 == 0 or i == len(files_to_delete) - 1:
             percent = int((freed / total_size) * 100) if total_size > 0 else 100
-            print(f"{percent}%")
-            sys.stdout.flush()
+            safe_print(f"{percent}%")
             
     # Al terminar exitosamente, limpiar directorios vacíos
     for t in targets:

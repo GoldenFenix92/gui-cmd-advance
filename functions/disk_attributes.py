@@ -13,13 +13,17 @@ DISK_SUPPORTED_ATTRIBUTES = ("readonly",)
 
 
 def safe_print(text=""):
-    """Imprime texto evitando errores de codificación en consolas Windows."""
+    """Imprime texto evitando errores de codificación o sys.stdout=None en Windows."""
+    if sys.stdout is None:
+        return
     try:
         print(text, flush=True)
     except UnicodeEncodeError:
-        enc = sys.stdout.encoding or "utf-8"
+        enc = getattr(sys.stdout, "encoding", None) or "utf-8"
         safe_text = str(text).encode(enc, errors="replace").decode(enc, errors="replace")
         print(safe_text, flush=True)
+    except Exception:
+        pass
 
 
 def is_admin():

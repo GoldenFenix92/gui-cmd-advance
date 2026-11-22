@@ -9,19 +9,7 @@ import urllib.error
 from tkinter import messagebox
 import sys
 import threading
-from functions.utils import apply_window_theme
-
-def get_base_path():
-    if getattr(sys, 'frozen', False):
-        return sys._MEIPASS
-    return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
-def get_user_data_path(filename):
-    if getattr(sys, 'frozen', False):
-        base_dir = os.path.dirname(sys.executable)
-    else:
-        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    return os.path.join(base_dir, filename)
+from functions.utils import apply_window_theme, get_resource_path, get_user_data_path, safe_print
 
 def get_history_path():
     return get_user_data_path("process_history.json")
@@ -110,7 +98,7 @@ class AIResultWindow(ctk.CTkToplevel):
         
         apply_window_theme(self)
         try:
-            self.iconbitmap(os.path.join(get_base_path(), "resources", "app_icon.ico"))
+            self.iconbitmap(get_resource_path(os.path.join("resources", "app_icon.ico")))
         except:
             pass
             
@@ -335,8 +323,7 @@ class ProcessManagerApp(ctk.CTk):
                     subprocess.run(["sc", "config", name, "start=", "demand"], check=True, creationflags=subprocess.CREATE_NO_WINDOW)
                     subprocess.run(["net", "stop", name, "/y"], creationflags=subprocess.CREATE_NO_WINDOW)
                     save_to_history("A Manual y Detenido (Bloatware)", "Servicio", name, "automatic")
-                    print(f"[ProcessManager] Bloatware optimizado: {name}.")
-                    import sys; sys.stdout.flush()
+                    safe_print(f"[ProcessManager] Bloatware optimizado: {name}.")
                     count += 1
                 except: pass
         messagebox.showinfo("Optimización", f"Se optimizaron {count} servicios identificados como Bloatware.")
@@ -383,20 +370,18 @@ class ProcessManagerApp(ctk.CTk):
             except: pass
             p.kill()
             save_to_history("Detenido", "Proceso", name, exe_path)
-            print(f"[ProcessManager] Se detuvo el proceso {name} (PID: {pid}).")
-            import sys; sys.stdout.flush()
+            safe_print(f"[ProcessManager] Se detuvo el proceso {name} (PID: {pid}).")
             messagebox.showinfo("Proceso Detenido", f"El proceso {name} (PID: {pid}) ha sido detenido.", parent=self)
             self.load_processes()
             self.load_history_ui()
         except Exception as e:
-            messagebox.showerror("Error", f"No se pudo detener el proceso {name}:\\n{e}", parent=self)
+            messagebox.showerror("Error", f"No se pudo detener el proceso {name}:\n{e}", parent=self)
             
     def set_service_manual(self, name):
         try:
             subprocess.run(["sc", "config", name, "start=", "demand"], check=True, creationflags=subprocess.CREATE_NO_WINDOW)
             save_to_history("A Manual", "Servicio", name, "automatic")
-            print(f"[ProcessManager] El servicio {name} ha sido puesto en modo Manual.")
-            import sys; sys.stdout.flush()
+            safe_print(f"[ProcessManager] El servicio {name} ha sido puesto en modo Manual.")
             messagebox.showinfo("Servicio Modificado", f"El servicio {name} ahora está en modo Manual.", parent=self)
             self.load_services()
             self.load_history_ui()
@@ -409,8 +394,7 @@ class ProcessManagerApp(ctk.CTk):
         try:
             subprocess.run(["net", "stop", name, "/y"], check=True, creationflags=subprocess.CREATE_NO_WINDOW)
             save_to_history("Detenido", "Servicio", name, "")
-            print(f"[ProcessManager] El servicio {name} ha sido detenido.")
-            import sys; sys.stdout.flush()
+            safe_print(f"[ProcessManager] El servicio {name} ha sido detenido.")
             messagebox.showinfo("Servicio Detenido", f"El servicio {name} ha sido detenido.", parent=self)
             self.load_services()
             self.load_history_ui()

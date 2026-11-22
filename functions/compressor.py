@@ -7,15 +7,24 @@ import time
 import multiprocessing
 
 # Forzar UTF-8 en la salida estándar para evitar errores de codificación con emojis en los nombres de archivo
-if hasattr(sys.stdout, 'reconfigure'):
-    sys.stdout.reconfigure(encoding='utf-8')
-if hasattr(sys.stderr, 'reconfigure'):
-    sys.stderr.reconfigure(encoding='utf-8')
+if sys.stdout is not None and hasattr(sys.stdout, 'reconfigure'):
+    try:
+        sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+    except Exception:
+        pass
+if sys.stderr is not None and hasattr(sys.stderr, 'reconfigure'):
+    try:
+        sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+    except Exception:
+        pass
 
 def ensure_requirements():
     try:
         from PIL import Image
     except ImportError:
+        if getattr(sys, "frozen", False):
+            print("Error: Pillow no está disponible en el ejecutable compilado.")
+            sys.exit(1)
         print("Instalando Pillow para procesamiento de imagenes...")
         subprocess.check_call([sys.executable, "-m", "pip", "install", "Pillow"])
         from PIL import Image

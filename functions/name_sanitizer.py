@@ -4,7 +4,7 @@ import sys
 
 def safe_str(s):
     try:
-        s.encode(sys.stdout.encoding or 'utf-8')
+        s.encode(getattr(sys.stdout, "encoding", None) or 'utf-8')
         return s
     except UnicodeEncodeError:
         return s.encode('ascii', errors='replace').decode('ascii')
@@ -15,7 +15,7 @@ def sanitize_name(name):
     new_name = re.sub(invalid_chars, '_', name)
     
     # Reemplazar caracteres que no se pueden imprimir en consola (como emojis)
-    sys_enc = sys.stdout.encoding or 'cp1252'
+    sys_enc = getattr(sys.stdout, "encoding", None) or 'cp1252'
     safe_chars = []
     for char in new_name:
         try:

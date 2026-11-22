@@ -28,13 +28,17 @@ def get_ffmpeg_path():
 
 
 def safe_print(text="", end="\n", flush=True):
-    """Imprime texto en consola de forma segura en Windows evitando UnicodeEncodeError."""
+    """Imprime texto en consola de forma segura en Windows (incluso con sys.stdout=None en --windowed)."""
+    if sys.stdout is None:
+        return
     try:
         print(text, end=end, flush=flush)
     except UnicodeEncodeError:
         enc = getattr(sys.stdout, "encoding", None) or "cp1252"
         safe_text = str(text).encode(enc, errors="replace").decode(enc, errors="replace")
         print(safe_text, end=end, flush=flush)
+    except Exception:
+        pass
 
 
 def center_window(window, width, height):

@@ -1140,7 +1140,7 @@ class App(ctk.CTk):
     def get_html_template(self, content, title="Reporte de Ejecución", command="Desconocido"):
         import datetime, os
         timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        template_path = os.path.join(os.path.dirname(__file__), "resources/templates", "base_report.html")
+        template_path = get_resource_path(os.path.join("resources", "templates", "base_report.html"))
         
         if os.path.exists(template_path):
             with open(template_path, "r", encoding="utf-8") as tf:
@@ -1494,24 +1494,31 @@ class App(ctk.CTk):
 
     def open_process_manager(self):
         try:
-            subprocess.Popen([sys.executable, sys.argv[0], "--run-process-manager"], creationflags=subprocess.CREATE_NO_WINDOW)
+            if getattr(sys, "frozen", False):
+                cmd = [sys.executable, "--run-process-manager"]
+            else:
+                cmd = [sys.executable, os.path.abspath(sys.argv[0]), "--run-process-manager"]
+            subprocess.Popen(cmd, creationflags=subprocess.CREATE_NO_WINDOW)
         except Exception as e:
             messagebox.showerror("Error", f"No se pudo abrir el Gestor de Procesos:\n{e}")
 
     def optimize_ram(self):
+        vbs_path = None
         try:
             import gc
             gc.collect()
             
-            vbs_path = os.path.join(get_base_path(), "liberar_ram.vbs")
-            with open(vbs_path, "w") as f:
+            vbs_path = get_user_data_path("liberar_ram.vbs")
+            with open(vbs_path, "w", encoding="ascii") as f:
                 f.write('FreeMem=Space(100000000)')
                 
             subprocess.run(["cscript", "//nologo", vbs_path], creationflags=subprocess.CREATE_NO_WINDOW)
-            
-            if os.path.exists(vbs_path):
-                os.remove(vbs_path)
-                
             messagebox.showinfo("RAM Optimizada", "Memoria inactiva liberada y procesos de fondo limpios correctamente.")
         except Exception as e:
             messagebox.showerror("Error", f"Ocurrió un error al intentar optimizar la RAM:\n{e}")
+        finally:
+            if vbs_path and os.path.exists(vbs_path):
+                try:
+                    os.remove(vbs_path)
+                except Exception:
+                    pass
