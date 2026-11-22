@@ -19,7 +19,13 @@ class CommandRunner:
         self.process = None
 
     def execute_command_async(self, command_string, output_callback, finished_callback):
+        is_internal = "__INTERNAL__" in command_string
         command_string = resolve_internal_command(command_string)
+        proc_env = None
+        if is_internal and getattr(sys, "frozen", False):
+            proc_env = os.environ.copy()
+            proc_env["PYINSTALLER_RESET_ENVIRONMENT"] = "1"
+            proc_env.pop("_MEIPASS2", None)
                 
         def run_process():
             try:
@@ -28,6 +34,7 @@ class CommandRunner:
                     stdout=subprocess.PIPE,
                     stderr=subprocess.STDOUT,
                     shell=True,
+                    env=proc_env,
                     bufsize=0
                 )
                 

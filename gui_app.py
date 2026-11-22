@@ -1494,11 +1494,14 @@ class App(ctk.CTk):
 
     def open_process_manager(self):
         try:
+            env = os.environ.copy()
             if getattr(sys, "frozen", False):
                 cmd = [sys.executable, "--run-process-manager"]
+                env["PYINSTALLER_RESET_ENVIRONMENT"] = "1"
+                env.pop("_MEIPASS2", None)
             else:
                 cmd = [sys.executable, os.path.abspath(sys.argv[0]), "--run-process-manager"]
-            subprocess.Popen(cmd, creationflags=subprocess.CREATE_NO_WINDOW)
+            subprocess.Popen(cmd, env=env, creationflags=subprocess.CREATE_NO_WINDOW)
         except Exception as e:
             messagebox.showerror("Error", f"No se pudo abrir el Gestor de Procesos:\n{e}")
 
@@ -1509,7 +1512,7 @@ class App(ctk.CTk):
             gc.collect()
             
             vbs_path = get_user_data_path("liberar_ram.vbs")
-            with open(vbs_path, "w", encoding="ascii") as f:
+            with open(vbs_path, "w", encoding="utf-8") as f:
                 f.write('FreeMem=Space(100000000)')
                 
             subprocess.run(["cscript", "//nologo", vbs_path], creationflags=subprocess.CREATE_NO_WINDOW)

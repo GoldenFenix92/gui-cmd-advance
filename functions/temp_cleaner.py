@@ -42,12 +42,23 @@ def main():
     files_to_delete = []
     total_size = 0
     
+    protected_meipass = os.path.normcase(os.path.abspath(getattr(sys, "_MEIPASS", ""))) if getattr(sys, "_MEIPASS", None) else ""
     for t in targets:
         path = t["path"]
         if os.path.exists(path):
             for root, dirs, files in os.walk(path):
-                # Remover junctions/symlinks para no entrar en bucles
-                dirs[:] = [d for d in dirs if not os.path.islink(os.path.join(root, d)) and not (hasattr(os.path, 'isjunction') and os.path.isjunction(os.path.join(root, d)))]
+                # Remover junctions/symlinks y carpetas activas de PyInstaller (_MEI*) para no dañar el .exe en ejecución
+                filtered_dirs = []
+                for d in dirs:
+                    full_d = os.path.join(root, d)
+                    if os.path.islink(full_d) or (hasattr(os.path, 'isjunction') and os.path.isjunction(full_d)):
+                        continue
+                    if d.startswith("_MEI"):
+                        continue
+                    if protected_meipass and os.path.normcase(os.path.abspath(full_d)) == protected_meipass:
+                        continue
+                    filtered_dirs.append(d)
+                dirs[:] = filtered_dirs
                 for f in files:
                     fp = os.path.join(root, f)
                     try:
