@@ -17,6 +17,22 @@ ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 from functions.utils import get_resource_path
 
+for _stream in (sys.stdout, sys.stderr):
+    if _stream is not None and hasattr(_stream, "reconfigure"):
+        try:
+            _stream.reconfigure(encoding="utf-8", errors="replace")
+        except Exception:
+            pass
+
+def safe_print(text=""):
+    """Imprime texto de forma segura en Windows evitando UnicodeEncodeError con emojis."""
+    try:
+        print(text, flush=True)
+    except UnicodeEncodeError:
+        enc = getattr(sys.stdout, "encoding", None) or "cp1252"
+        safe_text = str(text).encode(enc, errors="replace").decode(enc, errors="replace")
+        print(safe_text, flush=True)
+
 def center_window(window, width, height):
     screen_width = window.winfo_screenwidth()
     screen_height = window.winfo_screenheight()
@@ -463,7 +479,7 @@ class DuplicateFinderApp(ctk.CTk):
         dest_damaged = Path(self.selected_folder) / "Archivos_Dañados"
         moved_count = 0
         
-        print("=== REPORTE DE ARCHIVOS MULTIMEDIA MOVIDOS ===")
+        safe_print("=== REPORTE DE ARCHIVOS MULTIMEDIA MOVIDOS ===")
         
         items_to_keep = []
         for item in self.all_suspects:
@@ -481,14 +497,15 @@ class DuplicateFinderApp(ctk.CTk):
                         dest_folder.mkdir(parents=True)
                     shutil.move(str(filepath), str(dest_folder / filepath.name))
                     moved_count += 1
-                    print(f"MOVIDO: [{item['status']}] {filepath.name} -> {dest_folder.name}")
                 except Exception as e:
-                    print(f"ERROR al mover {filepath.name}: {e}")
+                    safe_print(f"ERROR al mover {filepath.name}: {e}")
                     items_to_keep.append(item)
+                else:
+                    safe_print(f"MOVIDO: [{item['status']}] {filepath.name} -> {dest_folder.name}")
             else:
                 items_to_keep.append(item)
                 
-        print(f"=== TOTAL MOVIDO: {moved_count} archivos ===\n")
+        safe_print(f"=== TOTAL MOVIDO: {moved_count} archivos ===\n")
                 
         self.all_suspects = items_to_keep
         messagebox.showinfo("Completado", f"Se han movido {moved_count} archivos en total.")
@@ -499,7 +516,7 @@ class DuplicateFinderApp(ctk.CTk):
         dest_damaged = Path(self.selected_folder) / "Archivos_Dañados"
         moved_count = 0
         
-        print("=== REPORTE DE ARCHIVOS MULTIMEDIA VISIBLES MOVIDOS ===")
+        safe_print("=== REPORTE DE ARCHIVOS MULTIMEDIA VISIBLES MOVIDOS ===")
         items_to_keep = []
         
         # Mover SOLO los archivos que están renderizados y marcados
@@ -515,14 +532,17 @@ class DuplicateFinderApp(ctk.CTk):
                             dest_folder.mkdir(parents=True)
                         shutil.move(str(filepath), str(dest_folder / filepath.name))
                         moved_count += 1
-                        print(f"MOVIDO: [{item['status']}] {filepath.name} -> {dest_folder.name}")
                     except Exception as e:
-                        print(f"ERROR al mover {filepath.name}: {e}")
-                        items_to_keep.append(item) 
+                        safe_print(f"ERROR al mover {filepath.name}: {e}")
+                        items_to_keep.append(item)
+                    else:
+                        safe_print(f"MOVIDO: [{item['status']}] {filepath.name} -> {dest_folder.name}")
+                else:
+                    items_to_keep.append(item)
             else:
                 items_to_keep.append(item)
                 
-        print(f"=== TOTAL MOVIDO: {moved_count} archivos ===\n")
+        safe_print(f"=== TOTAL MOVIDO: {moved_count} archivos ===\n")
         
         self.all_suspects = items_to_keep
         messagebox.showinfo("Completado", f"Se han movido {moved_count} archivos.")
