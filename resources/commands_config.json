@@ -932,19 +932,19 @@
                             "type": "radio_group",
                             "options": [
                                 {
-                                    "name": "NTFS",
+                                    "name": "NTFS (Discos > 32 GB / Windows / Archivos > 4 GB)",
                                     "flag": "-fs NTFS"
                                 },
                                 {
-                                    "name": "FAT32",
+                                    "name": "FAT32 (USB \u2264 32 GB / M\u00e1x. compatibilidad / Archivos \u2264 4 GB)",
                                     "flag": "-fs FAT32"
                                 },
                                 {
-                                    "name": "exFAT",
+                                    "name": "exFAT (USB/SD > 32 GB / Multiplataforma / Sin l\u00edmite 4 GB)",
                                     "flag": "-fs exFAT"
                                 }
                             ],
-                            "description": "Formato del volumen. NTFS recomendado para Windows, exFAT/FAT32 para USB."
+                            "description": "Formato del volumen seg\u00fan capacidad y uso:\n\u2022 NTFS: Recomendado para discos internos/externos y SSD > 32 GB en Windows (soporta archivos > 4 GB y permisos).\n\u2022 FAT32: Recomendado para memorias USB/SD de hasta 32 GB (m\u00e1xima compatibilidad con UEFI, consolas y equipos antiguos; l\u00edmite de 4 GB por archivo y 32 GB por partici\u00f3n en Windows).\n\u2022 exFAT: Recomendado para memorias USB y tarjetas SD > 32 GB (compatible con Windows, macOS y Linux, sin l\u00edmite de 4 GB por archivo)."
                         },
                         {
                             "name": "Etiqueta (Nombre)",
@@ -975,7 +975,7 @@
                 },
                 {
                     "name": "New-Partition & Format",
-                    "description": "Crea una nueva partici\u00f3n usando todo el espacio disponible y formatea como NTFS.",
+                    "description": "Crea una nueva partici\u00f3n usando todo el espacio disponible y formatea como NTFS (recomendado para discos > 32 GB y archivos > 4 GB en Windows).",
                     "command": "powershell -Command \"& {param($num) if($null -eq $num){ Write-Host 'Error: Ingresa el numero de disco.'; exit 1 } $d = Get-Disk -Number $num -ErrorAction SilentlyContinue; if($null -eq $d){ Write-Host 'Error: Disco no encontrado.'; exit 1 } if($d.IsSystem -or $d.IsBoot){ Write-Host 'ADVERTENCIA EXTREMA: Esta unidad contiene el sistema operativo. Operacion CANCELADA por seguridad.'; exit 1 } try { if($d.IsOffline){ Set-Disk -Number $num -IsOffline $false -ErrorAction Stop } if($d.IsReadOnly){ Set-Disk -Number $num -IsReadOnly $false -ErrorAction Stop } Update-Disk -Number $num -ErrorAction SilentlyContinue; $d = Get-Disk -Number $num -ErrorAction Stop; if($d.PartitionStyle -eq 'RAW' -or $d.PartitionStyle -eq 'Unknown'){ Initialize-Disk -Number $num -PartitionStyle GPT -ErrorAction Stop; Start-Sleep -Milliseconds 500; Update-Disk -Number $num -ErrorAction SilentlyContinue } $part = New-Partition -DiskNumber $num -UseMaximumSize -AssignDriveLetter -ErrorAction Stop; $part | Format-Volume -FileSystem NTFS -Confirm:$false -Force -ErrorAction Stop | Out-Null; Write-Host ('Particion creada y formateada con exito en ' + $part.DriveLetter + ':.') } catch { Write-Host ('Error: ' + $_.Exception.Message); exit 1 } }\"",
                     "args": [
                         {
