@@ -269,6 +269,69 @@ class TestProjectIntegrity(unittest.TestCase):
         self.assertIn("diskpart", rufus_cmd)
         self.assertIn("FAT32", rufus_cmd)
 
+    def test_categories_no_duplicates_profiles_and_all_powershell_syntax(self):
+        import subprocess
+        from functions import report_generator
+
+        cfg_path = os.path.join(PROJECT_ROOT, "resources", "commands_config.json")
+        with open(cfg_path, "r", encoding="utf-8") as f:
+            cfg = json.load(f)
+
+        expected_profiles = {
+            "Redes y Conectividad": "network",
+            "Sistema y Procesos": "system",
+            "Reparación y Mantenimiento": "system",
+            "Seguridad y Permisos": "security",
+            "Archivos y Compresión": "system",
+            "Almacenamiento: Formateo y Gestión": "storage",
+            "Almacenamiento: Diagnóstico y Salud": "storage",
+            "Recuperación de Datos": "storage",
+            "Multimedia": "multimedia",
+            "Instaladores Oficiales (Microsoft)": "system",
+        }
+        cat_names = [cat["name"] for cat in cfg["categories"]]
+        self.assertEqual(cat_names, list(expected_profiles.keys()))
+
+        seen_names = set()
+        ps_scripts = []
+        for cat in cfg["categories"]:
+            cname = cat["name"]
+            self.assertEqual(
+                report_generator.detect_report_profile(category=cname),
+                expected_profiles[cname],
+                f"Perfil de reporte incorrecto para categoría {cname}",
+            )
+            self.assertGreater(len(cat["commands"]), 0, f"Categoría vacía: {cname}")
+            for cmd in cat["commands"]:
+                name = cmd["name"]
+                self.assertNotIn(name, seen_names, f"Comando duplicado: {name}")
+                seen_names.add(name)
+                m = re.search(r'powershell -Command "(.*)"$', cmd["command"])
+                if m:
+                    # En JSON/cmd.exe, \" dentro de -Command "..." representa " en PowerShell
+                    ps_scripts.append((name, m.group(1).replace('\\"', '"')))
+
+        # Validar sintaxis AST de TODOS los comandos PowerShell en un solo proceso
+        payload = json.dumps(ps_scripts)
+        check_all_ps = (
+            "$items = [Console]::In.ReadToEnd() | ConvertFrom-Json; "
+            "$failed = @(); "
+            "foreach ($it in $items) { "
+            "  $errs = $null; "
+            "  [void][System.Management.Automation.Language.Parser]::ParseInput([string]$it[1], [ref]$null, [ref]$errs); "
+            "  if ($errs.Count -gt 0) { $failed += ($it[0] + ': ' + (($errs | ForEach-Object { $_.Message }) -join '; ')) } "
+            "}; "
+            "if ($failed.Count -gt 0) { $failed | ForEach-Object { Write-Error $_ }; exit 1 }"
+        )
+        proc = subprocess.run(
+            ["powershell", "-NoProfile", "-Command", check_all_ps],
+            input=payload,
+            capture_output=True,
+            text=True,
+            timeout=20,
+        )
+        self.assertEqual(proc.returncode, 0, f"Errores de sintaxis PowerShell:\n{proc.stderr}")
+
 
 if __name__ == "__main__":
     unittest.main()

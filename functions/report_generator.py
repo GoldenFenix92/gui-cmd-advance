@@ -47,7 +47,8 @@ def detect_report_profile(category="", title="", command=""):
         return "multimedia"
 
     if any(k in blob for k in (
-        "almacenamiento", "recuperación de datos", "recuperacion de datos", "diskpart",
+        "almacenamiento", "formateo y gestión", "formateo y gestion", "diagnóstico y salud", "diagnostico y salud",
+        "recuperación de datos", "recuperacion de datos", "diskpart",
         "--run-disk-attributes", "--run-usb-audit", "autenticidad", "get-disk", "get-physicaldisk",
         "get-volume", "clear-disk", "format-volume", "initialize-disk", "optimize-volume",
         "chkdsk", "winfr", "photorec", "smart",
@@ -55,7 +56,7 @@ def detect_report_profile(category="", title="", command=""):
         return "storage"
 
     if any(k in blob for k in (
-        "redes", "ipconfig", "ping", "tracert", "netstat", "getmac", "arp",
+        "redes", "conectividad", "ipconfig", "ping", "tracert", "netstat", "getmac", "arp",
         "nslookup", "pathping", "enrutamiento", "tcp", "wifi", "wlan", "netadapter", "dns",
     )):
         return "network"

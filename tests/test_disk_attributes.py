@@ -178,7 +178,10 @@ class TestDiskAttributes(unittest.TestCase):
         cfg_path = os.path.join(os.path.dirname(__file__), "..", "resources", "commands_config.json")
         with open(cfg_path, "r", encoding="utf-8") as f:
             data = json.load(f)
-        storage_cat = next((c for c in data["categories"] if c["name"] == "Almacenamiento"), None)
+        storage_cat = next(
+            (c for c in data["categories"] if c["name"] == "Almacenamiento: Formateo y Gestión"),
+            None,
+        )
         self.assertIsNotNone(storage_cat)
         cmd = next(
             (c for c in storage_cat["commands"] if c["command"] == "__INTERNAL__ --run-disk-attributes"),
