@@ -182,7 +182,11 @@ class OfficeDeployApp(ctk.CTk):
         
         def run_install():
             try:
-                subprocess.run([setup_path, "/configure", config_path], check=True)
+                subprocess.run(
+                    [setup_path, "/configure", config_path],
+                    check=True,
+                    creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+                )
                 self.log("[+] Instalación finalizada exitosamente (o proceso delegado a Windows).")
             except Exception as e:
                 self.log(f"[-] Ocurrió un error en la instalación: {str(e)}")

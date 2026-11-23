@@ -105,7 +105,7 @@ def apply_window_theme(window):
     def _apply():
         try:
             window.iconbitmap(get_resource_path('resources/app_icon.ico'))
-        except: pass
+        except Exception: pass
         import customtkinter as ctk
         if ctk.get_appearance_mode().lower() == 'dark':
             try:
@@ -115,7 +115,7 @@ def apply_window_theme(window):
                 DWMWA_USE_IMMERSIVE_DARK_MODE = 20
                 value = ctypes.c_int(2)
                 ctypes.windll.dwmapi.DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, ctypes.byref(value), ctypes.sizeof(value))
-            except: pass
+            except Exception: pass
     window.after(200, _apply)
 
 # Monkey-patching para aplicar el icono y tema a TODAS las ventanas automáticamente

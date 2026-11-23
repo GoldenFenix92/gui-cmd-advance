@@ -53,7 +53,7 @@ class DuplicateFinderApp(ctk.CTk):
         def set_icon():
             try:
                 self.iconbitmap(get_resource_path("resources/app_icon.ico"))
-            except:
+            except Exception:
                 pass
         self.after(200, set_icon)
         

@@ -402,6 +402,51 @@ class TestProjectIntegrity(unittest.TestCase):
         self.assertIn("3600", values)
         self.assertIn("36000", values)
 
+    def test_code_hygiene_no_emojis_no_bare_except_and_no_window_subprocesses(self):
+        import ast
+
+        # Iconos compactos aprobados explícitamente por el usuario (botones compactos y categoría Favoritos)
+        allowed_compact_icons = set("ℹ❔⭐🗑👁🙈\ufe0f")
+        emoji_re = re.compile(r"[\U0001F000-\U0001FAFF\u2600-\u27BF\u2300-\u23FF\u2B50\u2139\u2754\u23FB\u23F8]")
+
+        py_files = [
+            os.path.join(PROJECT_ROOT, "main.py"),
+            os.path.join(PROJECT_ROOT, "gui_app.py"),
+        ] + sorted(glob.glob(os.path.join(PROJECT_ROOT, "functions", "*.py")))
+
+        disallowed_emoji_hits = []
+        bare_except_hits = []
+        subprocess_hits = []
+
+        for path in py_files:
+            rel = os.path.relpath(path, PROJECT_ROOT)
+            with open(path, "r", encoding="utf-8") as f:
+                src = f.read()
+
+            for lineno, line in enumerate(src.splitlines(), 1):
+                found = [ch for ch in emoji_re.findall(line) if ch not in allowed_compact_icons]
+                if found:
+                    disallowed_emoji_hits.append(f"{rel}:{lineno} ({''.join(dict.fromkeys(found))})")
+
+            tree = ast.parse(src, filename=rel)
+            for node in ast.walk(tree):
+                if isinstance(node, ast.ExceptHandler) and node.type is None:
+                    bare_except_hits.append(f"{rel}:{node.lineno}")
+                if (
+                    isinstance(node, ast.Call)
+                    and isinstance(node.func, ast.Attribute)
+                    and node.func.attr in ("run", "Popen", "check_output", "call")
+                    and isinstance(node.func.value, ast.Name)
+                    and node.func.value.id == "subprocess"
+                ):
+                    kw_names = {k.arg for k in node.keywords}
+                    if "creationflags" not in kw_names and "startupinfo" not in kw_names:
+                        subprocess_hits.append(f"{rel}:{node.lineno} ({node.func.attr})")
+
+        self.assertEqual(disallowed_emoji_hits, [], f"Emojis no permitidos detectados: {disallowed_emoji_hits}")
+        self.assertEqual(bare_except_hits, [], f"Bloques except: desnudos detectados: {bare_except_hits}")
+        self.assertEqual(subprocess_hits, [], f"Llamadas subprocess sin CREATE_NO_WINDOW: {subprocess_hits}")
+
 
 if __name__ == "__main__":
     unittest.main()

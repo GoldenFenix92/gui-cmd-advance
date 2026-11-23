@@ -41,7 +41,7 @@ class App(ctk.CTk):
         
         try:
             self.iconbitmap(get_resource_path("resources/app_icon.ico"))
-        except:
+        except Exception:
             pass
 
         self.grid_rowconfigure(0, weight=1)
@@ -65,24 +65,24 @@ class App(ctk.CTk):
         self.theme_switch.pack(side="left")
         self.theme_switch.select()
 
-        self.credits_btn = ctk.CTkButton(self.top_bar, text="ℹ️ Créditos", width=80, height=25, fg_color="transparent", text_color=("black", "white"), command=self.show_credits)
+        self.credits_btn = ctk.CTkButton(self.top_bar, text="Créditos", width=80, height=25, fg_color="transparent", text_color=("black", "white"), command=self.show_credits)
         self.credits_btn.pack(side="right")
 
-        self.plugins_btn = ctk.CTkButton(self.top_bar, text="🧩 Complementos", width=100, height=25, fg_color="#27AE60", hover_color="#2ECC71", command=self.show_plugins)
+        self.plugins_btn = ctk.CTkButton(self.top_bar, text="Complementos", width=100, height=25, fg_color="#27AE60", hover_color="#2ECC71", command=self.show_plugins)
         self.plugins_btn.pack(side="right", padx=(0, 10))
 
-        self.proc_btn = ctk.CTkButton(self.top_bar, text="⚙️ Procesos", width=80, height=25, fg_color="#3498DB", hover_color="#2980B9", command=self.open_process_manager)
+        self.proc_btn = ctk.CTkButton(self.top_bar, text="Procesos", width=80, height=25, fg_color="#3498DB", hover_color="#2980B9", command=self.open_process_manager)
         self.proc_btn.pack(side="right", padx=(0, 10))
         if CTkToolTip: CTkToolTip(self.proc_btn, message="Gestor de Procesos y Servicios")
 
-        self.ram_btn = ctk.CTkButton(self.top_bar, text="🚀 RAM", width=60, height=25, fg_color="#E67E22", hover_color="#D35400", command=self.optimize_ram)
+        self.ram_btn = ctk.CTkButton(self.top_bar, text="RAM", width=60, height=25, fg_color="#E67E22", hover_color="#D35400", command=self.optimize_ram)
 
         self.ram_btn.pack(side="right", padx=(0, 10))
         if CTkToolTip: CTkToolTip(self.ram_btn, message="Liberar memoria inactiva (RAM)")
 
         self.search_var = ctk.StringVar()
         self.search_var.trace_add("write", self.on_search)
-        self.search_entry = ctk.CTkEntry(self.left_frame, textvariable=self.search_var, placeholder_text="🔍 Buscar comando...", border_width=0)
+        self.search_entry = ctk.CTkEntry(self.left_frame, textvariable=self.search_var, placeholder_text="Buscar comando...", border_width=0)
         self.search_entry.grid(row=1, column=0, padx=15, pady=(15, 5), sticky="ew")
 
         self.lbl_cat = ctk.CTkLabel(self.left_frame, text="Categoría:", font=("Arial", 12, "bold"))
@@ -126,7 +126,7 @@ class App(ctk.CTk):
         self.execute_btn.pack(side="left", fill="x", expand=True, padx=(0, 5))
         if CTkToolTip: CTkToolTip(self.execute_btn, message="Ejecutar el comando en segundo plano (Ctrl+Enter)")
         
-        self.pause_btn = ctk.CTkButton(self.btn_frame, text="⏸️ Posponer", width=80, fg_color="#F39C12", hover_color="#D68910", command=self.pause_execution)
+        self.pause_btn = ctk.CTkButton(self.btn_frame, text="Posponer", width=80, fg_color="#F39C12", hover_color="#D68910", command=self.pause_execution)
         # self.pause_btn.pack(side="left", padx=(0, 5)) # Se oculta por defecto
         
         self.fav_btn = ctk.CTkButton(self.btn_frame, text="⭐", width=40, font=("Segoe UI Emoji", 15), anchor="center", command=self.save_favorite, fg_color="#F39C12", hover_color="#D68910")
@@ -172,7 +172,7 @@ class App(ctk.CTk):
         self.table_btn.pack(side="left", padx=(0, 10))
         if CTkToolTip: CTkToolTip(self.table_btn, message="Ver resultados en una tabla interactiva (ideal para CSV)")
 
-        self.interpreter_btn = ctk.CTkButton(self.btn_frame, text="✨ Interpretar Resultados", width=150, command=self.run_interpreter, fg_color="#8E44AD", hover_color="#9B59B6")
+        self.interpreter_btn = ctk.CTkButton(self.btn_frame, text="Interpretar Resultados", width=150, command=self.run_interpreter, fg_color="#8E44AD", hover_color="#9B59B6")
         self.interpreter_btn.pack(side="left")
         if CTkToolTip: CTkToolTip(self.interpreter_btn, message="Analiza el reporte con Inteligencia Artificial o de manera local")
         
@@ -183,7 +183,7 @@ class App(ctk.CTk):
         self.keep_awake_var = ctk.BooleanVar(value=False)
         self.keep_awake_cb = ctk.CTkCheckBox(
             self.power_frame,
-            text="🔋 Evitar suspensión / hibernación",
+            text="Evitar suspensión / hibernación",
             variable=self.keep_awake_var,
         )
         self.keep_awake_cb.pack(side="left", padx=(0, 18))
@@ -196,7 +196,7 @@ class App(ctk.CTk):
         self.shutdown_after_var = ctk.BooleanVar(value=False)
         self.shutdown_after_cb = ctk.CTkCheckBox(
             self.power_frame,
-            text="⏻ Apagar PC al finalizar",
+            text="Apagar PC al finalizar",
             variable=self.shutdown_after_var,
         )
         self.shutdown_after_cb.pack(side="left")
@@ -210,10 +210,10 @@ class App(ctk.CTk):
         self.status_bar = ctk.CTkFrame(self.right_frame, height=25, fg_color="transparent")
         self.status_bar.grid(row=5, column=0, columnspan=2, sticky="ew")
         
-        self.lbl_ram = ctk.CTkLabel(self.status_bar, text="🧠 RAM: --%", font=("Consolas", 12, "bold"))
+        self.lbl_ram = ctk.CTkLabel(self.status_bar, text="RAM: --%", font=("Consolas", 12, "bold"))
         self.lbl_ram.pack(side="right", padx=10)
         
-        self.lbl_cpu = ctk.CTkLabel(self.status_bar, text="💻 CPU: --%", font=("Consolas", 12, "bold"))
+        self.lbl_cpu = ctk.CTkLabel(self.status_bar, text="CPU: --%", font=("Consolas", 12, "bold"))
         self.lbl_cpu.pack(side="right", padx=10)
         
         self.update_console_tags()
@@ -267,7 +267,7 @@ class App(ctk.CTk):
                         "name": "⭐ Favoritos",
                         "commands": favs
                     })
-        except:
+        except Exception:
             pass
             
         return config
@@ -284,11 +284,11 @@ class App(ctk.CTk):
                 elif val < 75: return "#fd7e14" # Naranja
                 else: return "#dc3545" # Rojo
                 
-            self.lbl_cpu.configure(text=f"💻 CPU: {cpu}%", text_color=get_color(cpu))
-            self.lbl_ram.configure(text=f"🧠 RAM: {ram}%", text_color=get_color(ram))
-        except:
-            self.lbl_cpu.configure(text="💻 CPU: --%")
-            self.lbl_ram.configure(text="🧠 RAM: --%")
+            self.lbl_cpu.configure(text=f"CPU: {cpu}%", text_color=get_color(cpu))
+            self.lbl_ram.configure(text=f"RAM: {ram}%", text_color=get_color(ram))
+        except Exception:
+            self.lbl_cpu.configure(text="CPU: --%")
+            self.lbl_ram.configure(text="RAM: --%")
         self.after(2000, self.update_status_dashboard)
 
     def get_windows_drives(self):
@@ -302,7 +302,7 @@ class App(ctk.CTk):
             for line in output:
                 if line.strip():
                     drives.append(line.strip())
-        except:
+        except Exception:
             pass
         if not drives:
             import string
@@ -360,7 +360,7 @@ class App(ctk.CTk):
             for line in output:
                 if line.strip():
                     disks.append(line.strip())
-        except:
+        except Exception:
             pass
         if not disks:
             disks = ["(Ningun disco)"]
@@ -378,7 +378,7 @@ class App(ctk.CTk):
                     profile_name = line.split(":", 1)[1].strip()
                     if profile_name:
                         profiles.append(profile_name)
-        except:
+        except Exception:
             pass
         return profiles if profiles else ["(Ninguna red encontrada)"]
 
@@ -393,7 +393,7 @@ class App(ctk.CTk):
             for line in output:
                 if line.strip():
                     adapters.append(line.strip())
-        except:
+        except Exception:
             pass
         return adapters if adapters else ["(Ninguno)"]
 
@@ -401,7 +401,7 @@ class App(ctk.CTk):
         import os
         try:
             threads = os.cpu_count() or 4
-        except:
+        except Exception:
             threads = 4
             
         options = ["0 (Auto - Todos)"]
@@ -449,7 +449,7 @@ class App(ctk.CTk):
         def set_icon():
             try:
                 info_win.iconbitmap(get_resource_path("resources/app_icon.ico"))
-            except:
+            except Exception:
                 pass
         
         info_win.after(200, set_icon)
@@ -535,7 +535,7 @@ class App(ctk.CTk):
                         plugin_needed = pid
                         break
                         
-                lbl = ctk.CTkLabel(self.args_frame, text=f"⚠️ Falta {PLUGINS[plugin_needed]['name']}.", text_color="#E74C3C", font=("Arial", 14, "bold"))
+                lbl = ctk.CTkLabel(self.args_frame, text=f"[AVISO] Falta {PLUGINS[plugin_needed]['name']}.", text_color="#E74C3C", font=("Arial", 14, "bold"))
                 lbl.pack(pady=20)
                 
                 def install_it():
@@ -605,14 +605,14 @@ class App(ctk.CTk):
                         btn_frame_paths.pack(side="right", padx=(0, 10))
                         
                         if arg_type == "save_file_entry":
-                            btn_browse_save = ctk.CTkButton(btn_frame_paths, text="💾 Guardar Como...", width=60, command=browse_save_file)
+                            btn_browse_save = ctk.CTkButton(btn_frame_paths, text="Guardar Como...", width=60, command=browse_save_file)
                             btn_browse_save.pack(side="left", padx=(0, 5))
                         elif arg_type == "file_entry":
-                            btn_browse_file = ctk.CTkButton(btn_frame_paths, text="📄 Archivo", width=60, command=browse_file)
+                            btn_browse_file = ctk.CTkButton(btn_frame_paths, text="Archivo", width=60, command=browse_file)
                             btn_browse_file.pack(side="left", padx=(0, 5))
                         
                         if arg_type in ["directory_entry", "file_entry"]:
-                            btn_browse_folder = ctk.CTkButton(btn_frame_paths, text="📁 Carpeta", width=60, command=browse_folder)
+                            btn_browse_folder = ctk.CTkButton(btn_frame_paths, text="Carpeta", width=60, command=browse_folder)
                             btn_browse_folder.pack(side="left")
                         
                     ent = ctk.CTkEntry(row_frame, textvariable=var, placeholder_text="Escribir...", border_width=0)
@@ -893,7 +893,7 @@ class App(ctk.CTk):
                     out_val = input_val
             
             if input_val and out_val and input_val.lower() == out_val.lower() and not suffix:
-                self.execute_btn.configure(state="disabled", text="❌ Falta sufijo (Evitará sobrescribir originales)")
+                self.execute_btn.configure(state="disabled", text="Falta sufijo (Evitará sobrescribir originales)")
             else:
                 if not self.is_running:
                     self.execute_btn.configure(state="normal", text="Ejecutar Comando")
@@ -944,7 +944,7 @@ class App(ctk.CTk):
 
         accent = "#D73A49" if is_danger else "#D29922"
         accent_hover = "#B62324" if is_danger else "#B07C14"
-        badge_text = "🚨 ACCIÓN CRÍTICA" if is_danger else "⚠️ CONFIRMACIÓN DE CAMBIO"
+        badge_text = "ACCIÓN CRÍTICA" if is_danger else "CONFIRMACIÓN DE CAMBIO"
 
         result = {"proceed": False}
 
@@ -1087,7 +1087,7 @@ class App(ctk.CTk):
         apply_window_theme(win)
 
         header_color = "#D29922" if had_error else "#1F6AA5"
-        header_txt = "⚠️ Tarea finalizada con error — Apagado en curso" if had_error else "⏻ Tarea finalizada — Apagado automático"
+        header_txt = "Tarea finalizada con error — Apagado en curso" if had_error else "Tarea finalizada — Apagado automático"
         header = ctk.CTkFrame(win, fg_color=header_color, corner_radius=6)
         header.pack(fill="x", padx=18, pady=(16, 10))
         ctk.CTkLabel(header, text=header_txt, font=("Segoe UI", 14, "bold"), text_color="#FFFFFF").pack(padx=12, pady=10, anchor="w")
@@ -1251,7 +1251,7 @@ class App(ctk.CTk):
             if os.path.exists(get_user_data_path("favorites.json")):
                 with open(get_user_data_path("favorites.json"), "r", encoding="utf-8") as f:
                     favs = json.load(f)
-        except:
+        except Exception:
             return
             
         new_favs = [f for f in favs if f.get("name") != cmd_name]
@@ -1281,7 +1281,7 @@ class App(ctk.CTk):
             if os.path.exists(get_user_data_path("favorites.json")):
                 with open(get_user_data_path("favorites.json"), "r", encoding="utf-8") as f:
                     favs = json.load(f)
-        except:
+        except Exception:
             pass
             
         base_name = f"{fav_cmd['name']} (Fav)"
@@ -1309,7 +1309,7 @@ class App(ctk.CTk):
             json.dump(favs, f, indent=4)
             
         self.output_textbox.configure(state="normal")
-        self.output_textbox.insert("end", f"\n[⭐] Comando '{fav_name}' guardado en Favoritos.\n(Reinicia la app para verlo en la lista)\n", "success")
+        self.output_textbox.insert("end", f"\n[OK] Comando '{fav_name}' guardado en Favoritos.\n(Reinicia la app para verlo en la lista)\n", "success")
         self.output_textbox.see("end")
         self.output_textbox.configure(state="disabled")
 
@@ -1487,7 +1487,7 @@ class App(ctk.CTk):
         flag_file = os.path.join(appdata, "cmd_gui_advance", "pause.flag")
         if os.path.exists(flag_file):
             try: os.remove(flag_file)
-            except: pass
+            except Exception: pass
 
         self._tick_progress_timer()
         self._start_storage_job_monitor(command_str)
@@ -1666,7 +1666,7 @@ class App(ctk.CTk):
             desc_lbl = ctk.CTkLabel(row, text=p['desc'], text_color="gray", wraplength=400, justify="left")
             desc_lbl.pack(side="top", anchor="w", padx=10)
             
-            status_text = "🟢 Instalado" if is_installed else "🔴 No Instalado"
+            status_text = "Instalado" if is_installed else "No Instalado"
             status_lbl = ctk.CTkLabel(row, text=status_text)
             status_lbl.pack(side="top", anchor="w", padx=10, pady=(5, 10))
             
@@ -1676,7 +1676,10 @@ class App(ctk.CTk):
             def open_folder(fpath=path):
                 tools_dir = os.path.dirname(fpath)
                 os.makedirs(tools_dir, exist_ok=True)
-                subprocess.Popen(f'explorer "{tools_dir}"')
+                subprocess.Popen(
+                    f'explorer "{tools_dir}"',
+                    creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+                )
                 
             def delete_plugin(fpath=path):
                 try:
@@ -1714,7 +1717,7 @@ class App(ctk.CTk):
                     def open_ai_config():
                         from functions.interpreter_addon import ConfigAPIWindow
                         ConfigAPIWindow(self)
-                    btn_ai = ctk.CTkButton(btn_frame, text="⚙️ Configurar Bóveda IA", width=120, fg_color="#8E44AD", hover_color="#9B59B6", command=open_ai_config)
+                    btn_ai = ctk.CTkButton(btn_frame, text="Configurar Bóveda IA", width=120, fg_color="#8E44AD", hover_color="#9B59B6", command=open_ai_config)
                     btn_ai.pack(side="left", padx=(10, 0))
 
                 self.backup_vars[pid] = ctk.IntVar(value=0)
@@ -1770,10 +1773,10 @@ class App(ctk.CTk):
         btn_action_frame = ctk.CTkFrame(win, fg_color="transparent")
         btn_action_frame.pack(fill="x", padx=20, pady=(0, 20))
         
-        btn_export = ctk.CTkButton(btn_action_frame, text="📦 Exportar ZIP", fg_color="#2E86C1", hover_color="#2874A6", command=export_plugins)
+        btn_export = ctk.CTkButton(btn_action_frame, text="Exportar ZIP", fg_color="#2E86C1", hover_color="#2874A6", command=export_plugins)
         btn_export.pack(side="left", expand=True, padx=5)
 
-        btn_import = ctk.CTkButton(btn_action_frame, text="📥 Importar ZIP", fg_color="#27AE60", hover_color="#229954", command=import_plugins)
+        btn_import = ctk.CTkButton(btn_action_frame, text="Importar ZIP", fg_color="#27AE60", hover_color="#229954", command=import_plugins)
         btn_import.pack(side="right", expand=True, padx=5)
 
     def show_table_view(self):
@@ -1856,7 +1859,7 @@ class App(ctk.CTk):
         def set_credits_icon():
             try:
                 credits_win.iconbitmap(get_resource_path("resources/app_icon.ico"))
-            except:
+            except Exception:
                 pass
                 
         credits_win.after(200, set_credits_icon)

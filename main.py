@@ -13,7 +13,7 @@ from gui_app import App
 def is_admin():
     try:
         return ctypes.windll.shell32.IsUserAnAdmin()
-    except:
+    except Exception:
         return False
 
 if __name__ == "__main__":

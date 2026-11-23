@@ -32,7 +32,7 @@ def apply_dark_titlebar(window):
         # 1 for dark mode, 2 for some win11 builds. We try 1 or 2.
         value = ctypes.c_int(2)
         ctypes.windll.dwmapi.DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, ctypes.byref(value), ctypes.sizeof(value))
-    except:
+    except Exception:
         pass
 
 def get_api_settings():
@@ -45,7 +45,7 @@ def get_api_settings():
     if os.path.exists(old_settings_path) and not os.path.exists(settings_path):
         import shutil
         try: shutil.move(old_settings_path, settings_path)
-        except: pass
+        except Exception: pass
 
     default_settings = {
         "providers": {
@@ -80,20 +80,20 @@ def get_api_settings():
                                     default_settings["providers"][pk].update(pv)
                         else:
                             default_settings[k] = v
-    except:
+    except Exception:
         pass
     return default_settings
 
 class InterpreterApp(ctk.CTkToplevel):
     def __init__(self, parent, initial_text=""):
         super().__init__(parent)
-        self.title("✨ Intérprete Asistido de Reportes (Premium)")
+        self.title("Intérprete Asistido de Reportes (Premium)")
         center_window(self, 1100, 650)
         
         def _set_icon_and_theme():
             try:
                 self.iconbitmap(os.path.join(get_base_path(), "resources", "app_icon.ico"))
-            except: pass
+            except Exception: pass
             if ctk.get_appearance_mode().lower() == "dark":
                 apply_dark_titlebar(self)
         self.after(200, _set_icon_and_theme)
@@ -107,20 +107,20 @@ class InterpreterApp(ctk.CTkToplevel):
         self.top_frame = ctk.CTkFrame(self, fg_color="transparent")
         self.top_frame.grid(row=0, column=0, columnspan=2, padx=15, pady=15, sticky="ew")
 
-        self.btn_load = ctk.CTkButton(self.top_frame, text="📁 Cargar Archivo (.txt/.log)", width=160, fg_color="#2E86C1", hover_color="#21618C", command=self.load_file)
+        self.btn_load = ctk.CTkButton(self.top_frame, text="Cargar Archivo (.txt/.log)", width=160, fg_color="#2E86C1", hover_color="#21618C", command=self.load_file)
         self.btn_load.pack(side="left", padx=(0, 10))
 
-        self.btn_offline = ctk.CTkButton(self.top_frame, text="⚡ Analizar (Básico Offline)", width=160, fg_color="#F39C12", hover_color="#D68910", command=self.run_offline)
+        self.btn_offline = ctk.CTkButton(self.top_frame, text="Analizar (Básico Offline)", width=160, fg_color="#F39C12", hover_color="#D68910", command=self.run_offline)
         self.btn_offline.pack(side="left", padx=(0, 10))
 
-        self.btn_online = ctk.CTkButton(self.top_frame, text="🧠 Analizar con IA (Online)", width=160, fg_color="#8E44AD", hover_color="#9B59B6", command=self.run_online)
+        self.btn_online = ctk.CTkButton(self.top_frame, text="Analizar con IA (Online)", width=160, fg_color="#8E44AD", hover_color="#9B59B6", command=self.run_online)
         self.btn_online.pack(side="left", padx=(0, 10))
 
         self.var_use_train = ctk.BooleanVar(value=False)
         self.chk_train = ctk.CTkCheckBox(self.top_frame, text="Usar Tren de Modelos", variable=self.var_use_train)
         self.chk_train.pack(side="left", padx=(0, 10))
 
-        self.btn_config = ctk.CTkButton(self.top_frame, text="⚙️ Configurar API (IA)", width=150, fg_color="#475569", hover_color="#334155", command=self.config_api)
+        self.btn_config = ctk.CTkButton(self.top_frame, text="Configurar API (IA)", width=150, fg_color="#475569", hover_color="#334155", command=self.config_api)
         self.btn_config.pack(side="right")
 
         self.lbl_raw = ctk.CTkLabel(self, text="Reporte Original (Consola):", font=("Arial", 14, "bold"))
@@ -145,7 +145,7 @@ class InterpreterApp(ctk.CTkToplevel):
         self.lbl_status = ctk.CTkLabel(self.bottom_frame, text="Listo.", text_color="gray")
         self.lbl_status.pack(side="left")
 
-        self.btn_export = ctk.CTkButton(self.bottom_frame, text="💾 Exportar Interpretación", width=160, fg_color="#27AE60", hover_color="#2ECC71", command=self.export_interpretation)
+        self.btn_export = ctk.CTkButton(self.bottom_frame, text="Exportar Interpretación", width=160, fg_color="#27AE60", hover_color="#2ECC71", command=self.export_interpretation)
         self.btn_export.pack(side="right", padx=(10, 0))
 
 
@@ -163,7 +163,7 @@ class InterpreterApp(ctk.CTkToplevel):
                         html = re.sub(r'\*\*(.*?)\*\*', r'<b>\1</b>', html)
                         html = re.sub(r'\*(.*?)\*', r'<i>\1</i>', html)
                         html = html.replace('\n', '<br>')
-                        f.write(f"<!DOCTYPE html><html><head><meta charset='utf-8'><style>body{{font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; line-height: 1.6; color: #eee; background-color: #1e1e1e;}} .container{{max-width: 800px; margin: 0 auto; background: #2d2d2d; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.3);}} h2{{color: #4da6ff;}}</style></head><body><div class='container'><h2>✨ Reporte Interpretado</h2>{html}</div></body></html>")
+                        f.write(f"<!DOCTYPE html><html><head><meta charset='utf-8'><style>body{{font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; line-height: 1.6; color: #eee; background-color: #1e1e1e;}} .container{{max-width: 800px; margin: 0 auto; background: #2d2d2d; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.3);}} h2{{color: #4da6ff;}}</style></head><body><div class='container'><h2>Reporte Interpretado</h2>{html}</div></body></html>")
                     else:
                         f.write(content)
                 messagebox.showinfo("Guardado", f"Interpretación exportada exitosamente.\n{file_path}")
@@ -190,31 +190,31 @@ class InterpreterApp(ctk.CTkToplevel):
         lower_content = content.lower()
 
         if "ping" in lower_content and "ttl=" in lower_content:
-            output.append("🟢 **Comando Ping Detectado**")
+            output.append("[OK] **Comando Ping Detectado**")
             perdidos = re.search(r"(?:perdidos|lost)\s*=\s*(\d+)", lower_content)
             if perdidos:
                 num = int(perdidos.group(1))
-                if num == 0: output.append("✅ Tu conexión hacia el destino es estable y no hay pérdida de datos.")
-                else: output.append(f"⚠️ Alerta: Se detectó una pérdida de {num} paquetes.")
+                if num == 0: output.append("[OK] Tu conexión hacia el destino es estable y no hay pérdida de datos.")
+                else: output.append(f"[AVISO] Alerta: Se detectó una pérdida de {num} paquetes.")
             media = re.search(r"(?:media|average)\s*=\s*(\d+)ms", lower_content)
             if media:
                 ms = int(media.group(1))
-                if ms < 50: output.append(f"⚡ Tu latencia promedio es excelente ({ms} ms).")
-                elif ms < 150: output.append(f"🟡 Tu latencia promedio es normal ({ms} ms).")
-                else: output.append(f"🔴 Tu latencia es muy alta ({ms} ms).")
+                if ms < 50: output.append(f"Tu latencia promedio es excelente ({ms} ms).")
+                elif ms < 150: output.append(f"[AVISO] Tu latencia promedio es normal ({ms} ms).")
+                else: output.append(f"[ERROR] Tu latencia es muy alta ({ms} ms).")
             output.append("\n---\n")
 
         if "ipconfig" in lower_content or "lan" in lower_content or "ethernet" in lower_content:
             ip = re.search(r"(?:direcci.n ipv4|ipv4 address)[^:]*: ([\d\.]+)", lower_content)
             gw = re.search(r"(?:puerta de enlace predeterminada|default gateway)[^:]*: ([\d\.]+)", lower_content)
             if ip or gw:
-                output.append("🟢 **Configuración de Red (IPConfig) Detectada**")
-                if ip: output.append(f"✅ Estás conectado correctamente. Tu dirección IP local en esta red es: **{ip.group(1)}**.")
-                if gw: output.append(f"✅ La dirección de tu router principal (Puerta de enlace) es: **{gw.group(1)}**.")
+                output.append("[OK] **Configuración de Red (IPConfig) Detectada**")
+                if ip: output.append(f"[OK] Estás conectado correctamente. Tu dirección IP local en esta red es: **{ip.group(1)}**.")
+                if gw: output.append(f"[OK] La dirección de tu router principal (Puerta de enlace) es: **{gw.group(1)}**.")
                 output.append("\n---\n")
 
         if not output:
-            output.append("ℹ️ **Análisis Local Finalizado**\n\nNo se detectó un patrón conocido.")
+            output.append("[INFO] **Análisis Local Finalizado**\n\nNo se detectó un patrón conocido.")
 
         self.set_output("\n".join(output))
         self.lbl_status.configure(text="Análisis offline completado.")
@@ -237,12 +237,12 @@ class InterpreterApp(ctk.CTkToplevel):
             train = [{"provider": provider, "model": prov_data.get("model")}]
             
         self.lbl_status.configure(text="Conectando con IA... Por favor espera.")
-        self.set_output("Analizando con IA... ⏳\n\nSi el reporte es muy largo, esto puede tomar unos segundos.")
+        self.set_output("Analizando con IA...\n\nSi el reporte es muy largo, esto puede tomar unos segundos.")
         threading.Thread(target=self._run_train, args=(settings, train, content, 0), daemon=True).start()
 
     def _run_train(self, settings, train, content, index):
         if index >= len(train):
-            msg = "🔴 Error de conexión en los modelos.\n\nTodos los intentos fallaron (Verifica tus llaves API o saldo).\n\n💡 Consejo: Si estás usando modelos gratuitos, es posible que los servidores estén saturados. ¡Por favor, inténtalo de nuevo en un minuto mientras se liberan!"
+            msg = "[ERROR] Error de conexión en los modelos.\n\nTodos los intentos fallaron (Verifica tus llaves API o saldo).\n\n[TIP] Consejo: Si estás usando modelos gratuitos, es posible que los servidores estén saturados. ¡Por favor, inténtalo de nuevo en un minuto mientras se liberan!"
             self.after(0, self.set_output, msg)
             self.after(0, lambda: self.lbl_status.configure(text="Error fatal en el Tren de Modelos."))
             return
@@ -292,12 +292,12 @@ class InterpreterApp(ctk.CTkToplevel):
                     result = json.loads(response.read().decode())
                     text_response = result['choices'][0]['message']['content']
 
-            signature = f"🤖 [Analizado por {provider} - {model}]\n\n"
+            signature = f"[Analizado por {provider} - {model}]\n\n"
             self.after(0, self.set_output, signature + text_response)
             self.after(0, lambda: self.lbl_status.configure(text=f"Análisis completado usando {provider} ({model})."))
 
         except Exception as e:
-            self.after(0, lambda p=provider, m=model: self.lbl_status.configure(text=f"⚠️ {p} ({m}) falló. Saltando al siguiente..."))
+            self.after(0, lambda p=provider, m=model: self.lbl_status.configure(text=f"[AVISO] {p} ({m}) falló. Saltando al siguiente..."))
             self._run_train(settings, train, content, index + 1)
 
     def set_output(self, text):
@@ -312,7 +312,7 @@ class InterpreterApp(ctk.CTkToplevel):
 class ModelTrainWindow(ctk.CTkToplevel):
     def __init__(self, master, settings_ref, save_callback):
         super().__init__(master)
-        self.title("🚂 Configuración de Tren de Modelos (Fallback)")
+        self.title("Configuración de Tren de Modelos (Fallback)")
         center_window(self, 700, 450)
         self.attributes("-topmost", True)
         self.grab_set()
@@ -354,10 +354,10 @@ class ModelTrainWindow(ctk.CTkToplevel):
         self.lb_train = tk.Listbox(right_frame, bg="#1e1e1e", fg="#e0e0e0", selectbackground="#3498db", font=("Segoe UI", 11), highlightthickness=0, borderwidth=0)
         self.lb_train.pack(fill="both", expand=True, padx=10, pady=(0,10))
 
-        btn_test = ctk.CTkButton(right_frame, text="🧪 Testear Tren (Reporte)", fg_color="#F39C12", hover_color="#D68910", command=self.test_train)
+        btn_test = ctk.CTkButton(right_frame, text=" Testear Tren (Reporte)", fg_color="#F39C12", hover_color="#D68910", command=self.test_train)
         btn_test.pack(pady=5)
 
-        btn_save = ctk.CTkButton(self, text="💾 Guardar Tren", fg_color="#27AE60", hover_color="#2ECC71", command=self.save)
+        btn_save = ctk.CTkButton(self, text="Guardar Tren", fg_color="#27AE60", hover_color="#2ECC71", command=self.save)
         btn_save.pack(side="bottom", pady=15)
 
         self.load_models(self.var_prov.get())
@@ -393,7 +393,7 @@ class ModelTrainWindow(ctk.CTkToplevel):
             return
 
         test_win = ctk.CTkToplevel(self)
-        test_win.title("🧪 Reporte de Efectividad de Modelos")
+        test_win.title(" Reporte de Efectividad de Modelos")
         center_window(test_win, 650, 400)
         test_win.attributes("-topmost", True)
         test_win.grab_set()
@@ -416,11 +416,11 @@ class ModelTrainWindow(ctk.CTkToplevel):
                 test_win.update()
                 
                 if not api_key:
-                    txt.insert("end", "❌ SIN LLAVE API\n")
+                    txt.insert("end", "[ERROR] SIN LLAVE API\n")
                     continue
                     
                 prompt = "Responde únicamente con la palabra 'OK'."
-                status = "✅ EFECTIVO (Respuesta Exitosa)"
+                status = "[OK] EFECTIVO (Respuesta Exitosa)"
                 
                 try:
                     if prov == "Google Gemini":
@@ -441,13 +441,13 @@ class ModelTrainWindow(ctk.CTkToplevel):
                         
                 except urllib.error.HTTPError as e:
                     if e.code == 429:
-                        status = "⚠️ ERROR 429 (Límite de cuota excedido - No apto)"
+                        status = "[AVISO] ERROR 429 (Límite de cuota excedido - No apto)"
                     elif e.code == 404:
-                        status = "❌ ERROR 404 (El modelo no existe o sin acceso)"
+                        status = "[ERROR] ERROR 404 (El modelo no existe o sin acceso)"
                     else:
-                        status = f"❌ ERROR HTTP {e.code}"
+                        status = f"[ERROR] ERROR HTTP {e.code}"
                 except Exception as e:
-                    status = f"❌ ERROR ({str(e)[:30]})"
+                    status = f"[ERROR] ERROR ({str(e)[:30]})"
                 
                 txt.insert("end", f"{status}\n")
                 test_win.update()
@@ -495,7 +495,7 @@ class CustomDropdownWindow(ctk.CTkToplevel):
 class ConfigAPIWindow(ctk.CTkToplevel):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.title("⚙️ Configuración API Avanzada (Bóveda IA)")
+        self.title("Configuración API Avanzada (Bóveda IA)")
         center_window(self, 700, 550)
         
         apply_window_theme(self)
@@ -536,7 +536,7 @@ class ConfigAPIWindow(ctk.CTkToplevel):
         self.entry_key = ctk.CTkEntry(frame_key, textvariable=self.var_key, show="*")
         self.entry_key.pack(side="left", fill="x", expand=True)
         
-        self.btn_link = ctk.CTkButton(self, text="👉 Obtener API Key", fg_color="transparent", text_color="#3498DB", hover_color="#2C3E50", command=self.open_link)
+        self.btn_link = ctk.CTkButton(self, text="Obtener API Key", fg_color="transparent", text_color="#3498DB", hover_color="#2C3E50", command=self.open_link)
         self.btn_link.pack(pady=(0, 5))
 
         self.var_free_only = ctk.BooleanVar(value=self.settings.get("free_only", True))
@@ -544,7 +544,7 @@ class ConfigAPIWindow(ctk.CTkToplevel):
         self.chk_free.pack(pady=5)
 
         # 3. Load Models Button
-        self.btn_fetch = ctk.CTkButton(self, text="🔄 Cargar Modelos Disponibles", fg_color="#F39C12", hover_color="#D68910", command=self.fetch_models)
+        self.btn_fetch = ctk.CTkButton(self, text="Cargar Modelos Disponibles", fg_color="#F39C12", hover_color="#D68910", command=self.fetch_models)
         self.btn_fetch.pack(pady=(10, 20))
         
         self.lbl_verify = ctk.CTkLabel(self, text="Ingresa tu API Key y carga los modelos para verificar.", text_color="gray")
@@ -572,10 +572,10 @@ class ConfigAPIWindow(ctk.CTkToplevel):
         frame_btns = ctk.CTkFrame(self, fg_color="transparent")
         frame_btns.pack(pady=20)
 
-        btn_save = ctk.CTkButton(frame_btns, text="💾 Guardar en Bóveda Local", fg_color="#27AE60", hover_color="#2ECC71", command=self.save)
+        btn_save = ctk.CTkButton(frame_btns, text="Guardar en Bóveda Local", fg_color="#27AE60", hover_color="#2ECC71", command=self.save)
         btn_save.pack(side="left", padx=10)
 
-        btn_train = ctk.CTkButton(frame_btns, text="🚂 Configurar Tren de Modelos", fg_color="#8E44AD", hover_color="#9B59B6", command=self.open_train)
+        btn_train = ctk.CTkButton(frame_btns, text="Configurar Tren de Modelos", fg_color="#8E44AD", hover_color="#9B59B6", command=self.open_train)
         btn_train.pack(side="left", padx=10)
 
         self.on_provider_change(self.var_provider.get(), initial_load=True)
@@ -594,7 +594,7 @@ class ConfigAPIWindow(ctk.CTkToplevel):
             self.frame_url.pack(fill="x", padx=40, pady=5, after=self.menu_provider.master)
             self.btn_fetch.pack_forget()
             self.lbl_verify.pack_forget()
-            self.btn_link.configure(text="👉 Escribe tu modelo de forma manual", command=lambda: None)
+            self.btn_link.configure(text="Escribe tu modelo de forma manual", command=lambda: None)
             self.menu_model.pack_forget()
             self.entry_model.pack(side="left", fill="x", expand=True)
             if not initial_load: self.var_model.set("")
@@ -606,15 +606,15 @@ class ConfigAPIWindow(ctk.CTkToplevel):
             self.menu_model.pack(side="left", fill="x", expand=True)
 
             if val == "Google Gemini":
-                self.btn_link.configure(text="👉 Obtener API Key Gratuita (Google AI Studio)", command=lambda: __import__('webbrowser').open("https://aistudio.google.com/app/apikey"))
+                self.btn_link.configure(text="Obtener API Key Gratuita (Google AI Studio)", command=lambda: __import__('webbrowser').open("https://aistudio.google.com/app/apikey"))
             elif val == "OpenAI":
-                self.btn_link.configure(text="👉 Obtener API Key (Plataforma OpenAI)", command=lambda: __import__('webbrowser').open("https://platform.openai.com/api-keys"))
+                self.btn_link.configure(text="Obtener API Key (Plataforma OpenAI)", command=lambda: __import__('webbrowser').open("https://platform.openai.com/api-keys"))
             elif val == "Anthropic Claude":
-                self.btn_link.configure(text="👉 Obtener API Key (Anthropic Console)", command=lambda: __import__('webbrowser').open("https://console.anthropic.com/settings/keys"))
+                self.btn_link.configure(text="Obtener API Key (Anthropic Console)", command=lambda: __import__('webbrowser').open("https://console.anthropic.com/settings/keys"))
             elif val == "Groq":
-                self.btn_link.configure(text="👉 Obtener API Key Gratuita (Groq Cloud)", command=lambda: __import__('webbrowser').open("https://console.groq.com/keys"))
+                self.btn_link.configure(text="Obtener API Key Gratuita (Groq Cloud)", command=lambda: __import__('webbrowser').open("https://console.groq.com/keys"))
             elif val == "Deepseek":
-                self.btn_link.configure(text="👉 Obtener API Key (Deepseek Platform)", command=lambda: __import__('webbrowser').open("https://platform.deepseek.com/api_keys"))
+                self.btn_link.configure(text="Obtener API Key (Deepseek Platform)", command=lambda: __import__('webbrowser').open("https://platform.deepseek.com/api_keys"))
 
     def open_model_dropdown(self):
         vals = self.cached_models if self.cached_models else ["--- Carga los modelos primero ---"]
@@ -628,10 +628,10 @@ class ConfigAPIWindow(ctk.CTkToplevel):
         api_key = self.var_key.get().strip()
 
         if not api_key:
-            self.lbl_verify.configure(text="⚠️ Por favor ingresa tu API Key primero.", text_color="#E74C3C")
+            self.lbl_verify.configure(text="[AVISO] Por favor ingresa tu API Key primero.", text_color="#E74C3C")
             return
 
-        self.lbl_verify.configure(text="Obteniendo modelos oficiales... ⏳", text_color="#F39C12")
+        self.lbl_verify.configure(text="Obteniendo modelos oficiales...", text_color="#F39C12")
         self.btn_fetch.configure(state="disabled")
         
         def _fetch():
@@ -675,14 +675,14 @@ class ConfigAPIWindow(ctk.CTkToplevel):
                     if self.var_model.get() not in models:
                         if provider == "Google Gemini" and "gemini-1.5-flash" in models: self.after(0, lambda: self.var_model.set("gemini-1.5-flash"))
                         else: self.after(0, lambda: self.var_model.set(models[0]))
-                    self.after(0, lambda: self.lbl_verify.configure(text=f"✅ ¡Éxito! Se cargaron {len(models)} modelos disponibles.", text_color="#2ECC71"))
+                    self.after(0, lambda: self.lbl_verify.configure(text=f"[OK] ¡Éxito! Se cargaron {len(models)} modelos disponibles.", text_color="#2ECC71"))
                 else:
-                    self.after(0, lambda: self.lbl_verify.configure(text="⚠️ No se encontraron modelos.", text_color="#E74C3C"))
+                    self.after(0, lambda: self.lbl_verify.configure(text="[AVISO] No se encontraron modelos.", text_color="#E74C3C"))
 
             except urllib.error.HTTPError as e:
-                self.after(0, lambda: self.lbl_verify.configure(text=f"🔴 Error de clave (HTTP {e.code}): La API Key no es válida.", text_color="#E74C3C"))
+                self.after(0, lambda: self.lbl_verify.configure(text=f"[ERROR] Error de clave (HTTP {e.code}): La API Key no es válida.", text_color="#E74C3C"))
             except Exception as e:
-                self.after(0, lambda: self.lbl_verify.configure(text=f"🔴 Error de red: {str(e)[:40]}", text_color="#E74C3C"))
+                self.after(0, lambda: self.lbl_verify.configure(text=f"[ERROR] Error de red: {str(e)[:40]}", text_color="#E74C3C"))
             finally:
                 self.after(0, lambda: self.btn_fetch.configure(state="normal"))
                 
@@ -696,7 +696,7 @@ class ConfigAPIWindow(ctk.CTkToplevel):
         try:
             with open(settings_path, "w", encoding="utf-8") as f:
                 json.dump(self.settings, f, indent=4)
-        except: pass
+        except Exception: pass
 
     def save(self):
         settings_path = get_user_data_path(os.path.join("tools", "ai_settings.json"))

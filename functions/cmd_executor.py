@@ -37,7 +37,8 @@ class CommandRunner:
                     stderr=subprocess.STDOUT,
                     shell=True,
                     env=proc_env,
-                    bufsize=0
+                    bufsize=0,
+                    creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
                 )
                 
                 buffer = bytearray()
@@ -87,7 +88,11 @@ class CommandRunner:
     def stop_command(self):
         if self.process:
             try:
-                subprocess.run(["taskkill", "/F", "/T", "/PID", str(self.process.pid)], capture_output=True)
+                subprocess.run(
+                    ["taskkill", "/F", "/T", "/PID", str(self.process.pid)],
+                    capture_output=True,
+                    creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+                )
             except Exception as e:
                 pass
 

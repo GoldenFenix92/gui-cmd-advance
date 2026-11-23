@@ -26,7 +26,7 @@ def main():
     
     targets = get_targets(args)
     if not targets:
-        print("No se seleccionó ninguna carpeta para limpiar. Activa las opciones en el panel.")
+        safe_print("No se seleccionó ninguna carpeta para limpiar. Activa las opciones en el panel.")
         return
         
     # Inicializar memoria de tarea basada en los argumentos
@@ -35,9 +35,9 @@ def main():
     
     resumed_count = memory.get_processed_count()
     if resumed_count > 0:
-        print(f"Reanudando tarea... Se omitirán {resumed_count} archivos previamente eliminados.\n")
+        safe_print(f"Reanudando tarea... Se omitirán {resumed_count} archivos previamente eliminados.\n")
     else:
-        print("Escaneando carpetas seleccionadas...\n")
+        safe_print("Escaneando carpetas seleccionadas...\n")
         
     files_to_delete = []
     total_size = 0
@@ -65,14 +65,14 @@ def main():
                         size = os.path.getsize(fp)
                         files_to_delete.append((fp, size))
                         total_size += size
-                    except: pass
+                    except Exception: pass
                     
     if total_size == 0 and resumed_count == 0:
-        print("100%")
-        print("No hay basura para eliminar en las carpetas seleccionadas.")
+        safe_print("100%")
+        safe_print("No hay basura para eliminar en las carpetas seleccionadas.")
         return
         
-    print(f"Total a limpiar detectado: {total_size/(1024*1024):.2f} MB ({len(files_to_delete)} archivos)")
+    safe_print(f"Total a limpiar detectado: {total_size/(1024*1024):.2f} MB ({len(files_to_delete)} archivos)")
     
     freed = 0
     skipped = 0
@@ -88,7 +88,7 @@ def main():
             os.remove(fp)
             freed += size
             memory.mark_processed(fp)
-        except: pass
+        except Exception: pass
         
         # Verificar pausa
         if TaskMemory.check_pause_signal():
@@ -113,10 +113,10 @@ def main():
                 for name in dirs:
                     dp = os.path.join(root, name)
                     try: os.rmdir(dp)
-                    except: pass
+                    except Exception: pass
                     
-    print("100%")
-    print(f"Limpieza completa. Se liberaron {(freed)/(1024*1024):.2f} MB.")
+    safe_print("100%")
+    safe_print(f"Limpieza completa. Se liberaron {(freed)/(1024*1024):.2f} MB.")
     memory.clear()
 
 if __name__ == "__main__":

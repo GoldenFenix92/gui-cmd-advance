@@ -1,3 +1,4 @@
+from functions.utils import safe_print
 import os
 import sys
 import json
@@ -49,7 +50,7 @@ def check_for_updates(master_win):
                 if exe_url:
                     master_win.after(0, lambda: _prompt_update(master_win, data.get("tag_name"), data.get("body", ""), exe_url))
         except Exception as e:
-            print(f"Error comprobando actualizaciones: {e}")
+            safe_print(f"Error comprobando actualizaciones: {e}")
 
     threading.Thread(target=_check, daemon=True).start()
 
@@ -69,7 +70,7 @@ def _prompt_update(master_win, tag_name, release_notes, download_url):
         try: 
             from functions.utils import get_resource_path
             update_win.iconbitmap(get_resource_path("resources/app_icon.ico"))
-        except: pass
+        except Exception: pass
     update_win.after(200, set_win_icon)
     
     lbl_title = ctk.CTkLabel(update_win, text=f"Actualización detectada: {tag_name}", font=("Arial", 16, "bold"))
@@ -134,7 +135,7 @@ del "%~f0"
                 
             master_win.after(0, lambda: _restart_and_update(bat_path))
         except Exception as e:
-            print(f"Error descargando actualización: {e}")
+            safe_print(f"Error descargando actualización: {e}")
             master_win.after(0, lambda: messagebox.showerror("Error", "No se pudo descargar la actualización."))
             master_win.after(0, dl_win.destroy)
             
@@ -162,7 +163,7 @@ def check_for_crashes(master_win):
             _prompt_crash_report(master_win, content, crash_file)
         else:
             try: os.remove(crash_file)
-            except: pass
+            except Exception: pass
 
 def _prompt_crash_report(master_win, crash_data, crash_file):
     crash_win = ctk.CTkToplevel(master_win)
@@ -179,7 +180,7 @@ def _prompt_crash_report(master_win, crash_data, crash_file):
         try: 
             from functions.utils import get_resource_path
             crash_win.iconbitmap(get_resource_path("resources/app_icon.ico"))
-        except: pass
+        except Exception: pass
     crash_win.after(200, set_win_icon)
     
     lbl = ctk.CTkLabel(crash_win, text="El programa se cerró inesperadamente la última vez.\n¿Deseas enviar el reporte de error de forma anónima\nal desarrollador para que pueda solucionarlo?", font=("Arial", 12))
@@ -198,12 +199,12 @@ def _prompt_crash_report(master_win, crash_data, crash_file):
         def _send():
             try:
                 payload = {
-                    "content": f"🚨 **Nuevo Crash Report - v{__version__}** 🚨\n```python\n{crash_data[:1800]}\n```"
+                    "content": f"[CRASH REPORT] **Nuevo Crash Report - v{__version__}**\n```python\n{crash_data[:1800]}\n```"
                 }
                 req = urllib.request.Request(DISCORD_WEBHOOK_URL, data=json.dumps(payload).encode('utf-8'), headers={'Content-Type': 'application/json', 'User-Agent': 'Mozilla/5.0'})
                 urllib.request.urlopen(req, timeout=5)
             except Exception as e:
-                print(f"Error enviando crash report: {e}")
+                safe_print(f"Error enviando crash report: {e}")
             finally:
                 _cleanup_crash(crash_file)
                 
@@ -222,5 +223,5 @@ def _prompt_crash_report(master_win, crash_data, crash_file):
 def _cleanup_crash(crash_file):
     try:
         os.remove(crash_file)
-    except:
+    except Exception:
         pass

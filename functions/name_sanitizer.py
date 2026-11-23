@@ -1,3 +1,4 @@
+from functions.utils import safe_print
 import os
 import re
 import sys
@@ -35,10 +36,10 @@ def sanitize_name(name):
 
 def main(folder, recursive=False):
     if not folder or not os.path.isdir(folder):
-        print(f"Error: La ruta '{folder}' no es una carpeta válida.")
+        safe_print(f"Error: La ruta '{folder}' no es una carpeta válida.")
         sys.exit(1)
         
-    print(f"Iniciando escaneo y reparación de nombres en: {safe_str(folder)}\n")
+    safe_print(f"Iniciando escaneo y reparación de nombres en: {safe_str(folder)}\n")
     renamed_count = 0
     error_count = 0
     
@@ -51,7 +52,7 @@ def main(folder, recursive=False):
             dirs = [d for d in items if os.path.isdir(os.path.join(folder, d))]
             items_to_process = [(folder, dirs, files)]
         except Exception as e:
-            print(f"Error accediendo a la carpeta: {e}")
+            safe_print(f"Error accediendo a la carpeta: {e}")
             sys.exit(1)
             
     # Renombrar (bottom-up si es recursivo) para evitar romper rutas
@@ -74,10 +75,10 @@ def main(folder, recursive=False):
                     
                 try:
                     os.rename(old_path, new_path)
-                    print(f"[OK] Archivo renombrado: {safe_str(name)} -> {os.path.basename(new_path)}")
+                    safe_print(f"[OK] Archivo renombrado: {safe_str(name)} -> {os.path.basename(new_path)}")
                     renamed_count += 1
                 except Exception as e:
-                    print(f"[ERROR] No se pudo renombrar el archivo '{safe_str(name)}': {e}")
+                    safe_print(f"[ERROR] No se pudo renombrar el archivo '{safe_str(name)}': {e}")
                     error_count += 1
                     
         # Carpetas
@@ -94,13 +95,13 @@ def main(folder, recursive=False):
                     
                 try:
                     os.rename(old_path, new_path)
-                    print(f"[OK] Carpeta renombrada: {safe_str(name)} -> {os.path.basename(new_path)}")
+                    safe_print(f"[OK] Carpeta renombrada: {safe_str(name)} -> {os.path.basename(new_path)}")
                     renamed_count += 1
                 except Exception as e:
-                    print(f"[ERROR] No se pudo renombrar la carpeta '{safe_str(name)}': {e}")
+                    safe_print(f"[ERROR] No se pudo renombrar la carpeta '{safe_str(name)}': {e}")
                     error_count += 1
                     
-    print(f"\nProceso finalizado. Total analizados: {analyzed_count} | Renombrados: {renamed_count} | Errores: {error_count}")
+    safe_print(f"\nProceso finalizado. Total analizados: {analyzed_count} | Renombrados: {renamed_count} | Errores: {error_count}")
 
 if __name__ == "__main__":
     import argparse

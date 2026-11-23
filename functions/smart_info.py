@@ -58,7 +58,7 @@ class SmartInfoApp(ctk.CTk):
         self.title("Estado de Salud SMART Avanzado (CrystalDiskInfo Clone)")
         center_window(self, 900, 600)
         try: self.iconbitmap(get_resource_path("resources/app_icon.ico"))
-        except: pass
+        except Exception: pass
         
         self.grid_rowconfigure(1, weight=1)
         self.grid_columnconfigure(0, weight=1)
@@ -66,7 +66,7 @@ class SmartInfoApp(ctk.CTk):
         top = ctk.CTkFrame(self, fg_color="transparent")
         top.grid(row=0, column=0, padx=20, pady=10, sticky="ew")
         
-        self.btn_refresh = ctk.CTkButton(top, text="🔄 Analizar Discos", command=self.analyze, fg_color="#27AE60", hover_color="#1E8449")
+        self.btn_refresh = ctk.CTkButton(top, text="Analizar Discos", command=self.analyze, fg_color="#27AE60", hover_color="#1E8449")
         self.btn_refresh.pack(side="left")
         
         self.lbl_status = ctk.CTkLabel(top, text="Presiona Analizar para leer datos SMART...", font=("Arial", 12))
@@ -88,7 +88,7 @@ class SmartInfoApp(ctk.CTk):
                 d = out.decode('mbcs', 'ignore').strip()
                 smart_raw = json.loads(d) if d else []
                 if isinstance(smart_raw, dict): smart_raw = [smart_raw]
-            except:
+            except Exception:
                 smart_raw = []
                 
             # 2. Storage Reliability Counters (NVMe y otros modernos)
@@ -98,7 +98,7 @@ class SmartInfoApp(ctk.CTk):
                 d_rel = out_rel.decode('mbcs', 'ignore').strip()
                 rel_data = json.loads(d_rel) if d_rel else []
                 if isinstance(rel_data, dict): rel_data = [rel_data]
-            except:
+            except Exception:
                 rel_data = []
                 
             # 3. Discos Físicos (General)
@@ -108,7 +108,7 @@ class SmartInfoApp(ctk.CTk):
                 d = out.decode('mbcs', 'ignore').strip()
                 phys_data = json.loads(d) if d else []
                 if isinstance(phys_data, dict): phys_data = [phys_data]
-            except:
+            except Exception:
                 phys_data = []
 
             disks_info = []
@@ -186,7 +186,7 @@ class SmartInfoApp(ctk.CTk):
             top_bar.pack(fill="x", padx=10, pady=10)
             
             color = "#28a745" if disk["status"] == "Healthy" else "#dc3545"
-            ctk.CTkLabel(top_bar, text=f"💾 {disk['name']} ({disk['media']})", font=("Arial", 16, "bold")).pack(side="left")
+            ctk.CTkLabel(top_bar, text=f"{disk['name']} ({disk['media']})", font=("Arial", 16, "bold")).pack(side="left")
             ctk.CTkLabel(top_bar, text=f"Salud: {disk['status']}", font=("Arial", 14, "bold"), text_color=color).pack(side="right", padx=20)
             
             final_temp = disk["temp"]
@@ -198,9 +198,9 @@ class SmartInfoApp(ctk.CTk):
                         break
 
             if final_temp:
-                ctk.CTkLabel(top_bar, text=f"🌡️ {final_temp} °C", font=("Arial", 15, "bold"), text_color="#F39C12").pack(side="right", padx=20)
+                ctk.CTkLabel(top_bar, text=f"Temp: {final_temp} °C", font=("Arial", 15, "bold"), text_color="#F39C12").pack(side="right", padx=20)
             else:
-                ctk.CTkLabel(top_bar, text="🌡️ N/A", font=("Arial", 15, "bold"), text_color="gray").pack(side="right", padx=20)
+                ctk.CTkLabel(top_bar, text="Temp: N/A", font=("Arial", 15, "bold"), text_color="gray").pack(side="right", padx=20)
 
             if disk["smart"]:
                 table_frame = ctk.CTkFrame(f, fg_color="transparent")

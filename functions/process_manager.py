@@ -1,3 +1,4 @@
+from functions.utils import safe_print
 import customtkinter as ctk
 import psutil
 import subprocess
@@ -19,7 +20,7 @@ def load_history():
     if os.path.exists(p):
         with open(p, "r", encoding="utf-8") as f:
             try: return json.load(f)
-            except: return []
+            except Exception: return []
     return []
 
 def save_to_history(action, item_type, name, extra_info=""):
@@ -99,7 +100,7 @@ class AIResultWindow(ctk.CTkToplevel):
         apply_window_theme(self)
         try:
             self.iconbitmap(get_resource_path(os.path.join("resources", "app_icon.ico")))
-        except:
+        except Exception:
             pass
             
         self.grid_rowconfigure(0, weight=1)
@@ -136,10 +137,10 @@ class ProcessManagerApp(ctk.CTk):
         
         ctk.CTkLabel(self.top_frame, text="Gestor de Procesos y Servicios", font=("Arial", 20, "bold")).pack(side="left")
         
-        self.refresh_btn = ctk.CTkButton(self.top_frame, text="🔄 Actualizar", width=100, command=self.refresh_data)
+        self.refresh_btn = ctk.CTkButton(self.top_frame, text="Actualizar", width=100, command=self.refresh_data)
         self.refresh_btn.pack(side="right")
         
-        self.btn_ai = ctk.CTkButton(self.top_frame, text="🧠 Analizador IA", width=120, fg_color="#8E44AD", hover_color="#9B59B6", command=self.run_ai_analysis)
+        self.btn_ai = ctk.CTkButton(self.top_frame, text="Analizador IA", width=120, fg_color="#8E44AD", hover_color="#9B59B6", command=self.run_ai_analysis)
         self.btn_ai.pack(side="right", padx=(0, 10))
         
         # Tabs
@@ -148,8 +149,8 @@ class ProcessManagerApp(ctk.CTk):
         
         self.tab_proc = self.tabview.add("Procesos")
         self.tab_serv = self.tabview.add("Servicios")
-        self.tab_bloat = self.tabview.add("🧹 Bloatware")
-        self.tab_hist = self.tabview.add("🕒 Historial")
+        self.tab_bloat = self.tabview.add("Bloatware")
+        self.tab_hist = self.tabview.add("Historial")
         
         # Configurar Tab Procesos
         self.tab_proc.grid_columnconfigure(0, weight=1)
@@ -169,7 +170,7 @@ class ProcessManagerApp(ctk.CTk):
         ctk.CTkLabel(self.tab_bloat, text="Selecciona los servicios de Bloatware que deseas deshabilitar (Pasar a Manual):", font=("Arial", 12, "bold")).grid(row=0, column=0, pady=5, sticky="w")
         self.scroll_bloat = ctk.CTkScrollableFrame(self.tab_bloat)
         self.scroll_bloat.grid(row=1, column=0, sticky="nsew", padx=5, pady=5)
-        self.btn_bloat_apply = ctk.CTkButton(self.tab_bloat, text="🚀 Optimizar Seleccionados", command=self.apply_bloatware_fix, fg_color="#E67E22", hover_color="#D35400")
+        self.btn_bloat_apply = ctk.CTkButton(self.tab_bloat, text="Optimizar Seleccionados", command=self.apply_bloatware_fix, fg_color="#E67E22", hover_color="#D35400")
         self.btn_bloat_apply.grid(row=2, column=0, pady=10)
         self.bloat_vars = {}
         
@@ -201,7 +202,7 @@ class ProcessManagerApp(ctk.CTk):
             try:
                 mem = p.info['memory_info'].rss / (1024 * 1024)
                 processes.append((p.info['pid'], p.info['name'], mem))
-            except:
+            except Exception:
                 pass
                 
         processes.sort(key=lambda x: x[2], reverse=True)
@@ -219,7 +220,7 @@ class ProcessManagerApp(ctk.CTk):
             actions_frame = ctk.CTkFrame(self.scroll_proc, fg_color="transparent")
             actions_frame.grid(row=i, column=3, padx=5, pady=2)
             
-            btn_info = ctk.CTkButton(actions_frame, text="ℹ️", width=30, fg_color="#3498DB", hover_color="#2980B9",
+            btn_info = ctk.CTkButton(actions_frame, text="ℹ", width=30, fg_color="#3498DB", hover_color="#2980B9",
                                      command=lambda n=name_lower: self.show_process_info(n))
             btn_info.pack(side="left", padx=2)
             
@@ -250,7 +251,7 @@ class ProcessManagerApp(ctk.CTk):
                     info = s.as_dict()
                     if info.get('start_type') in ['automatic', 'manual']:
                         services.append(info)
-                except:
+                except Exception:
                     pass
         except Exception as e:
             ctk.CTkLabel(self.scroll_serv, text=f"Error cargando servicios: {e}").grid(row=1, column=0)
@@ -277,7 +278,7 @@ class ProcessManagerApp(ctk.CTk):
             btn_frame = ctk.CTkFrame(self.scroll_serv, fg_color="transparent")
             btn_frame.grid(row=i, column=3, padx=5, pady=2)
             
-            btn_info = ctk.CTkButton(btn_frame, text="ℹ️", width=30, fg_color="#3498DB", hover_color="#2980B9",
+            btn_info = ctk.CTkButton(btn_frame, text="ℹ", width=30, fg_color="#3498DB", hover_color="#2980B9",
                                      command=lambda n=name_lower: self.show_service_info(n))
             btn_info.pack(side="left", padx=2)
             
@@ -311,9 +312,9 @@ class ProcessManagerApp(ctk.CTk):
                     chk = ctk.CTkCheckBox(self.scroll_bloat, text=f"{info.get('display_name')} ({name}) - {BLOATWARE_LIST[name]}", variable=var)
                     chk.grid(row=row, column=0, sticky="w", padx=5, pady=5)
                     row += 1
-        except: pass
+        except Exception: pass
         if row == 0:
-            ctk.CTkLabel(self.scroll_bloat, text="✅ Excelente, no se encontró Bloatware activo.").grid(row=0, column=0)
+            ctk.CTkLabel(self.scroll_bloat, text="Excelente, no se encontró Bloatware activo.").grid(row=0, column=0)
 
     def apply_bloatware_fix(self):
         count = 0
@@ -325,7 +326,7 @@ class ProcessManagerApp(ctk.CTk):
                     save_to_history("A Manual y Detenido (Bloatware)", "Servicio", name, "automatic")
                     safe_print(f"[ProcessManager] Bloatware optimizado: {name}.")
                     count += 1
-                except: pass
+                except Exception: pass
         messagebox.showinfo("Optimización", f"Se optimizaron {count} servicios identificados como Bloatware.")
         self.refresh_data()
 
@@ -367,7 +368,7 @@ class ProcessManagerApp(ctk.CTk):
             p = psutil.Process(pid)
             exe_path = ""
             try: exe_path = p.exe()
-            except: pass
+            except Exception: pass
             p.kill()
             save_to_history("Detenido", "Proceso", name, exe_path)
             safe_print(f"[ProcessManager] Se detuvo el proceso {name} (PID: {pid}).")
@@ -407,7 +408,7 @@ class ProcessManagerApp(ctk.CTk):
         try:
             from functions.interpreter_addon import get_api_settings
             settings = get_api_settings()
-        except:
+        except Exception:
             messagebox.showerror("Error", "No se pudo cargar la configuración de IA. Verifica el archivo ai_settings.json.")
             return
             
@@ -420,14 +421,14 @@ class ProcessManagerApp(ctk.CTk):
         try:
             for p in psutil.process_iter(['name', 'memory_info']):
                 try: proc_list.append((p.info['name'], p.info['memory_info'].rss / (1024*1024)))
-                except: pass
-        except: pass
+                except Exception: pass
+        except Exception: pass
         
         proc_list.sort(key=lambda x: x[1], reverse=True)
         top_15 = [f"{n} ({m:.1f}MB)" for n, m in proc_list[:15]]
         prompt = "Actúa como experto en Windows. Analiza esta lista de procesos que consumen más RAM y sugiere cuáles son inútiles (bloatware) y seguros de matar para optimizar: " + ", ".join(top_15)
         
-        self.btn_ai.configure(text="⏳ Analizando...", state="disabled")
+        self.btn_ai.configure(text="Analizando...", state="disabled")
         
         def _fetch():
             res = None
@@ -444,7 +445,7 @@ class ProcessManagerApp(ctk.CTk):
                         req = urllib.request.Request(url, data=payload, headers={'Content-Type': 'application/json'}, method='POST')
                         with urllib.request.urlopen(req, timeout=15) as r:
                             resp = json.loads(r.read())
-                            res = f"🤖 [Analizado por {model}]:\\n\\n" + resp['candidates'][0]['content']['parts'][0]['text']
+                            res = f"[Analizado por {model}]:\\n\\n" + resp['candidates'][0]['content']['parts'][0]['text']
                             break
                     elif provider in ["OpenAI", "Groq"]:
                         url = "https://api.openai.com/v1/chat/completions" if provider == "OpenAI" else "https://api.groq.com/openai/v1/chat/completions"
@@ -452,14 +453,14 @@ class ProcessManagerApp(ctk.CTk):
                         req = urllib.request.Request(url, data=payload, headers={'Content-Type': 'application/json', 'Authorization': f'Bearer {api_key}'}, method='POST')
                         with urllib.request.urlopen(req, timeout=15) as r:
                             resp = json.loads(r.read())
-                            res = f"🤖 [Analizado por {model}]:\\n\\n" + resp['choices'][0]['message']['content']
+                            res = f"[Analizado por {model}]:\\n\\n" + resp['choices'][0]['message']['content']
                             break
                 except Exception as e:
-                    print("AI Error con", provider, e)
+                    safe_print("AI Error con", provider, e)
                     continue
             
             def _done():
-                self.btn_ai.configure(text="🧠 Analizador IA", state="normal")
+                self.btn_ai.configure(text="Analizador IA", state="normal")
                 if res:
                     AIResultWindow(self, "Análisis Inteligente", res)
                     save_to_history("Análisis IA Realizado", "IA", "Optimización", "")

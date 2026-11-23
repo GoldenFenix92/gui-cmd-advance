@@ -62,7 +62,7 @@ class AdvancedSearchApp(ctk.CTk):
         self.title("Búsqueda Avanzada de Texto (FindStr Ultra)")
         center_window(self, 900, 600)
         try: self.iconbitmap(get_resource_path("resources/app_icon.ico"))
-        except: pass
+        except Exception: pass
         
         self.grid_rowconfigure(2, weight=1)
         self.grid_columnconfigure(0, weight=1)
@@ -97,7 +97,7 @@ class AdvancedSearchApp(ctk.CTk):
         ctk.CTkCheckBox(top_frame, text="Expresión Regular (/r)", variable=self.regex_var).grid(row=1, column=4, padx=5, pady=5)
         
         # Botón Primario (Verde)
-        self.btn_search = ctk.CTkButton(self, text="🔍 Buscar Ahora", command=self.run_search, fg_color="#27AE60", hover_color="#1E8449", font=("Arial", 14, "bold"))
+        self.btn_search = ctk.CTkButton(self, text="Buscar Ahora", command=self.run_search, fg_color="#27AE60", hover_color="#1E8449", font=("Arial", 14, "bold"))
         self.btn_search.grid(row=1, column=0, padx=20, pady=5)
         
         self.results_frame = ctk.CTkScrollableFrame(self, fg_color="transparent")
@@ -186,7 +186,7 @@ class AdvancedSearchApp(ctk.CTk):
             header.grid_columnconfigure(0, weight=1)
             
             # Nombre de archivo truncado pero visible
-            lbl_path = ctk.CTkLabel(header, text=f"📄 {path}", font=("Arial", 14, "bold"), text_color="#F39C12", anchor="w", justify="left")
+            lbl_path = ctk.CTkLabel(header, text=f"{path}", font=("Arial", 14, "bold"), text_color="#F39C12", anchor="w", justify="left")
             lbl_path.grid(row=0, column=0, sticky="w")
             
             # Botón Primario para Abrir Archivo, alineado a la derecha
@@ -224,7 +224,10 @@ class AdvancedSearchApp(ctk.CTk):
             # algunos programas (como Edge, Chrome o Adobe) bloquean la apertura de archivos
             # por motivos de seguridad (UIPI).
             # Para evitarlo, le pedimos a 'explorer.exe' (que corre como usuario normal) que lo abra.
-            subprocess.Popen(['explorer.exe', clean_path])
+            subprocess.Popen(
+                ['explorer.exe', clean_path],
+                creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+            )
         except Exception as e:
             try:
                 os.startfile(clean_path)
