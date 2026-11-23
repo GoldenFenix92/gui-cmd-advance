@@ -55,6 +55,7 @@ HIDDEN_IMPORTS = [
     "functions.name_sanitizer",
     "functions.office_deploy",
     "functions.process_manager",
+    "functions.report_generator",
     "functions.setup_manager",
     "functions.smart_info",
     "functions.tabular_viewer",

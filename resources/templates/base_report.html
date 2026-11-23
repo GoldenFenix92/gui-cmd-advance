@@ -1,283 +1,708 @@
 <!DOCTYPE html>
-<html lang="es" data-theme="dark">
+<html lang="es" data-theme="dark" data-profile="{{PROFILE_ID}}">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{TITLE}} - CMD GUI Advance</title>
+    <title>{{TITLE}} — GUI CMD Advance</title>
     <style>
-        :root[data-theme="dark"] {
-            --bg-color: #0f172a;
-            --text-color: #f8fafc;
-            --card-bg: #1e293b;
-            --console-bg: #000000;
-            --console-text: #e2e8f0;
-            --border-color: #334155;
-            --btn-bg: #2563eb;
-            --btn-hover: #1d4ed8;
+        /* Base tokens (Dark default) */
+        :root {
+            --bg: #0d1117;
+            --surface: #151b23;
+            --surface-alt: #1b232e;
+            --terminal-bg: #090d12;
+            --text: #e6edf3;
+            --muted: #8b949e;
+            --border: #2a3340;
+            --accent: #3fb950;
+            --accent-soft: rgba(63, 185, 80, 0.14);
+            --ok: #3fb950;
+            --warn: #d29922;
+            --err: #f85149;
+            --info: #58a6ff;
+            --radius: 10px;
+            --font-sans: 'Segoe UI Variable', 'Segoe UI', system-ui, -apple-system, sans-serif;
+            --font-mono: 'Cascadia Code', 'Consolas', 'JetBrains Mono', monospace;
+        }
+
+        /* Distinct domain palettes */
+        :root[data-profile="multimedia"] {
+            --bg: #0e1014;
+            --surface: #171a21;
+            --surface-alt: #1f242e;
+            --terminal-bg: #090b0f;
+            --accent: #e5a00d;
+            --accent-soft: rgba(229, 160, 13, 0.14);
+        }
+        :root[data-profile="storage"] {
+            --bg: #0a1016;
+            --surface: #111a24;
+            --surface-alt: #182534;
+            --terminal-bg: #070b10;
+            --accent: #22d3ee;
+            --accent-soft: rgba(34, 211, 238, 0.14);
+        }
+        :root[data-profile="network"] {
+            --bg: #080e1a;
+            --surface: #0f192d;
+            --surface-alt: #162440;
+            --terminal-bg: #050a14;
             --accent: #38bdf8;
+            --accent-soft: rgba(56, 189, 248, 0.14);
         }
+        :root[data-profile="security"] {
+            --bg: #110d16;
+            --surface: #1a1423;
+            --surface-alt: #241c31;
+            --terminal-bg: #0b0810;
+            --accent: #a78bfa;
+            --accent-soft: rgba(167, 139, 250, 0.15);
+        }
+
+        /* Light mode overrides */
         :root[data-theme="light"] {
-            --bg-color: #f1f5f9;
-            --text-color: #0f172a;
-            --card-bg: #ffffff;
-            --console-bg: #f8fafc;
-            --console-text: #334155;
-            --border-color: #cbd5e1;
-            --btn-bg: #3b82f6;
-            --btn-hover: #2563eb;
-            --accent: #0284c7;
+            --bg: #f4f6f9;
+            --surface: #ffffff;
+            --surface-alt: #eef2f6;
+            --terminal-bg: #fbfcfe;
+            --text: #1c2430;
+            --muted: #5a6778;
+            --border: #d5dde6;
+            --ok: #1a7f37;
+            --warn: #9a6700;
+            --err: #cf222e;
+            --info: #0969da;
         }
+        :root[data-theme="light"][data-profile="multimedia"] { --accent: #b77900; --accent-soft: rgba(183, 121, 0, 0.11); }
+        :root[data-theme="light"][data-profile="storage"]    { --accent: #0e7490; --accent-soft: rgba(14, 116, 144, 0.11); }
+        :root[data-theme="light"][data-profile="network"]    { --accent: #0369a1; --accent-soft: rgba(3, 105, 161, 0.11); }
+        :root[data-theme="light"][data-profile="security"]   { --accent: #6d28d9; --accent-soft: rgba(109, 40, 217, 0.11); }
 
+        * { box-sizing: border-box; }
         body {
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
             margin: 0;
-            padding: 20px;
-            transition: all 0.3s ease;
+            background: var(--bg);
+            color: var(--text);
+            font-family: var(--font-sans);
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
         }
 
-        .container {
-            max-width: 1200px;
+        .page {
+            max-width: 1260px;
             margin: 0 auto;
+            padding: 28px 24px 48px;
         }
 
-        .header {
+        /* Header with strong accent rule */
+        .report-header {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 20px;
+            align-items: start;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-top: 3px solid var(--accent);
+            border-radius: var(--radius);
+            padding: 24px 28px;
+            margin-bottom: 18px;
+        }
+
+        .profile-tag {
+            display: inline-block;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--accent);
+            background: var(--accent-soft);
+            padding: 3px 10px;
+            border-radius: 999px;
+            margin-bottom: 8px;
+        }
+
+        .report-header h1 {
+            margin: 0 0 6px;
+            font-size: 1.65rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        .subtitle {
+            margin: 0 0 14px;
+            color: var(--muted);
+            font-size: 0.92rem;
+        }
+
+        .cmd-line {
+            font-family: var(--font-mono);
+            font-size: 0.82rem;
+            background: var(--terminal-bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 8px 12px;
+            color: var(--text);
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+
+        .meta-time {
+            margin-top: 8px;
+            font-size: 0.82rem;
+            color: var(--muted);
+        }
+
+        .header-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            align-items: flex-end;
+        }
+
+        /* Domain-specific panel */
+        .domain-panel {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 18px 22px;
+            margin-bottom: 18px;
+        }
+
+        .metrics-strip {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+            gap: 14px;
+        }
+
+        .metric-item {
+            background: var(--surface-alt);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 14px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .metric-label {
+            font-size: 0.8rem;
+            color: var(--muted);
+        }
+
+        .metric-val {
+            font-size: 1.28rem;
+            font-weight: 700;
+            color: var(--text);
+        }
+        .metric-val.ok { color: var(--ok); }
+        .metric-val.err { color: var(--err); }
+        .metric-val.warn { color: var(--warn); }
+
+        .metric-sub {
+            font-size: 0.8rem;
+            color: var(--muted);
+        }
+
+        .domain-visual {
+            margin-top: 16px;
+            padding-top: 14px;
+            border-top: 1px solid var(--border);
+        }
+
+        .visual-head {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.88rem;
+            margin-bottom: 8px;
+        }
+
+        .ratio-track {
+            height: 10px;
+            background: var(--terminal-bg);
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            overflow: hidden;
+        }
+
+        .ratio-fill {
+            height: 100%;
+            background: var(--accent);
+            border-radius: 999px;
+            transition: width 0.6s ease;
+        }
+        .ratio-fill.warn { background: var(--warn); }
+
+        .chip-bar {
+            margin-top: 14px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+        }
+        .chip-title { font-size: 0.82rem; color: var(--muted); margin-right: 4px; }
+        .ip-chip {
+            font-family: var(--font-mono);
+            font-size: 0.78rem;
+            background: var(--surface-alt);
+            color: var(--accent);
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            padding: 4px 10px;
+            cursor: pointer;
+        }
+        .ip-chip:hover { border-color: var(--accent); }
+
+        .error-drawer {
+            margin-top: 14px;
+            border: 1px solid rgba(248, 81, 73, 0.35);
+            border-radius: 8px;
+            background: rgba(248, 81, 73, 0.05);
+            padding: 10px 14px;
+        }
+        .error-drawer summary {
+            cursor: pointer;
+            font-weight: 600;
+            color: var(--err);
+            font-size: 0.9rem;
+        }
+        .table-wrap { overflow-x: auto; margin-top: 10px; }
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.84rem;
+        }
+        .data-table th, .data-table td {
+            text-align: left;
+            padding: 8px 10px;
+            border-bottom: 1px solid var(--border);
+        }
+        .data-table th { color: var(--muted); font-weight: 600; }
+        .mono { font-family: var(--font-mono); }
+
+        /* Controls toolbar */
+        .controls-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 12px 16px;
+            margin-bottom: 14px;
+        }
+
+        .filter-group, .action-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .search-box {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--terminal-bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 6px 10px;
+            min-width: 240px;
+            flex: 1 1 240px;
+        }
+        .search-box input {
+            background: transparent;
+            border: none;
+            color: var(--text);
+            outline: none;
+            width: 100%;
+            font-family: var(--font-sans);
+            font-size: 0.88rem;
+        }
+        .search-count {
+            font-size: 0.78rem;
+            color: var(--muted);
+            white-space: nowrap;
+        }
+
+        .btn {
+            background: var(--surface-alt);
+            color: var(--text);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 6px 12px;
+            font-size: 0.84rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn:hover { border-color: var(--accent); }
+        .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+        .btn.active {
+            background: var(--accent-soft);
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+        .btn.btn-err.active { background: rgba(248, 81, 73, 0.16); border-color: var(--err); color: var(--err); }
+        .btn.btn-ok.active { background: rgba(63, 185, 80, 0.16); border-color: var(--ok); color: var(--ok); }
+        .btn.btn-warn.active { background: rgba(210, 153, 34, 0.16); border-color: var(--warn); color: var(--warn); }
+
+        .badge {
+            font-family: var(--font-mono);
+            font-size: 0.74rem;
+            padding: 1px 6px;
+            border-radius: 999px;
+            background: var(--terminal-bg);
+            color: var(--muted);
+        }
+
+        /* Console viewer */
+        .console-shell {
+            background: var(--terminal-bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+        }
+
+        .console-top {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background-color: var(--card-bg);
-            padding: 20px 30px;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            margin-bottom: 20px;
-            border: 1px solid var(--border-color);
+            padding: 10px 16px;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            font-size: 0.82rem;
+            color: var(--muted);
         }
 
-        .header-info h1 {
-            margin: 0 0 10px 0;
-            color: var(--accent);
-            font-size: 1.8rem;
+        .console-body {
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            line-height: 1.55;
+            max-height: 68vh;
+            overflow: auto;
+            padding: 12px 0;
         }
 
-        .header-info p {
-            margin: 0;
-            opacity: 0.8;
-            font-size: 0.95rem;
+        .console-body.nowrap .log-text { white-space: pre; }
+        .console-body:not(.nowrap) .log-text { white-space: pre-wrap; word-break: break-word; }
+
+        .log-row {
+            display: grid;
+            grid-template-columns: 56px 1fr;
+            padding: 1px 16px 1px 0;
+            border-left: 3px solid transparent;
+        }
+        .console-body.hide-nums .log-row { grid-template-columns: 1fr; padding-left: 14px; }
+        .console-body.hide-nums .log-num { display: none; }
+
+        .log-row:hover { background: rgba(127, 127, 127, 0.08); }
+        .log-num {
+            text-align: right;
+            padding-right: 12px;
+            color: var(--muted);
+            opacity: 0.55;
+            user-select: none;
+            font-size: 0.78rem;
         }
 
-        .toolbar {
-            display: flex;
-            gap: 10px;
-            background-color: var(--card-bg);
-            padding: 15px 30px;
-            border-radius: 12px;
-            margin-bottom: 20px;
-            border: 1px solid var(--border-color);
-            flex-wrap: wrap;
+        .log-row.sev-error { color: var(--err); border-left-color: var(--err); background: rgba(248, 81, 73, 0.06); }
+        .log-row.sev-success { color: var(--ok); border-left-color: var(--ok); }
+        .log-row.sev-warn { color: var(--warn); border-left-color: var(--warn); background: rgba(210, 153, 34, 0.05); }
+        .log-row.sev-cmd { color: var(--accent); font-weight: 600; }
+        .log-row.hidden { display: none; }
+
+        mark {
+            background: var(--accent);
+            color: #0b0e14;
+            border-radius: 2px;
+            padding: 0 2px;
         }
 
-        button {
-            background-color: var(--btn-bg);
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 6px;
-            cursor: pointer;
+        .toast {
+            position: fixed;
+            bottom: 22px;
+            right: 22px;
+            background: var(--surface);
+            color: var(--text);
+            border: 1px solid var(--accent);
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-size: 0.86rem;
             font-weight: 600;
-            font-size: 0.9rem;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            transition: background-color 0.2s;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+            z-index: 100;
         }
+        .toast.show { opacity: 1; }
 
-        button:hover {
-            background-color: var(--btn-hover);
+        @media (max-width: 720px) {
+            .report-header { grid-template-columns: 1fr; }
+            .header-actions { align-items: flex-start; flex-direction: row; }
         }
-
-        button.filter-btn { background-color: #475569; }
-        button.filter-btn.active { background-color: var(--accent); }
-        button.filter-error { background-color: #ef4444; }
-        button.filter-success { background-color: #10b981; }
-
-        .console-container {
-            background-color: var(--console-bg);
-            border-radius: 12px;
-            border: 1px solid var(--border-color);
-            overflow: hidden;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        @media (prefers-reduced-motion: reduce) {
+            * { transition: none !important; }
         }
-
-        .console-header {
-            background-color: #1e293b;
-            padding: 10px 20px;
-            border-bottom: 1px solid var(--border-color);
-            display: flex;
-            gap: 8px;
+        @media print {
+            .controls-bar, .header-actions, .toast { display: none !important; }
+            .console-body { max-height: none; overflow: visible; }
         }
-
-        .mac-btn { width: 12px; height: 12px; border-radius: 50%; }
-        .mac-btn.close { background-color: #ef4444; }
-        .mac-btn.min { background-color: #eab308; }
-        .mac-btn.max { background-color: #22c55e; }
-
-        pre {
-            margin: 0;
-            padding: 20px;
-            font-family: 'Consolas', 'Monaco', monospace;
-            font-size: 0.95rem;
-            color: var(--console-text);
-            line-height: 1.5;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-            max-height: 70vh;
-            overflow-y: auto;
-        }
-
-        /* Syntax Highlighting Classes */
-        .line { display: block; padding: 2px 0; border-left: 3px solid transparent; }
-        .line:hover { background-color: rgba(255,255,255,0.05); }
-        .line-error { color: #ef4444; border-left-color: #ef4444; background-color: rgba(239, 68, 68, 0.05); }
-        .line-success { color: #10b981; border-left-color: #10b981; }
-        .line-warn { color: #eab308; border-left-color: #eab308; }
-        
-        .hidden { display: none !important; }
-
     </style>
 </head>
 <body>
-
-<div class="container">
-    <div class="header">
-        <div class="header-info">
-            <h1>🚀 {{TITLE}}</h1>
-            <p><strong>Comando Ejecutado:</strong> {{COMMAND}}</p>
-            <p><strong>Fecha de Generación:</strong> {{TIMESTAMP}}</p>
+<div class="page">
+    <header class="report-header">
+        <div>
+            <span class="profile-tag">{{PROFILE_LABEL}}</span>
+            <h1>{{TITLE}}</h1>
+            <p class="subtitle">{{PROFILE_SUBTITLE}}</p>
+            <div class="cmd-line">{{COMMAND}}</div>
+            <div class="meta-time">Generado el {{TIMESTAMP}}</div>
         </div>
         <div class="header-actions">
-            <button onclick="toggleTheme()" id="themeBtn">☀️ Modo Claro</button>
+            <button type="button" class="btn" id="themeBtn" onclick="toggleTheme()">Modo claro</button>
+            <button type="button" class="btn" onclick="window.print()">Imprimir / PDF</button>
         </div>
-    </div>
+    </header>
 
-    <div class="toolbar">
-        <button onclick="copyToClipboard()">📋 Copiar Todo</button>
-        <button onclick="downloadRaw()">💾 Guardar RAW</button>
-        <div style="width: 2px; background: var(--border-color); margin: 0 10px;"></div>
-        <button class="filter-btn active" id="btn-all" onclick="filterLines('all')">🔍 Mostrar Todo</button>
-        <button class="filter-btn filter-error" id="btn-error" onclick="filterLines('error')">❌ Solo Errores</button>
-        <button class="filter-btn filter-success" id="btn-success" onclick="filterLines('success')">✅ Solo Éxitos</button>
-    </div>
+    {{HERO_WIDGET}}
 
-    <div class="console-container">
-        <div class="console-header">
-            <div class="mac-btn close"></div>
-            <div class="mac-btn min"></div>
-            <div class="mac-btn max"></div>
+    <section class="controls-bar" aria-label="Filtros y acciones del reporte">
+        <div class="filter-group">
+            <button type="button" class="btn active" id="f-all" onclick="setSeverity('all')">Todo <span class="badge" id="c-all">0</span></button>
+            <button type="button" class="btn btn-ok" id="f-success" onclick="setSeverity('success')">Éxitos <span class="badge" id="c-success">0</span></button>
+            <button type="button" class="btn btn-warn" id="f-warn" onclick="setSeverity('warn')">Avisos <span class="badge" id="c-warn">0</span></button>
+            <button type="button" class="btn btn-err" id="f-error" onclick="setSeverity('error')">Errores <span class="badge" id="c-error">0</span></button>
+            <button type="button" class="btn" id="btn-first-err" onclick="jumpToFirstError()" style="display:none;">Ir al primer error</button>
         </div>
-        <pre id="consoleOutput">{{CONTENT}}</pre>
-    </div>
+
+        <div class="search-box">
+            <input type="search" id="searchInput" placeholder="Buscar archivo, IP, error..." oninput="applyFilters()" aria-label="Buscar en la salida">
+            <span class="search-count" id="searchCount"></span>
+        </div>
+
+        <div class="action-group">
+            <button type="button" class="btn" id="btn-nums" onclick="toggleLineNumbers()">Ocultar #</button>
+            <button type="button" class="btn" id="btn-wrap" onclick="toggleWrap()">Sin ajuste</button>
+            <button type="button" class="btn" onclick="copyVisible()">Copiar vista</button>
+            <button type="button" class="btn" onclick="downloadRaw()">Descargar TXT</button>
+        </div>
+    </section>
+
+    <section class="console-shell">
+        <div class="console-top">
+            <span>Registro interactivo de ejecución</span>
+            <span id="visibleSummary">Cargando...</span>
+        </div>
+        <div class="console-body" id="consoleBody"></div>
+    </section>
 </div>
 
+<div class="toast" id="toast"></div>
+
+<script id="raw-report-data" type="application/json">{{RAW_CONTENT_JSON}}</script>
 <script>
-    // Configuración Inicial e inyección de estilos
+    let rawText = "";
+    let allRows = [];
+    let activeSeverity = "all";
+
+    function showToast(msg) {
+        const t = document.getElementById("toast");
+        t.textContent = msg;
+        t.classList.add("show");
+        clearTimeout(t._timer);
+        t._timer = setTimeout(() => t.classList.remove("show"), 2200);
+    }
+
+    function classifyLine(line, section) {
+        const low = line.toLowerCase();
+        if (low.startsWith(">") || low.includes("diskpart>")) return "cmd";
+        if (
+            section === "error" ||
+            low.includes("[error]") || low.includes("error:") || low.includes("fallo definitivo") ||
+            low.includes("failed") || low.includes("acceso denegado") || low.includes("access is denied") ||
+            low.includes("truncated") || low.includes("[corrupto]")
+        ) return "error";
+        if (
+            low.includes("[warn]") || low.includes("[warning]") || low.includes("[aviso]") ||
+            low.includes("advertencia") || low.includes("bloqueado por seguridad")
+        ) return "warn";
+        if (
+            section === "success" ||
+            low.includes("[success]") || low.includes("[ok]") ||
+            low.includes("completado con éxito") || low.includes("finalizado con éxito") ||
+            low.includes("enviado a la papelera")
+        ) return "success";
+        return "neutral";
+    }
+
+    function escapeHtml(s) {
+        return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+
     document.addEventListener("DOMContentLoaded", () => {
-        const pre = document.getElementById('consoleOutput');
-        // Usar textContent para no perder el formato real o innerHTML si fue limpiado
-        const contentStr = pre.innerHTML || "";
-        const lines = contentStr.split(/\r?\n/);
-        
-        let formattedHtml = '';
-        let currentSection = 'neutral';
-        
-        lines.forEach(line => {
-            // Escapar HTML en la línea de forma segura si no lo está
-            let safeLine = line.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-            // Deshacer el doble escape si innerHTML ya lo tenía escapado
-            safeLine = safeLine.replace(/&amp;amp;/g, "&amp;").replace(/&amp;lt;/g, "&lt;").replace(/&amp;gt;/g, "&gt;");
-            
-            let lowerLine = safeLine.toLowerCase();
-            
-            // State machine to track sections
-            if (lowerLine.includes('[ archivos con errores ]') || lowerLine.includes('fallidos:')) {
-                currentSection = 'error';
-            } else if (lowerLine.includes('[ archivos completados') || lowerLine.includes('exitosos:')) {
-                currentSection = 'success';
-            } else if (lowerLine.includes('resumen') || lowerLine.includes('=====')) {
-                currentSection = 'neutral';
-            }
-            
-            let lineClass = 'line';
-            let isErrorKeyword = lowerLine.includes('error') || lowerLine.includes('fail') || lowerLine.includes('denied') || lowerLine.includes('truncated') || lowerLine.includes('terminating');
-            let isSuccessKeyword = lowerLine.includes('success') || lowerLine.includes('[ok]') || lowerLine.includes('éxito') || lowerLine.includes('exito');
-            let isWarnKeyword = lowerLine.includes('warn') || lowerLine.includes('advertencia');
-            
-            if (isErrorKeyword || (currentSection === 'error' && safeLine.trim() !== '')) {
-                lineClass += ' line-error';
-            } else if (isSuccessKeyword || (currentSection === 'success' && safeLine.trim() !== '')) {
-                lineClass += ' line-success';
-            } else if (isWarnKeyword) {
-                lineClass += ' line-warn';
-            }
-            
-            if(safeLine.trim() !== '') {
-                formattedHtml += `<span class="${lineClass}">${safeLine}</span>\n`;
-            } else {
-                formattedHtml += `<br>`;
-            }
-        });
-        
-        if(formattedHtml) {
-            pre.innerHTML = formattedHtml;
+        try {
+            rawText = JSON.parse(document.getElementById("raw-report-data").textContent || '""');
+        } catch (e) {
+            rawText = "";
         }
+
+        const lines = rawText.split(/\r?\n/);
+        const container = document.getElementById("consoleBody");
+        const frag = document.createDocumentFragment();
+
+        let section = "neutral";
+        const stats = { all: 0, success: 0, warn: 0, error: 0 };
+
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
+            const trimmed = line.trim();
+            const low = trimmed.toLowerCase();
+
+            if (low.includes("[ archivos con errores")) section = "error";
+            else if (low.includes("[ archivos completados")) section = "success";
+            else if (low.includes("====") || low.includes("[ resumen")) section = "neutral";
+
+            if (!trimmed && i === lines.length - 1) continue;
+
+            const sev = trimmed ? classifyLine(trimmed, section) : "neutral";
+            stats.all++;
+            if (sev === "success") stats.success++;
+            else if (sev === "warn") stats.warn++;
+            else if (sev === "error") stats.error++;
+
+            const row = document.createElement("div");
+            row.className = "log-row" + (sev !== "neutral" ? " sev-" + sev : "");
+            row.dataset.sev = sev;
+            row.dataset.raw = line;
+
+            const numEl = document.createElement("span");
+            numEl.className = "log-num";
+            numEl.textContent = String(i + 1);
+
+            const txtEl = document.createElement("span");
+            txtEl.className = "log-text";
+            txtEl.textContent = line || " ";
+
+            row.appendChild(numEl);
+            row.appendChild(txtEl);
+            frag.appendChild(row);
+            allRows.push(row);
+        }
+
+        container.appendChild(frag);
+
+        document.getElementById("c-all").textContent = stats.all.toLocaleString();
+        document.getElementById("c-success").textContent = stats.success.toLocaleString();
+        document.getElementById("c-warn").textContent = stats.warn.toLocaleString();
+        document.getElementById("c-error").textContent = stats.error.toLocaleString();
+        if (stats.error > 0) {
+            document.getElementById("btn-first-err").style.display = "inline-flex";
+        }
+        updateVisibleSummary(stats.all);
     });
+
+    function updateVisibleSummary(visible) {
+        document.getElementById("visibleSummary").textContent =
+            `Mostrando ${visible.toLocaleString()} de ${allRows.length.toLocaleString()} líneas`;
+    }
+
+    function setSeverity(sev) {
+        activeSeverity = sev;
+        ["all", "success", "warn", "error"].forEach(k => {
+            document.getElementById("f-" + k).classList.toggle("active", k === sev);
+        });
+        applyFilters();
+    }
+
+    function quickSearch(term) {
+        const inp = document.getElementById("searchInput");
+        inp.value = term;
+        applyFilters();
+        inp.focus();
+    }
+
+    function applyFilters() {
+        const query = document.getElementById("searchInput").value.trim();
+        const qLower = query.toLowerCase();
+        let visible = 0;
+
+        for (let i = 0; i < allRows.length; i++) {
+            const row = allRows[i];
+            const sevOk = activeSeverity === "all" || row.dataset.sev === activeSeverity;
+            const raw = row.dataset.raw;
+            const textOk = !qLower || raw.toLowerCase().includes(qLower);
+            const show = sevOk && textOk;
+            row.classList.toggle("hidden", !show);
+
+            const txtEl = row.lastChild;
+            if (show) {
+                visible++;
+                if (qLower) {
+                    const safe = escapeHtml(raw);
+                    const escapedQ = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+                    txtEl.innerHTML = safe.replace(new RegExp(escapedQ, "gi"), m => `<mark>${m}</mark>`);
+                } else if (txtEl.innerHTML !== escapeHtml(raw)) {
+                    txtEl.textContent = raw || " ";
+                }
+            }
+        }
+
+        document.getElementById("searchCount").textContent = qLower ? `${visible.toLocaleString()} coinc.` : "";
+        updateVisibleSummary(visible);
+    }
+
+    function jumpToFirstError() {
+        if (activeSeverity !== "all" && activeSeverity !== "error") {
+            setSeverity("all");
+        }
+        const firstErr = allRows.find(r => r.dataset.sev === "error" && !r.classList.contains("hidden"));
+        if (firstErr) {
+            firstErr.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+    }
 
     function toggleTheme() {
         const html = document.documentElement;
-        const btn = document.getElementById('themeBtn');
-        if (html.getAttribute('data-theme') === 'dark') {
-            html.setAttribute('data-theme', 'light');
-            btn.innerHTML = '🌙 Modo Oscuro';
-        } else {
-            html.setAttribute('data-theme', 'dark');
-            btn.innerHTML = '☀️ Modo Claro';
-        }
+        const btn = document.getElementById("themeBtn");
+        const isDark = html.getAttribute("data-theme") === "dark";
+        html.setAttribute("data-theme", isDark ? "light" : "dark");
+        btn.textContent = isDark ? "Modo oscuro" : "Modo claro";
     }
 
-    function copyToClipboard() {
-        const text = document.getElementById('consoleOutput').innerText;
-        navigator.clipboard.writeText(text).then(() => {
-            alert('¡Contenido copiado al portapapeles!');
-        });
+    function toggleLineNumbers() {
+        const body = document.getElementById("consoleBody");
+        const hidden = body.classList.toggle("hide-nums");
+        document.getElementById("btn-nums").textContent = hidden ? "Mostrar #" : "Ocultar #";
+    }
+
+    function toggleWrap() {
+        const body = document.getElementById("consoleBody");
+        const nowrap = body.classList.toggle("nowrap");
+        document.getElementById("btn-wrap").textContent = nowrap ? "Ajustar líneas" : "Sin ajuste";
+    }
+
+    function copyVisible() {
+        const lines = allRows.filter(r => !r.classList.contains("hidden")).map(r => r.dataset.raw);
+        navigator.clipboard.writeText(lines.join("\n")).then(() => {
+            showToast(`Copiadas ${lines.length.toLocaleString()} líneas al portapapeles`);
+        }).catch(() => showToast("No se pudo copiar al portapapeles"));
     }
 
     function downloadRaw() {
-        const text = document.getElementById('consoleOutput').innerText;
-        const blob = new Blob([text], { type: 'text/plain' });
+        const blob = new Blob([rawText], { type: "text/plain;charset=utf-8" });
         const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
+        const a = document.createElement("a");
         a.href = url;
-        a.download = 'reporte_raw.txt';
+        a.download = "reporte_raw.txt";
         a.click();
         URL.revokeObjectURL(url);
-    }
-
-    function filterLines(type) {
-        // Update active button styling
-        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById('btn-' + type).classList.add('active');
-
-        const lines = document.querySelectorAll('#consoleOutput .line');
-        lines.forEach(line => {
-            line.classList.remove('hidden');
-            if (type === 'error' && !line.classList.contains('line-error')) {
-                line.classList.add('hidden');
-            } else if (type === 'success' && !line.classList.contains('line-success')) {
-                line.classList.add('hidden');
-            }
-        });
+        showToast("Descarga de TXT iniciada");
     }
 </script>
-
 </body>
 </html>

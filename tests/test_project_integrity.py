@@ -180,6 +180,42 @@ class TestProjectIntegrity(unittest.TestCase):
         self.assertEqual(App.parse_storage_job_json(job_json), ("Format Volume", 18.0))
         self.assertIsNone(App.parse_storage_job_json('{"Name":"Format Volume","JobState":"Completed","PercentComplete":100}'))
 
+    def test_report_generator_profiles_and_html_output(self):
+        from functions import report_generator
+
+        self.assertEqual(report_generator.detect_report_profile("Multimedia", "Compresor de Multimedia", "--run-compressor"), "multimedia")
+        self.assertEqual(report_generator.detect_report_profile("Almacenamiento", "Gestor de Atributos", "--run-disk-attributes"), "storage")
+        self.assertEqual(report_generator.detect_report_profile("Redes", "ping", "ping 8.8.8.8"), "network")
+        self.assertEqual(report_generator.detect_report_profile("Seguridad y Privacidad", "Credenciales", "--run-vault"), "security")
+        self.assertEqual(report_generator.detect_report_profile("Sistema", "sfc", "sfc /scannow"), "system")
+
+        sample_media = (
+            "Tiempo total: 5 minutos y 10 segundos.\n"
+            "Imágenes        | 100             | 2               | 102\n"
+            "Videos          | 10              | 1               | 11\n"
+            "Peso Original : 10.0 GB\n"
+            "Peso Final    : 2.0 GB\n"
+            "Espacio Ahorrado: 8.0 GB (80.0%)\n"
+            "[ ARCHIVOS CON ERRORES (ORIGINALES CONSERVADOS INTACTOS) ]\n"
+            "bad.mp4 | Invalid data </script><script>alert(1)</script>\n"
+        )
+        out_html = report_generator.generate_html_report(
+            sample_media,
+            title="Compresor de Multimedia",
+            command="--run-compressor",
+            category="Multimedia",
+        )
+        self.assertIn('data-profile="multimedia"', out_html)
+        self.assertIn("80.0% ahorrado", out_html)
+        self.assertIn("bad.mp4", out_html)
+        self.assertNotIn("</script><script>alert(1)", out_html)
+
+        # Verificar que convert_old_report fue eliminado de gui_app.py
+        with open(os.path.join(PROJECT_ROOT, "gui_app.py"), "r", encoding="utf-8") as f:
+            gui_src = f.read()
+        self.assertNotIn("def convert_old_report", gui_src)
+        self.assertNotIn("Convertir Reporte Antiguo", gui_src)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -171,12 +171,9 @@ class App(ctk.CTk):
         self.table_btn = ctk.CTkButton(self.btn_frame, text="Ver como Tabla", width=100, fg_color="#2E86C1", hover_color="#21618C", command=self.show_table_view)
         self.table_btn.pack(side="left", padx=(0, 10))
         if CTkToolTip: CTkToolTip(self.table_btn, message="Ver resultados en una tabla interactiva (ideal para CSV)")
-        
-        self.convert_btn = ctk.CTkButton(self.btn_frame, text="Convertir Reporte Antiguo", width=150, command=self.convert_old_report, fg_color="#475569", hover_color="#334155")
-        self.convert_btn.pack(side="left")
 
         self.interpreter_btn = ctk.CTkButton(self.btn_frame, text="✨ Interpretar Resultados", width=150, command=self.run_interpreter, fg_color="#8E44AD", hover_color="#9B59B6")
-        self.interpreter_btn.pack(side="left", padx=(10, 0))
+        self.interpreter_btn.pack(side="left")
         if CTkToolTip: CTkToolTip(self.interpreter_btn, message="Analiza el reporte con Inteligencia Artificial o de manera local")
         
         # Dashboard (Status Bar)
@@ -1278,24 +1275,14 @@ class App(ctk.CTk):
         self.output_textbox.delete("1.0", "end")
         self.output_textbox.configure(state="disabled")
 
-    def get_html_template(self, content, title="Reporte de Ejecución", command="Desconocido"):
-        import datetime, os
-        timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        template_path = get_resource_path(os.path.join("resources", "templates", "base_report.html"))
-        
-        if os.path.exists(template_path):
-            with open(template_path, "r", encoding="utf-8") as tf:
-                html = tf.read()
-                # Escapar contenido
-                safe_content = content.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-                html = html.replace("{{TITLE}}", title)
-                html = html.replace("{{COMMAND}}", command)
-                html = html.replace("{{TIMESTAMP}}", timestamp)
-                html = html.replace("{{CONTENT}}", safe_content)
-                return html
-        else:
-            # Fallback simple
-            return f"<html><body><h1>{title}</h1><pre>{content}</pre></body></html>"
+    def get_html_template(self, content, title="Reporte de Ejecución", command="Desconocido", category=""):
+        from functions.report_generator import generate_html_report
+        return generate_html_report(
+            content=content,
+            title=title,
+            command=command,
+            category=category or (self.cat_var.get() if hasattr(self, "cat_var") else ""),
+        )
 
     def show_plugins(self):
         from functions.utils import get_user_data_path, apply_window_theme
@@ -1520,70 +1507,6 @@ class App(ctk.CTk):
         text_content = self.output_textbox.get("1.0", "end")
         from functions.interpreter_addon import InterpreterApp
         InterpreterApp(self, initial_text=text_content)
-
-    def convert_old_report(self):
-        # Abre un archivo antiguo (.txt o .html basico) y lo convierte al nuevo formato
-        input_path = filedialog.askopenfilename(filetypes=[("Archivos de texto/HTML", "*.txt *.html *.log"), ("Todos los archivos", "*.*")], title="Selecciona un reporte antiguo para convertir")
-        if not input_path: return
-        
-        try:
-            with open(input_path, "r", encoding="utf-8") as f:
-                content = f.read()
-        except:
-            # Fallback for ANSI encoding
-            with open(input_path, "r", encoding="latin-1") as f:
-                content = f.read()
-                
-        # Limpiar si el archivo viejo ya era un HTML (muy básico, extraemos el body text si es posible, o lo metemos crudo)
-        import re
-        if "<body" in content.lower():
-            match = re.search(r'<div class="console">(.*?)</div>', content, re.IGNORECASE | re.DOTALL)
-            if match:
-                content = match.group(1).replace("&lt;", "<").replace("&gt;", ">").replace("&amp;", "&")
-            else:
-                # Si no encontramos consola, quitamos las etiquetas html basicas
-                content = re.sub(r'<[^>]+>', '', content)
-
-        from tkinter import messagebox
-        ans = messagebox.askyesnocancel(
-            "Tipo de Conversión", 
-            "¿Deseas mantener TODO el historial del reporte antiguo?\n\n"
-            "• SÍ: Convierte todo el texto íntegro.\n"
-            "• NO: Extrae y convierte SOLO el resumen final (más ligero).\n"
-            "• CANCELAR: Aborta la conversión."
-        )
-        
-        if ans is None:
-            return
-            
-        if not ans:
-            # Extraer solo el resumen
-            lines = content.split('\n')
-            summary_start = 0
-            for i in range(len(lines)-1, -1, -1):
-                if "ARCHIVOS COMPLETADOS" in lines[i] or "ARCHIVOS CON ERRORES" in lines[i] or "RESUMEN DE" in lines[i]:
-                    for j in range(i, max(-1, i-5), -1):
-                        if "===" in lines[j]:
-                            summary_start = j
-                            break
-                    else:
-                        summary_start = max(0, i-2)
-                    break
-            
-            if summary_start > 0:
-                content = "\n... (Salida larga de proceso omitida durante la conversión) ...\n\n" + "\n".join(lines[summary_start:])
-            elif len(lines) > 300:
-                content = "\n... (Salida larga omitida, marcador no detectado) ...\n\n" + "\n".join(lines[-300:])
-
-        output_path = filedialog.asksaveasfilename(defaultextension=".html", filetypes=[("HTML Interactivo", "*.html")], title="Guardar Nuevo Reporte Interactivo", initialfile=os.path.basename(input_path).split('.')[0] + "_interactivo.html")
-        if output_path:
-            with open(output_path, "w", encoding="utf-8") as f:
-                f.write(self.get_html_template(content, title="Reporte Convertido", command="Importado desde " + os.path.basename(input_path)))
-            
-            self.output_textbox.configure(state="normal")
-            self.output_textbox.insert("end", f"\n[!] Reporte antiguo convertido con éxito a HTML interactivo: {output_path}\n", "success")
-            self.output_textbox.see("end")
-            self.output_textbox.configure(state="disabled")
 
     def show_credits(self):
         credits_win = ctk.CTkToplevel(self)
