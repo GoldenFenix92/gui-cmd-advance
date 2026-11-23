@@ -60,12 +60,17 @@ class TestProjectIntegrity(unittest.TestCase):
         from functions import media_repair
 
         with tempfile.TemporaryDirectory() as tmp:
-            src = os.path.join(tmp, "sample.png")
-            Image.new("RGBA", (16, 16), (255, 0, 0, 255)).save(src)
+            src = os.path.join(tmp, "sample.jpg")
+            im = Image.new("RGB", (40, 20), (255, 0, 0))
+            ex = im.getexif()
+            ex[274] = 6  # Rotado 90° CW
+            im.save(src, "JPEG", exif=ex.tobytes())
             out = media_repair.get_output_path(src, tmp, suffix="_reparado")
             ok = media_repair.repair_image(src, out)
             self.assertTrue(ok)
             self.assertTrue(os.path.exists(out))
+            with Image.open(out) as check:
+                self.assertEqual(check.size, (20, 40))
 
     def test_credentials_vault_cli_parses_english_and_spanish(self):
         from functions import credentials_vault_cli
