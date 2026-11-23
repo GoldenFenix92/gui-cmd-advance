@@ -9,7 +9,7 @@ import time
 from pathlib import Path
 
 from functions.task_memory import TaskMemory
-from functions.utils import get_ffmpeg_path, safe_print
+from functions.utils import get_ffmpeg_path, safe_print, send_to_recycle_bin
 
 # Forzar UTF-8 en la salida estándar para evitar errores de codificación con emojis en los nombres de archivo
 for _stream in (sys.stdout, sys.stderr):
@@ -560,6 +560,13 @@ def main(argv=None):
         else:
             safe_print(f"Incremento de Peso: +{format_size(abs(ahorro))} (+{abs(ahorro_pct):.1f}%)")
 
+    failed_paths = set()
+    for err in error_img + error_vid:
+        try:
+            failed_paths.add(str(Path(err["file"]).resolve()))
+        except Exception:
+            failed_paths.add(str(err["file"]))
+
     if success_img or success_vid:
         safe_print("\n[ ARCHIVOS COMPLETADOS CON ÉXITO ]")
         for r in success_img + success_vid:
@@ -568,18 +575,24 @@ def main(argv=None):
             safe_print(f" - [OK] {file_p.name}")
             if args.delete_original:
                 try:
-                    if not out_p.exists() or out_p.stat().st_size == 0:
+                    resolved_src = str(file_p.resolve())
+                    if r.get("status") != "success" or resolved_src in failed_paths:
+                        safe_print(f"   -> (Omitido por error previo; original conservado: {file_p.name})")
+                    elif not out_p.exists() or out_p.stat().st_size == 0:
                         safe_print(f"   -> (Original conservado por seguridad: salida no verificada para {file_p.name})")
                     elif out_p.resolve() == file_p.resolve():
-                        safe_print(f"   -> (Original conservado por seguridad: ruta de salida coincide con origen)")
+                        safe_print("   -> (Original conservado por seguridad: ruta de salida coincide con origen)")
                     else:
-                        file_p.unlink()
-                        safe_print(f"   -> (Eliminado original: {file_p.name})")
+                        ok_trash, err_trash = send_to_recycle_bin(file_p)
+                        if ok_trash:
+                            safe_print(f"   -> (Enviado a la Papelera de Reciclaje: {file_p.name})")
+                        else:
+                            safe_print(f"   -> (No se pudo enviar a la Papelera; original conservado: {err_trash})")
                 except Exception as e:
-                    safe_print(f"   -> (No se pudo eliminar: {e})")
+                    safe_print(f"   -> (No se pudo enviar a la Papelera; original conservado: {e})")
 
     if error_img or error_vid:
-        safe_print("\n[ ARCHIVOS CON ERRORES ]")
+        safe_print("\n[ ARCHIVOS CON ERRORES (ORIGINALES CONSERVADOS INTACTOS) ]")
         safe_print(f"{'ARCHIVO':<45} | {'MOTIVO DEL FALLO'}")
         safe_print("-" * 80)
         for err in error_img + error_vid:

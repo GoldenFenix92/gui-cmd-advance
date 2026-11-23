@@ -123,26 +123,38 @@ class TestCompressor(unittest.TestCase):
             # Carpeta de salida DENTRO de la carpeta de entrada (prueba anti-bucle)
             nested_out = Path(tmp) / "salida"
 
-            compressor.main([
-                "--input", tmp,
-                "--output", str(nested_out),
-                "--suffix", "_comprimido",
-                "--hw", "cpu",
-                "--preset", "fast",
-                "--delete-original",
-            ])
+            from unittest.mock import patch
+            recycled_files = []
 
-            # Los exitosos existen y sus originales se eliminaron
+            def fake_recycle(path_obj):
+                p = Path(path_obj)
+                recycled_files.append(p.name)
+                p.unlink()
+                return True, ""
+
+            with patch("functions.compressor.send_to_recycle_bin", side_effect=fake_recycle):
+                compressor.main([
+                    "--input", tmp,
+                    "--output", str(nested_out),
+                    "--suffix", "_comprimido",
+                    "--hw", "cpu",
+                    "--preset", "fast",
+                    "--delete-original",
+                ])
+
+            # Los exitosos existen y sus originales se enviaron a la Papelera (no unlink directo)
             self.assertTrue((nested_out / "foto_comprimido.jpg").exists())
             self.assertTrue((nested_out / "captura_comprimido.jpg").exists())
             self.assertTrue((nested_out / "video_comprimido.mp4").exists())
             self.assertTrue(_verify_video_playable(nested_out / "video_comprimido.mp4"))
 
+            self.assertEqual(sorted(recycled_files), ["captura.bmp", "foto.jpg", "video.mp4"])
             self.assertFalse(img_ok.exists())
             self.assertFalse(bmp_ok.exists())
             self.assertFalse(vid_ok.exists())
 
-            # El video corrupto NO debe haberse borrado ni haber dejado salida corrupta
+            # El video corrupto NO debe haberse enviado a la Papelera ni haber dejado salida corrupta
+            self.assertNotIn("roto.mp4", recycled_files)
             self.assertTrue(vid_bad.exists())
             self.assertFalse((nested_out / "roto_comprimido.mp4").exists())
 

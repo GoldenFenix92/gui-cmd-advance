@@ -1294,10 +1294,10 @@
                             "description": "Ajuste de imagen."
                         },
                         {
-                            "name": "Eliminar Originales",
+                            "name": "Enviar Originales a la Papelera",
                             "flag": "--delete-original",
                             "type": "checkbox",
-                            "description": "Si se procesa con \u00e9xito, elimina el archivo original de tu disco para ahorrar espacio (CUIDADO)."
+                            "description": "Si se comprime con \u00e9xito, env\u00eda el archivo original a la Papelera de Reciclaje para poder recuperarlo. Los archivos con errores nunca se eliminan."
                         },
                         {
                             "name": "Motor de Aceleracion de Hardware",
