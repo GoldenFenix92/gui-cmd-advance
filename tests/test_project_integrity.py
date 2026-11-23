@@ -332,6 +332,76 @@ class TestProjectIntegrity(unittest.TestCase):
         )
         self.assertEqual(proc.returncode, 0, f"Errores de sintaxis PowerShell:\n{proc.stderr}")
 
+    def test_warnings_shutdown_presets_and_power_manager(self):
+        from unittest.mock import patch, MagicMock
+        from functions import power_manager
+        from gui_app import App
+
+        # 1. power_manager usa ES_CONTINUOUS | ES_SYSTEM_REQUIRED (sin ES_DISPLAY_REQUIRED por defecto)
+        mock_kernel32 = MagicMock()
+        mock_kernel32.SetThreadExecutionState.return_value = 1
+        with patch.object(power_manager.ctypes, "windll", create=True) as mock_windll:
+            mock_windll.kernel32 = mock_kernel32
+            self.assertTrue(power_manager.prevent_sleep(keep_display=False))
+            mock_kernel32.SetThreadExecutionState.assert_called_with(
+                power_manager.ES_CONTINUOUS | power_manager.ES_SYSTEM_REQUIRED
+            )
+            self.assertTrue(power_manager.allow_sleep())
+            mock_kernel32.SetThreadExecutionState.assert_called_with(power_manager.ES_CONTINUOUS)
+
+        desktop = power_manager.get_desktop_path()
+        self.assertTrue(isinstance(desktop, str) and len(desktop) > 0)
+
+        # 2. Validar advertencias en commands_config.json y skip_if_flag_in
+        cfg_path = os.path.join(PROJECT_ROOT, "resources", "commands_config.json")
+        with open(cfg_path, "r", encoding="utf-8") as f:
+            cfg = json.load(f)
+
+        all_cmds = {
+            cmd["name"]: cmd
+            for cat in cfg["categories"]
+            for cmd in cat["commands"]
+        }
+        warned = {n: c["warning"] for n, c in all_cmds.items() if "warning" in c}
+        self.assertGreaterEqual(len(warned), 30)
+
+        for name, w in warned.items():
+            self.assertIn(w.get("level"), ("danger", "caution"), f"Nivel inválido en {name}")
+            self.assertTrue(w.get("title"), f"Título vacío en {name}")
+            self.assertTrue(w.get("message"), f"Mensaje vacío en {name}")
+
+        # Comandos críticos obligatorios con warning danger
+        for critical in (
+            "Formatear Disco (Avanzado estilo Rufus)",
+            "Clear-Disk (Formateo Completo)",
+            "Limpieza Selectiva de Temporales",
+            "Administrador de Apagado Programado",
+        ):
+            self.assertEqual(warned[critical]["level"], "danger")
+
+        # Comandos de solo consulta sin warning
+        for readonly in ("ipconfig", "Get-Disk", "systeminfo", "Estado de Salud SMART Avanzado"):
+            self.assertNotIn(readonly, warned)
+
+        # skip_if_flag_in funciona en modos de solo lectura
+        attr_cmd = all_cmds["Gestor de Atributos de Discos (HDD/SSD/USB)"]
+        self.assertIsNone(App.get_active_warning(attr_cmd, "__INTERNAL__ --run-disk-attributes --disk 1 --action inspect"))
+        self.assertIsNotNone(App.get_active_warning(attr_cmd, "__INTERNAL__ --run-disk-attributes --disk 1 --action clear"))
+
+        usb_cmd = all_cmds["Auditor de Autenticidad de Unidades (USB / SSD / HDD)"]
+        self.assertIsNone(App.get_active_warning(usb_cmd, "__INTERNAL__ --run-usb-audit --disk 1 --mode hardware"))
+        self.assertIsNotNone(App.get_active_warning(usb_cmd, "__INTERNAL__ --run-usb-audit --disk 1 --mode quick"))
+
+        # 3. Administrador de Apagado Programado tiene dropdown con presets hasta 10 horas (36000s)
+        sd_cmd = all_cmds["Administrador de Apagado Programado"]
+        time_arg = next((a for a in sd_cmd["args"] if a.get("flag") == "/t"), None)
+        self.assertIsNotNone(time_arg)
+        self.assertEqual(time_arg["type"], "dropdown")
+        values = [opt["value"] for opt in time_arg["options"]]
+        self.assertIn("0", values)
+        self.assertIn("3600", values)
+        self.assertIn("36000", values)
+
 
 if __name__ == "__main__":
     unittest.main()

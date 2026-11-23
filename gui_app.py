@@ -176,9 +176,39 @@ class App(ctk.CTk):
         self.interpreter_btn.pack(side="left")
         if CTkToolTip: CTkToolTip(self.interpreter_btn, message="Analiza el reporte con Inteligencia Artificial o de manera local")
         
+        # Controles de energía debajo de la consola
+        self.power_frame = ctk.CTkFrame(self.right_frame, fg_color="transparent")
+        self.power_frame.grid(row=4, column=0, columnspan=2, padx=10, pady=(2, 4), sticky="ew")
+
+        self.keep_awake_var = ctk.BooleanVar(value=False)
+        self.keep_awake_cb = ctk.CTkCheckBox(
+            self.power_frame,
+            text="🔋 Evitar suspensión / hibernación",
+            variable=self.keep_awake_var,
+        )
+        self.keep_awake_cb.pack(side="left", padx=(0, 18))
+        if CTkToolTip:
+            CTkToolTip(
+                self.keep_awake_cb,
+                message="Evita que Windows suspenda o hiberne mientras se ejecuta un comando (la pantalla puede apagarse normalmente).",
+            )
+
+        self.shutdown_after_var = ctk.BooleanVar(value=False)
+        self.shutdown_after_cb = ctk.CTkCheckBox(
+            self.power_frame,
+            text="⏻ Apagar PC al finalizar",
+            variable=self.shutdown_after_var,
+        )
+        self.shutdown_after_cb.pack(side="left")
+        if CTkToolTip:
+            CTkToolTip(
+                self.shutdown_after_cb,
+                message="Al terminar la ejecución, inicia una cuenta regresiva cancelable de 60s para apagar el equipo. Si ocurre un error, guarda un reporte HTML en el Escritorio antes de apagar.",
+            )
+
         # Dashboard (Status Bar)
         self.status_bar = ctk.CTkFrame(self.right_frame, height=25, fg_color="transparent")
-        self.status_bar.grid(row=4, column=0, columnspan=2, sticky="ew")
+        self.status_bar.grid(row=5, column=0, columnspan=2, sticky="ew")
         
         self.lbl_ram = ctk.CTkLabel(self.status_bar, text="🧠 RAM: --%", font=("Consolas", 12, "bold"))
         self.lbl_ram.pack(side="right", padx=10)
@@ -189,6 +219,7 @@ class App(ctk.CTk):
         self.update_console_tags()
 
         self.update_status_dashboard()
+        self.protocol("WM_DELETE_WINDOW", self._on_app_close)
 
         self.clear_frame = ctk.CTkFrame(self.right_frame, fg_color="transparent")
         self.clear_frame.grid(row=3, column=1, padx=10, pady=(0, 10), sticky="se")
@@ -537,6 +568,7 @@ class App(ctk.CTk):
                 var = ctk.StringVar(value=arg.get("value", ""))
                 var.trace_add("write", lambda *args: self.update_preview())
                 
+                option_map = None
                 if arg_type == "checkbox":
                     chk = ctk.CTkCheckBox(row_frame, text=arg_name, variable=var, onvalue=arg_flag, offvalue="")
                     chk.pack(side="left", padx=(0, 10))
@@ -653,11 +685,16 @@ class App(ctk.CTk):
                 elif arg_type == "dropdown":
                     lbl = ctk.CTkLabel(row_frame, text=f"{arg_name}:")
                     lbl.pack(side="left", padx=(0, 5))
-                    opts = arg.get("options", [])
-                    dropdown = ctk.CTkOptionMenu(row_frame, variable=var, values=opts)
+                    raw_opts = arg.get("options", [])
+                    if raw_opts and isinstance(raw_opts[0], dict):
+                        display_opts = [o.get("name", "") for o in raw_opts]
+                        option_map = {o.get("name", ""): str(o.get("value", "")) for o in raw_opts}
+                    else:
+                        display_opts = raw_opts
+                    dropdown = ctk.CTkOptionMenu(row_frame, variable=var, values=display_opts)
                     dropdown.pack(side="left", fill="x", expand=True, padx=(0, 10))
-                    if opts and not var.get():
-                        var.set(opts[0])
+                    if display_opts and (not var.get() or var.get() not in display_opts):
+                        var.set(display_opts[0])
                 elif arg_type == "threads_dropdown":
                     lbl = ctk.CTkLabel(row_frame, text=f"{arg_name}:")
                     lbl.pack(side="left", padx=(0, 5))
@@ -727,7 +764,12 @@ class App(ctk.CTk):
                     var1.trace_add("write", check_match)
                     var2.trace_add("write", check_match)
                 
-                self.current_args_vars[arg_name] = {"var": var, "type": arg_type, "flag": arg_flag}
+                self.current_args_vars[arg_name] = {
+                    "var": var,
+                    "type": arg_type,
+                    "flag": arg_flag,
+                    "option_map": option_map,
+                }
                 
                 btn_info = ctk.CTkButton(
                     row_frame, text="ℹ", width=25, height=25, fg_color="transparent",
@@ -808,12 +850,20 @@ class App(ctk.CTk):
                         command_list.append(arg_data["flag"])
                     command_list.append(val)
                 elif arg_data["type"] in ["drive_dropdown", "disk_dropdown", "disk_online_dropdown", "disk_offline_dropdown", "threads_dropdown", "dropdown"]:
-                    val_to_use = val.split(" ")[0]
+                    opt_map = arg_data.get("option_map")
+                    if opt_map and val in opt_map:
+                        val_to_use = opt_map[val]
+                    else:
+                        val_to_use = val.split(" ")[0]
                     if arg_data["type"] in ["disk_dropdown", "disk_online_dropdown", "disk_offline_dropdown"] and val_to_use == "(Ningun":
+                        continue
+                    if command_list[0].strip().lower() == "shutdown" and "/a" in command_list and arg_data["flag"] in ("/t", "/f"):
                         continue
                     if arg_data["flag"]:
                         command_list.append(arg_data["flag"])
                     command_list.append(val_to_use)
+        if command_list[0].strip().lower() == "shutdown" and "/a" in command_list:
+            command_list = ["shutdown", "/a"]
         full_command_str = " ".join(command_list)
         self.preview_var.set(full_command_str)
 
@@ -868,10 +918,272 @@ class App(ctk.CTk):
             help_cmd = f"{cmd_data.get('command')} /?"
             self.execute_external(help_cmd)
 
+    @staticmethod
+    def get_active_warning(cmd_data, cmd_str):
+        """Devuelve el diccionario de advertencia si el comando requiere confirmación previa."""
+        if not cmd_data:
+            return None
+        warning = cmd_data.get("warning")
+        if not warning or not isinstance(warning, dict):
+            return None
+        skip_flags = warning.get("skip_if_flag_in") or []
+        cmd_lower = (cmd_str or "").lower()
+        for flag in skip_flags:
+            if flag and flag.lower() in cmd_lower:
+                return None
+        return warning
+
+    def show_execution_warning_dialog(self, warning, cmd_str):
+        """Muestra un diálogo modal de advertencia antes de ejecutar un comando modificador/destructivo."""
+        from functions.utils import apply_window_theme
+
+        level = warning.get("level", "caution")
+        title = warning.get("title", "Confirmación de Ejecución")
+        message = warning.get("message", "Esta operación realizará cambios en el sistema o en tus archivos.")
+        is_danger = level == "danger"
+
+        accent = "#D73A49" if is_danger else "#D29922"
+        accent_hover = "#B62324" if is_danger else "#B07C14"
+        badge_text = "🚨 ACCIÓN CRÍTICA" if is_danger else "⚠️ CONFIRMACIÓN DE CAMBIO"
+
+        result = {"proceed": False}
+
+        win = ctk.CTkToplevel(self)
+        win.title(f"Advertencia — {title}")
+        win.geometry("540x360")
+        win.resizable(False, False)
+        win.transient(self)
+        win.grab_set()
+
+        win.update_idletasks()
+        x = int(self.winfo_x() + (self.winfo_width() / 2) - 270)
+        y = int(self.winfo_y() + (self.winfo_height() / 2) - 180)
+        win.geometry(f"+{x}+{y}")
+        apply_window_theme(win)
+
+        header = ctk.CTkFrame(win, fg_color=accent, corner_radius=6)
+        header.pack(fill="x", padx=18, pady=(16, 10))
+        ctk.CTkLabel(
+            header,
+            text=f"{badge_text}  —  {title}",
+            font=("Segoe UI", 14, "bold"),
+            text_color="#FFFFFF",
+            wraplength=480,
+            justify="left",
+        ).pack(padx=12, pady=10, anchor="w")
+
+        ctk.CTkLabel(
+            win,
+            text=message,
+            font=("Segoe UI", 13),
+            wraplength=495,
+            justify="left",
+            anchor="w",
+        ).pack(fill="x", padx=20, pady=(4, 10))
+
+        preview_text = cmd_str if len(cmd_str) <= 220 else cmd_str[:217] + "..."
+        preview_box = ctk.CTkTextbox(win, height=78, font=("Consolas", 11), wrap="word")
+        preview_box.pack(fill="x", padx=20, pady=(0, 12))
+        preview_box.insert("1.0", f"Comando a ejecutar:\n{preview_text}")
+        preview_box.configure(state="disabled")
+
+        btn_row = ctk.CTkFrame(win, fg_color="transparent")
+        btn_row.pack(fill="x", padx=20, pady=(4, 16))
+
+        def on_cancel():
+            result["proceed"] = False
+            win.destroy()
+
+        def on_continue():
+            result["proceed"] = True
+            win.destroy()
+
+        cancel_btn = ctk.CTkButton(
+            btn_row,
+            text="Cancelar",
+            width=140,
+            fg_color="transparent",
+            border_width=1,
+            text_color=("#24292F", "#C9D1D9"),
+            command=on_cancel,
+        )
+        cancel_btn.pack(side="left")
+
+        proceed_btn = ctk.CTkButton(
+            btn_row,
+            text="Continuar y Ejecutar",
+            width=190,
+            fg_color=accent,
+            hover_color=accent_hover,
+            text_color="#FFFFFF",
+            font=("Segoe UI", 13, "bold"),
+            command=on_continue,
+        )
+        proceed_btn.pack(side="right")
+
+        win.bind("<Escape>", lambda e: on_cancel())
+        win.protocol("WM_DELETE_WINDOW", on_cancel)
+        cancel_btn.focus_set()
+        self.wait_window(win)
+        return result["proceed"]
+
+    def _on_app_close(self):
+        try:
+            from functions import power_manager
+            power_manager.allow_sleep()
+        except Exception:
+            pass
+        if self.is_running:
+            try:
+                cmd_executor.stop_command()
+            except Exception:
+                pass
+        self.destroy()
+
+    def _save_error_report_to_desktop(self, cmd_name, command_str):
+        """Genera y guarda automáticamente un reporte HTML en el Escritorio cuando ocurre un error antes de apagar."""
+        import datetime
+        import os
+        import re
+        from functions import power_manager
+
+        try:
+            content = self.output_textbox.get("1.0", "end-1c")
+            html_doc = self.get_html_template(
+                content=content,
+                title=f"{cmd_name} (Error antes de apagar)",
+                command=command_str,
+                category=self.cat_var.get() if hasattr(self, "cat_var") else "",
+            )
+            desktop = power_manager.get_desktop_path()
+            os.makedirs(desktop, exist_ok=True)
+            safe_name = re.sub(r"[^A-Za-z0-9_-]+", "_", cmd_name or "comando").strip("_")[:40]
+            ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+            out_path = os.path.join(desktop, f"Reporte_Error_{safe_name}_{ts}.html")
+            with open(out_path, "w", encoding="utf-8") as f:
+                f.write(html_doc)
+            return out_path
+        except Exception:
+            return None
+
+    def show_shutdown_countdown_dialog(self, seconds=60, had_error=False, report_path=None):
+        """Ventana de cuenta regresiva cancelable antes de apagar el PC al finalizar una tarea."""
+        from functions import power_manager
+        from functions.utils import apply_window_theme
+
+        state = {"remaining": int(seconds), "cancelled": False, "timer_id": None}
+
+        win = ctk.CTkToplevel(self)
+        win.title("Apagado Automático Programado")
+        win.geometry("500x290")
+        win.resizable(False, False)
+        win.transient(self)
+        win.grab_set()
+
+        win.update_idletasks()
+        x = int(self.winfo_x() + (self.winfo_width() / 2) - 250)
+        y = int(self.winfo_y() + (self.winfo_height() / 2) - 145)
+        win.geometry(f"+{x}+{y}")
+        apply_window_theme(win)
+
+        header_color = "#D29922" if had_error else "#1F6AA5"
+        header_txt = "⚠️ Tarea finalizada con error — Apagado en curso" if had_error else "⏻ Tarea finalizada — Apagado automático"
+        header = ctk.CTkFrame(win, fg_color=header_color, corner_radius=6)
+        header.pack(fill="x", padx=18, pady=(16, 10))
+        ctk.CTkLabel(header, text=header_txt, font=("Segoe UI", 14, "bold"), text_color="#FFFFFF").pack(padx=12, pady=10, anchor="w")
+
+        countdown_lbl = ctk.CTkLabel(
+            win,
+            text=f"El equipo se apagará en {state['remaining']} segundos.",
+            font=("Segoe UI", 16, "bold"),
+        )
+        countdown_lbl.pack(pady=(8, 6))
+
+        extra_msg = ""
+        if had_error and report_path:
+            extra_msg = f"Se guardó automáticamente el reporte HTML de errores en tu Escritorio:\n{report_path}"
+        elif had_error:
+            extra_msg = "El comando finalizó con errores. Puedes cancelar el apagado para revisar la consola."
+        else:
+            extra_msg = "Puedes cancelar el apagado en cualquier momento antes de que termine el conteo."
+
+        ctk.CTkLabel(win, text=extra_msg, font=("Segoe UI", 12), wraplength=460, justify="center").pack(padx=18, pady=(0, 14))
+
+        btn_row = ctk.CTkFrame(win, fg_color="transparent")
+        btn_row.pack(fill="x", padx=20, pady=(4, 16))
+
+        def cancel_shutdown():
+            state["cancelled"] = True
+            if state["timer_id"]:
+                try:
+                    win.after_cancel(state["timer_id"])
+                except Exception:
+                    pass
+            self.append_output("\n[ENERGÍA] Apagado automático cancelado por el usuario.\n")
+            win.destroy()
+
+        def shutdown_now():
+            state["cancelled"] = True
+            if state["timer_id"]:
+                try:
+                    win.after_cancel(state["timer_id"])
+                except Exception:
+                    pass
+            win.destroy()
+            power_manager.execute_shutdown_now()
+
+        cancel_btn = ctk.CTkButton(
+            btn_row,
+            text="Cancelar Apagado",
+            width=190,
+            fg_color="#D73A49",
+            hover_color="#B62324",
+            text_color="#FFFFFF",
+            font=("Segoe UI", 13, "bold"),
+            command=cancel_shutdown,
+        )
+        cancel_btn.pack(side="left")
+
+        now_btn = ctk.CTkButton(
+            btn_row,
+            text="Apagar Ahora",
+            width=150,
+            fg_color="#2E86C1",
+            hover_color="#21618C",
+            text_color="#FFFFFF",
+            command=shutdown_now,
+        )
+        now_btn.pack(side="right")
+
+        def tick():
+            if state["cancelled"]:
+                return
+            state["remaining"] -= 1
+            if state["remaining"] <= 0:
+                win.destroy()
+                power_manager.execute_shutdown_now()
+                return
+            countdown_lbl.configure(text=f"El equipo se apagará en {state['remaining']} segundos.")
+            state["timer_id"] = win.after(1000, tick)
+
+        win.bind("<Escape>", lambda e: cancel_shutdown())
+        win.protocol("WM_DELETE_WINDOW", cancel_shutdown)
+        cancel_btn.focus_set()
+        state["timer_id"] = win.after(1000, tick)
+
     def toggle_execution(self):
         if self.is_running:
+            self._stopped_by_user = True
             cmd_executor.stop_command()
         else:
+            cmd_str = self.preview_var.get()
+            if not cmd_str:
+                return
+            cmd_data = self.get_command_data(self.cmd_var.get())
+            warning = self.get_active_warning(cmd_data, cmd_str)
+            if warning:
+                if not self.show_execution_warning_dialog(warning, cmd_str):
+                    return
             self.check_drives_and_run()
 
     def check_drives_and_run(self):
@@ -1158,6 +1470,13 @@ class App(ctk.CTk):
 
         self.append_output(f"\n> {command_str}\n")
         self.is_running = True
+        self._stopped_by_user = False
+        self._active_keep_awake = bool(getattr(self, "keep_awake_var", None) and self.keep_awake_var.get())
+        if self._active_keep_awake:
+            from functions import power_manager
+            if power_manager.prevent_sleep(keep_display=False):
+                self.append_output("[ENERGÍA] Anti-suspensión/hibernación activo durante la ejecución (la pantalla podrá apagarse normalmente).\n")
+        current_cmd_name = self.cmd_var.get()
         self.execute_btn.configure(text="Detener ejecución", fg_color="red", hover_color="#8B0000")
         self.cat_menu.configure(state="disabled")
         self.cmd_menu.configure(state="disabled")
@@ -1175,6 +1494,14 @@ class App(ctk.CTk):
 
         def on_finish():
             self.is_running = False
+            if getattr(self, "_active_keep_awake", False):
+                try:
+                    from functions import power_manager
+                    power_manager.allow_sleep()
+                except Exception:
+                    pass
+                self._active_keep_awake = False
+
             if getattr(self, "_progress_timer_id", None):
                 try:
                     self.after_cancel(self._progress_timer_id)
@@ -1204,6 +1531,17 @@ class App(ctk.CTk):
             self.cat_menu.configure(state="normal")
             self.cmd_menu.configure(state="normal")
             self.pause_btn.pack_forget()
+
+            should_shutdown = bool(getattr(self, "shutdown_after_var", None) and self.shutdown_after_var.get())
+            if should_shutdown and not getattr(self, "_stopped_by_user", False):
+                self.shutdown_after_var.set(False)
+                had_error = rc != 0
+                report_path = None
+                if had_error:
+                    report_path = self._save_error_report_to_desktop(current_cmd_name, command_str)
+                    if report_path:
+                        self.append_output(f"\n[ENERGÍA] Error detectado: reporte HTML guardado en Escritorio -> {report_path}\n")
+                self.show_shutdown_countdown_dialog(seconds=60, had_error=had_error, report_path=report_path)
 
         cmd_executor.execute_command_async(
             command_string=command_str,

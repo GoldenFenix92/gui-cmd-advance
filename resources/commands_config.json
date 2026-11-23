@@ -159,7 +159,12 @@
                     "name": "Limpiar Cach\u00e9 DNS (Flush DNS)",
                     "description": "Vac\u00eda y restablece la cach\u00e9 de resoluci\u00f3n del cliente DNS. \u00datil para problemas de navegaci\u00f3n.",
                     "command": "ipconfig /flushdns",
-                    "args": []
+                    "args": [],
+                    "warning": {
+                        "level": "caution",
+                        "title": "Vaciar Cach\u00e9 DNS",
+                        "message": "Se limpiar\u00e1 la cach\u00e9 local de resoluci\u00f3n de nombres DNS del sistema."
+                    }
                 },
                 {
                     "name": "Gestor Adaptador de Red",
@@ -191,7 +196,12 @@
                             ],
                             "description": "Selecciona la acci\u00f3n a realizar sobre el adaptador seleccionado."
                         }
-                    ]
+                    ],
+                    "warning": {
+                        "level": "caution",
+                        "title": "Modificar Adaptador de Red",
+                        "message": "Se deshabilitar\u00e1, habilitar\u00e1 o reiniciar\u00e1 el adaptador de red seleccionado, lo cual interrumpir\u00e1 temporalmente tu conexi\u00f3n a Internet o red local."
+                    }
                 },
                 {
                     "name": "Contrase\u00f1as WiFi Guardadas",
@@ -253,7 +263,12 @@
                             "type": "checkbox",
                             "description": "Fuerza la terminaci\u00f3n del proceso (\u00fatil si el programa no responde)."
                         }
-                    ]
+                    ],
+                    "warning": {
+                        "level": "danger",
+                        "title": "Terminar Proceso (taskkill)",
+                        "message": "Se finalizar\u00e1 el proceso indicado de forma inmediata. Si usas /F, podr\u00edas perder trabajo no guardado en esa aplicaci\u00f3n."
+                    }
                 },
                 {
                     "name": "Administrador de Apagado Programado",
@@ -284,11 +299,77 @@
                             "description": "Acci\u00f3n a realizar."
                         },
                         {
-                            "name": "Tiempo en Segundos",
+                            "name": "Tiempo de Espera",
                             "flag": "/t",
-                            "type": "entry",
-                            "value": "3600",
-                            "description": "Tiempo de espera antes de la acci\u00f3n (Ej. 3600 = 1 hora)."
+                            "type": "dropdown",
+                            "value": "1 hora",
+                            "description": "Selecciona el tiempo de espera sugerido (desde inmediato hasta 10 horas) antes de ejecutar el apagado o reinicio.",
+                            "options": [
+                                {
+                                    "name": "Inmediato (0 seg)",
+                                    "value": "0"
+                                },
+                                {
+                                    "name": "1 minuto",
+                                    "value": "60"
+                                },
+                                {
+                                    "name": "5 minutos",
+                                    "value": "300"
+                                },
+                                {
+                                    "name": "10 minutos",
+                                    "value": "600"
+                                },
+                                {
+                                    "name": "15 minutos",
+                                    "value": "900"
+                                },
+                                {
+                                    "name": "30 minutos",
+                                    "value": "1800"
+                                },
+                                {
+                                    "name": "45 minutos",
+                                    "value": "2700"
+                                },
+                                {
+                                    "name": "1 hora",
+                                    "value": "3600"
+                                },
+                                {
+                                    "name": "1 hora 30 minutos",
+                                    "value": "5400"
+                                },
+                                {
+                                    "name": "2 horas",
+                                    "value": "7200"
+                                },
+                                {
+                                    "name": "3 horas",
+                                    "value": "10800"
+                                },
+                                {
+                                    "name": "4 horas",
+                                    "value": "14400"
+                                },
+                                {
+                                    "name": "5 horas",
+                                    "value": "18000"
+                                },
+                                {
+                                    "name": "6 horas",
+                                    "value": "21600"
+                                },
+                                {
+                                    "name": "8 horas",
+                                    "value": "28800"
+                                },
+                                {
+                                    "name": "10 horas",
+                                    "value": "36000"
+                                }
+                            ]
                         },
                         {
                             "name": "Forzar Cierre de Apps (/f)",
@@ -296,7 +377,12 @@
                             "type": "checkbox",
                             "description": "Fuerza el cierre de aplicaciones sin advertir a los usuarios."
                         }
-                    ]
+                    ],
+                    "warning": {
+                        "level": "danger",
+                        "title": "Acci\u00f3n de Energ\u00eda del Equipo",
+                        "message": "Se ejecutar\u00e1 la acci\u00f3n de apagado, reinicio, cierre de sesi\u00f3n o cancelaci\u00f3n seleccionada sobre este equipo. Guarda tu trabajo antes de continuar."
+                    }
                 },
                 {
                     "name": "Visor de Eventos del Sistema (Errores/Avisos)",
@@ -332,7 +418,12 @@
                             "type": "checkbox",
                             "description": "Examina la integridad sin realizar reparaciones."
                         }
-                    ]
+                    ],
+                    "warning": {
+                        "level": "caution",
+                        "title": "Comprobador de Archivos de Sistema (SFC)",
+                        "message": "SFC examinar\u00e1 los archivos protegidos de Windows y, con /scannow, reemplazar\u00e1 archivos da\u00f1ados del sistema operativo."
+                    }
                 },
                 {
                     "name": "dism",
@@ -370,19 +461,34 @@
                             "type": "checkbox",
                             "description": "Evita el uso de Windows Update como origen de reparaci\u00f3n."
                         }
-                    ]
+                    ],
+                    "warning": {
+                        "level": "caution",
+                        "title": "Reparaci\u00f3n de Imagen de Windows (DISM)",
+                        "message": "DISM analizar\u00e1 y, con /RestoreHealth, modificar\u00e1/reparar\u00e1 componentes de la imagen del sistema operativo Windows."
+                    }
                 },
                 {
                     "name": "Reparar Windows Update",
                     "description": "Detiene los servicios de actualizaci\u00f3n, renombra las carpetas corruptas y los vuelve a iniciar.",
                     "command": "powershell -Command \"& { try { $ts = Get-Date -Format 'yyyyMMdd_HHmmss'; Write-Host 'Deteniendo servicios...'; net stop wuauserv; net stop cryptSvc; net stop bits; net stop msiserver; Write-Host 'Respaldando carpetas de cache...'; if(Test-Path 'C:\\Windows\\SoftwareDistribution'){ Rename-Item -Path 'C:\\Windows\\SoftwareDistribution' -NewName ('SoftwareDistribution.old_' + $ts) -ErrorAction Stop }; if(Test-Path 'C:\\Windows\\System32\\catroot2'){ Rename-Item -Path 'C:\\Windows\\System32\\catroot2' -NewName ('catroot2.old_' + $ts) -ErrorAction Stop }; Write-Host 'Iniciando servicios...'; net start wuauserv; net start cryptSvc; net start bits; net start msiserver; Write-Host 'Reparacion completada. Reinicia tu PC e intenta actualizar de nuevo.' } catch { Write-Host ('Error: ' + $_.Exception.Message); exit 1 } }\"",
-                    "args": []
+                    "args": [],
+                    "warning": {
+                        "level": "caution",
+                        "title": "Restablecer Servicios de Windows Update",
+                        "message": "Se detendr\u00e1n los servicios de actualizaci\u00f3n de Windows, se respaldar\u00e1n las carpetas SoftwareDistribution y catroot2, y se reiniciar\u00e1n los servicios."
+                    }
                 },
                 {
                     "name": "Reiniciar Explorador de Windows",
                     "description": "Mata y reinicia el proceso explorer.exe para solucionar cuelgues visuales de la barra de tareas.",
                     "command": "powershell -Command \"Stop-Process -Name explorer -Force; Start-Sleep -Seconds 1; Start-Process explorer.exe; Write-Host 'Explorador reiniciado.'\"",
-                    "args": []
+                    "args": [],
+                    "warning": {
+                        "level": "caution",
+                        "title": "Reiniciar Explorador de Windows",
+                        "message": "Se cerrar\u00e1 y volver\u00e1 a iniciar explorer.exe. Todas las ventanas abiertas del Explorador de Archivos se cerrar\u00e1n y la barra de tareas parpadear\u00e1 brevemente."
+                    }
                 },
                 {
                     "name": "Limpieza Selectiva de Temporales",
@@ -413,7 +519,12 @@
                             "flag": "--win-update",
                             "description": "Limpia la cach\u00e9 de descargas de Windows Update."
                         }
-                    ]
+                    ],
+                    "warning": {
+                        "level": "danger",
+                        "title": "Eliminaci\u00f3n de Archivos Temporales",
+                        "message": "Se eliminar\u00e1n permanentemente los archivos temporales, cach\u00e9 de Prefetch o descargas de Windows Update seleccionadas."
+                    }
                 }
             ]
         },
@@ -446,7 +557,12 @@
                             ],
                             "description": "Selecciona si deseas encender o apagar el Firewall de Windows (Requiere Administrador)."
                         }
-                    ]
+                    ],
+                    "warning": {
+                        "level": "caution",
+                        "title": "Cambiar Estado del Firewall de Windows",
+                        "message": "Se habilitar\u00e1 o deshabilitar\u00e1 el Firewall de Windows en los perfiles Dominio, P\u00fablico y Privado. Deshabilitarlo reduce la protecci\u00f3n de red del equipo."
+                    }
                 },
                 {
                     "name": "Verificar Permisos de Archivo/Carpeta (icacls)",
@@ -493,7 +609,12 @@
                             "type": "checkbox",
                             "description": "Modifica todas las subcarpetas y archivos (recursivo)."
                         }
-                    ]
+                    ],
+                    "warning": {
+                        "level": "caution",
+                        "title": "Modificar Permisos ACL (icacls)",
+                        "message": "Se modificar\u00e1n las listas de control de acceso (ACL) del archivo o carpeta seleccionada para otorgar permisos de Control Total."
+                    }
                 },
                 {
                     "name": "Tomar Posesi\u00f3n (takeown)",
@@ -518,7 +639,12 @@
                             "type": "checkbox",
                             "description": "Responde S (si) automaticamente a cualquier confirmacion."
                         }
-                    ]
+                    ],
+                    "warning": {
+                        "level": "caution",
+                        "title": "Cambiar Propietario (takeown)",
+                        "message": "Se transferir\u00e1 la propiedad del archivo o carpeta seleccionada al usuario o grupo Administradores."
+                    }
                 },
                 {
                     "name": "Quitar Solo Lectura (attrib)",
@@ -550,7 +676,12 @@
                             "type": "checkbox",
                             "description": "Aplica tambien a los directorios (requiere /s)."
                         }
-                    ]
+                    ],
+                    "warning": {
+                        "level": "caution",
+                        "title": "Modificar Atributos de Archivos (attrib)",
+                        "message": "Se remover\u00e1n los atributos de Solo Lectura, Oculto o Sistema en los archivos o carpetas indicados."
+                    }
                 },
                 {
                     "name": "Forzar Desbloqueo de Archivos",
@@ -587,7 +718,12 @@
                             "type": "checkbox",
                             "description": "Si se marca, aplicar\u00e1 el sanitizado a todos los archivos y carpetas dentro de la ruta elegida (modo recursivo)."
                         }
-                    ]
+                    ],
+                    "warning": {
+                        "level": "caution",
+                        "title": "Renombrado Masivo de Archivos",
+                        "message": "Se renombrar\u00e1n archivos y carpetas con caracteres inv\u00e1lidos en la ruta seleccionada."
+                    }
                 },
                 {
                     "name": "B\u00fasqueda Avanzada de Texto",
@@ -769,7 +905,12 @@
                             "flag": "/XJ",
                             "description": "Ignora Junctions para evitar bucles infinitos (Recomendado activarlo)."
                         }
-                    ]
+                    ],
+                    "warning": {
+                        "level": "danger",
+                        "title": "Copia / Sincronizaci\u00f3n de Carpetas (Robocopy)",
+                        "message": "Se copiar\u00e1n o sobrescribir\u00e1n archivos en la carpeta destino. Si activaste Modo Espejo (/MIR), se ELIMINAR\u00c1N en el destino los archivos que no existan en el origen."
+                    }
                 },
                 {
                     "name": "xcopy",
@@ -813,7 +954,12 @@
                             "type": "checkbox",
                             "description": "Copia archivos ocultos y de sistema."
                         }
-                    ]
+                    ],
+                    "warning": {
+                        "level": "caution",
+                        "title": "Copia de Archivos (xcopy)",
+                        "message": "Se copiar\u00e1n archivos al directorio destino y podr\u00edan sobrescribirse archivos existentes con el mismo nombre."
+                    }
                 },
                 {
                     "name": "dir",
@@ -894,7 +1040,12 @@
                             "type": "file_entry",
                             "description": "El archivo a modificar."
                         }
-                    ]
+                    ],
+                    "warning": {
+                        "level": "caution",
+                        "title": "Modificar Atributos de Archivo/Carpeta",
+                        "message": "Se cambiar\u00e1n los atributos de visibilidad/protecci\u00f3n (Oculto, Sistema, Solo Lectura) del archivo o carpeta seleccionada."
+                    }
                 }
             ]
         },
@@ -958,7 +1109,12 @@
                             "type": "checkbox",
                             "description": "Realiza un formateo r\u00e1pido en lugar de escribir ceros en todo el disco."
                         }
-                    ]
+                    ],
+                    "warning": {
+                        "level": "danger",
+                        "title": "Formateo Completo de Disco",
+                        "message": "Se borrar\u00e1n TODAS las particiones y archivos del disco seleccionado de forma irreversible, se inicializar\u00e1 el esquema elegido y se formatear\u00e1 el volumen."
+                    }
                 },
                 {
                     "name": "Initialize-Disk",
@@ -971,7 +1127,12 @@
                             "type": "disk_dropdown",
                             "description": "Selecciona el n\u00famero de disco a inicializar."
                         }
-                    ]
+                    ],
+                    "warning": {
+                        "level": "danger",
+                        "title": "Inicializaci\u00f3n de Disco",
+                        "message": "Se escribir\u00e1 una nueva tabla de particiones GPT en el disco seleccionado. Aseg\u00farate de haber elegido la unidad correcta."
+                    }
                 },
                 {
                     "name": "New-Partition & Format",
@@ -984,7 +1145,12 @@
                             "type": "disk_dropdown",
                             "description": "Selecciona el n\u00famero de disco donde crear la partici\u00f3n."
                         }
-                    ]
+                    ],
+                    "warning": {
+                        "level": "danger",
+                        "title": "Creaci\u00f3n de Partici\u00f3n y Formateo NTFS",
+                        "message": "Se crear\u00e1 una partici\u00f3n ocupando todo el espacio libre del disco seleccionado y se formatear\u00e1 como NTFS."
+                    }
                 },
                 {
                     "name": "Clear-Disk (Formateo Completo)",
@@ -997,7 +1163,12 @@
                             "type": "disk_dropdown",
                             "description": "Selecciona el disco a borrar COMPLETAMENTE."
                         }
-                    ]
+                    ],
+                    "warning": {
+                        "level": "danger",
+                        "title": "Borrado Total de Disco (Clear-Disk)",
+                        "message": "Se eliminar\u00e1n ABSOLUTAMENTE TODAS las particiones, datos y tablas del disco seleccionado de forma irreversible."
+                    }
                 },
                 {
                     "name": "Optimizar / TRIM / Desfragmentar Discos",
@@ -1010,7 +1181,12 @@
                             "type": "drive_dropdown",
                             "description": "Selecciona la unidad a optimizar."
                         }
-                    ]
+                    ],
+                    "warning": {
+                        "level": "caution",
+                        "title": "Optimizaci\u00f3n de Unidad (TRIM / Desfragmentar)",
+                        "message": "Se ejecutar\u00e1 TRIM (en SSD) o desfragmentaci\u00f3n (en HDD) sobre la unidad seleccionada."
+                    }
                 },
                 {
                     "name": "Gestor de Atributos de Discos (HDD/SSD/USB)",
@@ -1086,7 +1262,15 @@
                             "type": "entry",
                             "description": "Opcional: escribe una letra (ej. E) para modificar solo ese volumen. Si se deja vac\u00edo, aplica a todos los vol\u00famenes del disco."
                         }
-                    ]
+                    ],
+                    "warning": {
+                        "level": "caution",
+                        "title": "Modificar Atributos de Disco / Volumen (Diskpart)",
+                        "message": "Se aplicar\u00e1n o quitar\u00e1n atributos de disco o volumen (como Solo Lectura u Oculto) mediante Diskpart en la unidad seleccionada.",
+                        "skip_if_flag_in": [
+                            "--action inspect"
+                        ]
+                    }
                 },
                 {
                     "name": "Explorar Disco (Abrir Carpeta)",
@@ -1112,7 +1296,12 @@
                             "type": "disk_dropdown",
                             "description": "Selecciona el disco al cual asignarle letra."
                         }
-                    ]
+                    ],
+                    "warning": {
+                        "level": "caution",
+                        "title": "Montar Partici\u00f3n (Asignar Letra)",
+                        "message": "Se asignar\u00e1 una nueva letra de unidad a la primera partici\u00f3n v\u00e1lida sin letra del disco seleccionado."
+                    }
                 },
                 {
                     "name": "Quitar Letra (Desmontar)",
@@ -1125,7 +1314,12 @@
                             "type": "disk_dropdown",
                             "description": "Selecciona el disco a desmontar."
                         }
-                    ]
+                    ],
+                    "warning": {
+                        "level": "danger",
+                        "title": "Desmontar Unidad (Quitar Letra)",
+                        "message": "Se remover\u00e1 la letra de unidad del disco seleccionado, ocult\u00e1ndolo del Explorador de Windows (los datos no se borran, pero los programas dejar\u00e1n de verlo)."
+                    }
                 },
                 {
                     "name": "Desconectar Disco (Offline)",
@@ -1138,7 +1332,12 @@
                             "type": "disk_online_dropdown",
                             "description": "Selecciona el disco a desconectar."
                         }
-                    ]
+                    ],
+                    "warning": {
+                        "level": "danger",
+                        "title": "Desconectar Disco (Offline)",
+                        "message": "El disco seleccionado pasar\u00e1 a estado Fuera de L\u00ednea (Offline) y dejar\u00e1 de estar accesible para Windows y tus programas hasta que lo vuelvas a conectar."
+                    }
                 },
                 {
                     "name": "Conectar Disco (Online)",
@@ -1151,7 +1350,12 @@
                             "type": "disk_offline_dropdown",
                             "description": "Selecciona el disco a conectar."
                         }
-                    ]
+                    ],
+                    "warning": {
+                        "level": "caution",
+                        "title": "Conectar Disco (Online)",
+                        "message": "El disco seleccionado pasar\u00e1 a estado En L\u00ednea (Online) y quedar\u00e1 accesible para Windows."
+                    }
                 },
                 {
                     "name": "Expulsar Unidad Seguramente",
@@ -1164,7 +1368,12 @@
                             "type": "drive_dropdown",
                             "description": "Selecciona la unidad a expulsar."
                         }
-                    ]
+                    ],
+                    "warning": {
+                        "level": "caution",
+                        "title": "Expulsar Unidad USB",
+                        "message": "Se desmontar\u00e1 y expulsar\u00e1 la unidad seleccionada. Aseg\u00farate de no tener archivos abiertos en ella."
+                    }
                 }
             ]
         },
@@ -1201,7 +1410,15 @@
                             ],
                             "description": "El modo Hardware no escribe nada. Los modos R\u00e1pido y Exhaustivo prueban solo el espacio libre sin tocar tus archivos y limpian los datos temporales al finalizar."
                         }
-                    ]
+                    ],
+                    "warning": {
+                        "level": "caution",
+                        "title": "Prueba de Escritura y Lectura en Unidad",
+                        "message": "Se escribir\u00e1n archivos temporales de prueba en el espacio libre de la unidad seleccionada para verificar su velocidad y capacidad real (se eliminan autom\u00e1ticamente al terminar).",
+                        "skip_if_flag_in": [
+                            "--mode hardware"
+                        ]
+                    }
                 },
                 {
                     "name": "Estado de Salud SMART Avanzado",
@@ -1261,7 +1478,12 @@
                             "type": "checkbox",
                             "description": "Fuerza el desmontaje del volumen previamente si es necesario."
                         }
-                    ]
+                    ],
+                    "warning": {
+                        "level": "caution",
+                        "title": "Reparaci\u00f3n de Sistema de Archivos (CHKDSK)",
+                        "message": "CHKDSK analizar\u00e1 la unidad y, si activaste reparaci\u00f3n o desmontaje forzado (/r, /x), podr\u00e1 desmontar temporalmente el volumen y reparar sectores."
+                    }
                 },
                 {
                     "name": "Recuperaci\u00f3n de Archivos (WINFR)",
@@ -1313,7 +1535,12 @@
                     "name": "PhotoRec C\u00f3digo Abierto (Desinstalar)",
                     "description": "Elimina los archivos descargados de PhotoRec de C:\\GuiCmdAdvance\\tools\\testdisk_app (y residuos antiguos en Temp si existen).",
                     "command": "powershell -Command \"& { try { $removed = $false; foreach($p in @('C:\\GuiCmdAdvance\\tools\\testdisk_app', 'C:\\Windows\\Temp\\testdisk_app')){ if(Test-Path $p){ Remove-Item -Path $p -Recurse -Force -ErrorAction Stop; $removed = $true } }; if($removed){ Write-Host 'PhotoRec ha sido eliminado del sistema exitosamente.' } else { Write-Host 'PhotoRec no se encuentra en el sistema.' } } catch { Write-Host ('Error: ' + $_.Exception.Message); exit 1 } }\"",
-                    "args": []
+                    "args": [],
+                    "warning": {
+                        "level": "caution",
+                        "title": "Desinstalar PhotoRec",
+                        "message": "Se eliminar\u00e1 la carpeta descargada de PhotoRec (testdisk_app) de tu equipo."
+                    }
                 }
             ]
         },
@@ -1442,7 +1669,12 @@
                             "type": "threads_dropdown",
                             "description": "Cantidad de hilos a usar."
                         }
-                    ]
+                    ],
+                    "warning": {
+                        "level": "danger",
+                        "title": "Compresi\u00f3n de Archivos Multimedia",
+                        "message": "Se procesar\u00e1n y guardar\u00e1n archivos comprimidos. Si activaste la opci\u00f3n de eliminar originales, los archivos originales ser\u00e1n enviados a la Papelera de Reciclaje."
+                    }
                 },
                 {
                     "name": "Reparador de Multimedia",
@@ -1474,7 +1706,12 @@
                             "value": "_reparado",
                             "description": "Texto para a\u00f1adir al final del nombre reparado."
                         }
-                    ]
+                    ],
+                    "warning": {
+                        "level": "caution",
+                        "title": "Reparaci\u00f3n de Archivos Multimedia",
+                        "message": "Se procesar\u00e1n y generar\u00e1n versiones reparadas de las im\u00e1genes o videos seleccionados."
+                    }
                 },
                 {
                     "name": "Analizador de Salud Multimedia",
@@ -1568,7 +1805,12 @@
                             "type": "threads_dropdown",
                             "description": "Numero de hilos paralelos para procesar archivos."
                         }
-                    ]
+                    ],
+                    "warning": {
+                        "level": "caution",
+                        "title": "Escaneo y Gesti\u00f3n de Duplicados",
+                        "message": "Se abrir\u00e1 la herramienta de detecci\u00f3n de duplicados, desde la cual podr\u00e1s revisar y eliminar archivos duplicados."
+                    }
                 }
             ]
         },
@@ -1579,7 +1821,12 @@
                     "name": "Desplegar Microsoft Office (ODT)",
                     "description": "Abre la herramienta gr\u00e1fica interna para descargar, configurar el XML e instalar Microsoft Office LTSC 2019/2021/2024.",
                     "command": "__INTERNAL__ --run-office-deploy",
-                    "args": []
+                    "args": [],
+                    "warning": {
+                        "level": "caution",
+                        "title": "Despliegue / Instalaci\u00f3n de Microsoft Office",
+                        "message": "Se abrir\u00e1 el asistente para descargar, configurar e instalar o modificar Microsoft Office en este equipo."
+                    }
                 },
                 {
                     "name": "Descargar ISO Windows 11",

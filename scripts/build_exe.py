@@ -54,6 +54,7 @@ HIDDEN_IMPORTS = [
     "functions.media_repair",
     "functions.name_sanitizer",
     "functions.office_deploy",
+    "functions.power_manager",
     "functions.process_manager",
     "functions.report_generator",
     "functions.setup_manager",
