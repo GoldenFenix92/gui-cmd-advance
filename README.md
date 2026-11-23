@@ -2,6 +2,37 @@
 
 **GUI CMD ADVANCE** es una aplicación de escritorio para Windows desarrollada en Python (`CustomTkinter`) que ofrece una interfaz gráfica moderna, segura y portable para ejecutar operaciones avanzadas de administración de sistemas, diagnóstico de almacenamiento, redes, seguridad, recuperación de datos y procesamiento multimedia sin depender de la línea de comandos.
 
+![Interfaz Principal de GUI CMD Advance](docs/images/01_main_interface.png)
+
+---
+
+## Galería de Vistas Principales
+
+### Formateo Avanzado estilo Rufus y Controles de Energía
+Incluye selector de esquema GPT/MBR, recomendaciones de uso por capacidad en NTFS/FAT32/exFAT y casillas debajo de la consola para evitar suspensión/hibernación o apagar el equipo al finalizar.
+
+![Formatear Disco Avanzado estilo Rufus](docs/images/02_rufus_format.png)
+
+### Sistema de Advertencias Pre-Ejecución
+Antes de ejecutar cualquier operación modificadora o destructiva, la aplicación muestra un diálogo modal con el nivel de severidad, detalle de los cambios y vista previa del comando.
+
+![Diálogo de Advertencia Pre-Ejecución](docs/images/03_execution_warning.png)
+
+### Administrador de Apagado Programado (hasta 10 horas)
+Selector desplegable con 16 tiempos sugeridos (desde inmediato hasta 10 horas) y cancelación limpia (`shutdown /a`).
+
+![Administrador de Apagado Programado](docs/images/04_scheduled_shutdown.png)
+
+### Auditor de Autenticidad de Unidades (USB / SSD / HDD)
+Inspección de VID/PID, serie y firmware más pruebas de velocidad y capacidad real estilo H2testw.
+
+![Auditor de Autenticidad de Unidades](docs/images/05_usb_auditor.png)
+
+### Reportes HTML Interactivos por Dominio
+Exportación autocontenida con perfil visual automático, métricas extraídas, filtros por severidad, buscador en vivo y soporte de modo claro/oscuro.
+
+![Reporte HTML Interactivo por Dominio](docs/images/06_html_report.png)
+
 ---
 
 ## Características Principales
