@@ -22,29 +22,7 @@ except ImportError:
     __version__ = "1.0.0"
 
 from functions.setup_manager import check_dependencies
-
-def get_base_path():
-    if getattr(sys, 'frozen', False):
-        return sys._MEIPASS
-    else:
-        return os.path.dirname(os.path.abspath(__file__))
-
-def get_user_data_path(filename):
-    if getattr(sys, 'frozen', False):
-        base_dir = os.path.dirname(sys.executable)
-    else:
-        base_dir = os.path.dirname(os.path.abspath(__file__))
-    return os.path.join(base_dir, filename)
-
-def get_resource_path(relative_path):
-    return os.path.join(get_base_path(), relative_path)
-
-def center_window(window, width, height):
-    screen_width = window.winfo_screenwidth()
-    screen_height = window.winfo_screenheight()
-    x = int((screen_width / 2) - (width / 2))
-    y = int((screen_height / 2) - (height / 2))
-    window.geometry(f"{width}x{height}+{x}+{y}")
+from functions.utils import get_user_data_path, get_resource_path, center_window
 
 try:
     ctk.set_default_color_theme(get_resource_path("resources/custom_github_theme.json"))
