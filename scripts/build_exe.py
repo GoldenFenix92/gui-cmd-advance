@@ -62,6 +62,7 @@ HIDDEN_IMPORTS = [
     "functions.task_memory",
     "functions.telemetry",
     "functions.temp_cleaner",
+    "functions.usb_auditor",
     "functions.utils",
 ]
 

@@ -1057,6 +1057,38 @@
                     ]
                 },
                 {
+                    "name": "Auditor de Autenticidad de Unidades (USB / SSD / HDD)",
+                    "description": "Audita si una memoria USB o unidad de almacenamiento es original o falsificada: analiza VID/PID real, fabricante, serie, firmware y permite pruebas de velocidad y capacidad real (estilo H2testw).",
+                    "command": "__INTERNAL__ --run-usb-audit",
+                    "args": [
+                        {
+                            "name": "Unidad de Almacenamiento (USB / SSD / HDD)",
+                            "flag": "--disk",
+                            "type": "disk_dropdown",
+                            "description": "Enlista todas las unidades conectadas (Online y Offline) con su nombre, etiqueta y capacidad."
+                        },
+                        {
+                            "name": "Nivel de Auditor\u00eda",
+                            "type": "radio_group",
+                            "options": [
+                                {
+                                    "name": "Solo Hardware e Identidad (VID/PID, Serie, Firmware \u2014 0 escritura)",
+                                    "flag": "--mode hardware"
+                                },
+                                {
+                                    "name": "Auditor\u00eda R\u00e1pida + Velocidad (64 MB en espacio libre)",
+                                    "flag": "--mode quick"
+                                },
+                                {
+                                    "name": "Prueba Exhaustiva de Capacidad Real (Estilo H2testw \u2014 todo el espacio libre)",
+                                    "flag": "--mode full"
+                                }
+                            ],
+                            "description": "El modo Hardware no escribe nada. Los modos R\u00e1pido y Exhaustivo prueban solo el espacio libre sin tocar tus archivos y limpian los datos temporales al finalizar."
+                        }
+                    ]
+                },
+                {
                     "name": "Estado de Salud SMART Avanzado",
                     "description": "Abre un visor estilo CrystalDiskInfo para evaluar la salud f\u00edsica y temperatura de tus discos.",
                     "command": "__INTERNAL__ --run-smart-info",

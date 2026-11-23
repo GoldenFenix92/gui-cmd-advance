@@ -47,6 +47,7 @@ This file tracks the commands that are planned, in progress, and completed for t
 - [x] Clear-Disk (Formateo Completo)
 - [x] wmic diskdrive
 - [x] Gestor de Atributos de Discos (HDD/SSD/USB)
+- [x] Auditor de Autenticidad de Unidades (USB / SSD / HDD)
 
 ## Mejoras Premium (Enterprise)
 

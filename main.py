@@ -163,6 +163,11 @@ if __name__ == "__main__":
             sys.argv.pop(1)
             disk_attributes.main()
             sys.exit(0)
+        elif sys.argv[1] == "--run-usb-audit":
+            from functions import usb_auditor
+            sys.argv.pop(1)
+            usb_auditor.main()
+            sys.exit(0)
             
     if is_admin():
         hwnd = ctypes.windll.kernel32.GetConsoleWindow()

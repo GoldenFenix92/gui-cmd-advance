@@ -48,8 +48,9 @@ def detect_report_profile(category="", title="", command=""):
 
     if any(k in blob for k in (
         "almacenamiento", "recuperación de datos", "recuperacion de datos", "diskpart",
-        "--run-disk-attributes", "get-disk", "get-physicaldisk", "get-volume", "clear-disk",
-        "format-volume", "initialize-disk", "optimize-volume", "chkdsk", "winfr", "photorec", "smart",
+        "--run-disk-attributes", "--run-usb-audit", "autenticidad", "get-disk", "get-physicaldisk",
+        "get-volume", "clear-disk", "format-volume", "initialize-disk", "optimize-volume",
+        "chkdsk", "winfr", "photorec", "smart",
     )):
         return "storage"
 
@@ -157,6 +158,9 @@ def extract_report_metrics(profile, content):
         m_style = re.search(r"Estilo Partici[oó]n\s*:\s*([^\r\n]+)", text)
         m_wp = re.search(r"Protecci[oó]n contra escritura\s*:\s*([^\r\n]+)", text)
         m_state = re.search(r"Estado Operativo\s*:\s*([^\r\n]+)", text)
+        m_verdict = re.search(r"Veredicto de Autenticidad\s*:\s*([^\r\n]+)", text)
+        m_vidpid = re.search(r"VID / PID USB\s*:\s*([^\r\n]+)", text)
+        m_speed = re.search(r"Velocidad Medida\s*:\s*([^\r\n]+)", text)
         vols = re.findall(r"Volumen\s+(\d+)\s+\[([^\]]+)\]", text)
 
         metrics.update({
@@ -166,6 +170,9 @@ def extract_report_metrics(profile, content):
             "partition_style": m_style.group(1).strip() if m_style else None,
             "write_protect": m_wp.group(1).strip() if m_wp else None,
             "op_status": m_state.group(1).strip() if m_state else None,
+            "verdict": m_verdict.group(1).strip() if m_verdict else None,
+            "vid_pid": m_vidpid.group(1).strip() if m_vidpid else None,
+            "speed": m_speed.group(1).strip() if m_speed else None,
             "volumes_count": len(vols),
         })
 
@@ -270,8 +277,14 @@ def _build_hero_widget(profile, metrics):
 
     if profile == "storage":
         cards = []
+        if metrics.get("verdict"):
+            v = metrics["verdict"]
+            v_cls = "ok" if "ORIGINAL" in v.upper() else ("err" if "FALSA" in v.upper() or "FALSIFICACI" in v.upper() else "warn")
+            cards.append(f'<div class="metric-item"><span class="metric-label">Veredicto de autenticidad</span><strong class="metric-val {v_cls}">{html.escape(v)}</strong><span class="metric-sub">{html.escape(metrics.get("vid_pid") or "Inspección de unidad")}</span></div>')
         if metrics.get("model"):
             cards.append(f'<div class="metric-item"><span class="metric-label">Unidad inspeccionada</span><strong class="metric-val">{html.escape(metrics["model"])}</strong><span class="metric-sub">{html.escape(metrics.get("drive_type") or "Almacenamiento")} · {html.escape(metrics.get("capacity") or "")}</span></div>')
+        if metrics.get("speed"):
+            cards.append(f'<div class="metric-item"><span class="metric-label">Velocidad medida</span><strong class="metric-val ok">{html.escape(metrics["speed"])}</strong><span class="metric-sub">Prueba secuencial verificada</span></div>')
         if metrics.get("partition_style"):
             cards.append(f'<div class="metric-item"><span class="metric-label">Esquema y estado</span><strong class="metric-val">{html.escape(metrics["partition_style"])}</strong><span class="metric-sub">Estado: {html.escape(metrics.get("op_status") or "N/D")} · Volúmenes: {metrics.get("volumes_count", 0)}</span></div>')
         if metrics.get("write_protect"):
