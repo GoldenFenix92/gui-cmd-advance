@@ -216,6 +216,59 @@ class TestProjectIntegrity(unittest.TestCase):
         self.assertNotIn("def convert_old_report", gui_src)
         self.assertNotIn("Convertir Reporte Antiguo", gui_src)
 
+    def test_disk_formatting_commands_syntax_and_safety(self):
+        import subprocess
+
+        cfg_path = os.path.join(PROJECT_ROOT, "resources", "commands_config.json")
+        with open(cfg_path, "r", encoding="utf-8") as f:
+            cfg = json.load(f)
+
+        target_names = {
+            "Initialize-Disk",
+            "New-Partition & Format",
+            "Clear-Disk (Formateo Completo)",
+            "Formatear Disco (Avanzado estilo Rufus)",
+        }
+        found = {}
+        for cat in cfg["categories"]:
+            for cmd in cat["commands"]:
+                if cmd["name"] in target_names:
+                    found[cmd["name"]] = cmd["command"]
+
+        self.assertEqual(set(found.keys()), target_names)
+
+        for name, cmd_str in found.items():
+            self.assertIn("IsSystem", cmd_str, f"{name} debe proteger discos de sistema")
+            self.assertIn("IsBoot", cmd_str, f"{name} debe proteger discos de arranque")
+            self.assertIn("exit 1", cmd_str, f"{name} debe retornar exit 1 en errores")
+            self.assertIn("Update-Disk", cmd_str, f"{name} debe refrescar estado del disco")
+
+            m = re.search(r'powershell -Command "(.*)"$', cmd_str)
+            self.assertIsNotNone(m, f"Formato de comando PowerShell inesperado en {name}")
+            ps_script = m.group(1)
+
+            # Validar sintaxis PowerShell usando el AST parser oficial (sin ejecutar nada)
+            check_ps = (
+                "$errs = $null; "
+                "$code = [Console]::In.ReadToEnd(); "
+                "[void][System.Management.Automation.Language.Parser]::ParseInput($code, [ref]$null, [ref]$errs); "
+                "if ($errs.Count -gt 0) { $errs | ForEach-Object { Write-Error $_.Message }; exit 1 }"
+            )
+            proc = subprocess.run(
+                ["powershell", "-NoProfile", "-Command", check_ps],
+                input=ps_script,
+                capture_output=True,
+                text=True,
+                timeout=15,
+            )
+            self.assertEqual(proc.returncode, 0, f"Error de sintaxis PowerShell en {name}: {proc.stderr}")
+
+        rufus_cmd = found["Formatear Disco (Avanzado estilo Rufus)"]
+        self.assertIn("PartitionStyle -eq 'RAW'", rufus_cmd)
+        self.assertIn("Set-Disk -Number $num -PartitionStyle $style", rufus_cmd)
+        self.assertIn("diskpart", rufus_cmd)
+        self.assertIn("FAT32", rufus_cmd)
+
 
 if __name__ == "__main__":
     unittest.main()
