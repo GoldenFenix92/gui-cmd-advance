@@ -8,6 +8,26 @@
 
 ## Galería de Vistas Principales
 
+### Combos Inteligentes (Antes / Después) y Cola Encadenada
+32 comandos del catálogo sugieren flujos recomendados antes (*Protocolo Seguro*) y después (*Continuación*), con herencia automática de disco/unidad/ruta, advertencia unificada y ejecución continua en un solo clic.
+
+![Modal de Combos Inteligentes](docs/images/07_smart_combos.png)
+
+### Escáner de Superficie y Sectores (HDD / SSD / USB)
+Clasificación de bloques por latencia en tiempo real (`<50 ms` Excelente, `<200 ms` Normal, `<1000 ms` Lento, `>1000 ms` Crítico y sectores dañados) con modos de muestreo rápido, escaneo completo y reasignación (*Remap*) protegida contra SSD/NVMe y discos de sistema.
+
+![Escáner de Superficie y Sectores](docs/images/08_surface_scanner.png)
+
+### Borrado Seguro Irreversible (Sysinternals SDelete)
+Integración bajo demanda de Sysinternals SDelete para destrucción irreversible de archivos/carpetas o limpieza de espacio libre (`-z` / `-c`), con detección de SSD, protección de rutas críticas de Windows y progreso en vivo.
+
+![Borrado Seguro Irreversible con SDelete](docs/images/09_sdelete_secure_erase.png)
+
+### Tema Claro Soft Slate y CHKDSK Avanzado (`/b`, `/scan`)
+Tema claro rediseñado (*Soft Slate*) de alto contraste, botón sólido ámbar **Limpiar**, contadores dinámicos de progreso y ETA por color, y soporte ampliado en CHKDSK (`/r`, `/b`, `/scan`, `/x` y detección `RAW`).
+
+![Tema Claro Soft Slate y CHKDSK Avanzado](docs/images/10_light_theme_soft_slate.png)
+
 ### Formateo Avanzado estilo Rufus y Controles de Energía
 Incluye selector de esquema GPT/MBR, recomendaciones de uso por capacidad en NTFS/FAT32/exFAT y casillas debajo de la consola para evitar suspensión/hibernación o apagar el equipo al finalizar.
 
@@ -38,14 +58,18 @@ Exportación autocontenida con perfil visual automático, métricas extraídas, 
 ## Características Principales
 
 ### 1. Diagnóstico y Gestión Avanzada de Almacenamiento
+- **Escáner de Superficie y Sectores (HDD / SSD / USB):** Evalúa la salud física de cada bloque mediante acceso directo Win32 (`CreateFileW`) clasificando latencias (`Excelente`, `Normal`, `Lento`, `Crítico` y `Dañado`). Incluye *Muestreo Rápido*, *Escaneo Completo* (0 escritura) y *Reasignación de Sectores Pendientes (Remap con ceros)* con bloqueo automático para discos del sistema/arranque y unidades SSD/NVMe.
+- **Reparar Sistema de Archivos y Sectores (`chkdsk`):** Soporte completo para reparación de sectores (`/r`), re-evaluación de clústeres malos en NTFS (`/b`), escaneo en línea sin desmontar (`/scan`), desmontaje forzado (`/x`) y detección de volúmenes `RAW`.
 - **Formatear Disco (Avanzado estilo Rufus):** Limpieza, inicialización (GPT/MBR), particionado y formateo (NTFS, FAT32, exFAT) en un solo paso. Incluye protección contra borrado de discos de sistema/arranque, manejo automático de discos ya inicializados o `RAW`, respaldo con `diskpart` para unidades USB híbridas, validación del límite de 32 GB en FAT32 y recomendaciones de uso según capacidad directamente en la interfaz.
 - **Auditor de Autenticidad de Unidades (USB / SSD / HDD):** Detecta memorias falsificadas o alteradas inspeccionando VID/PID real, fabricante, número de serie y firmware (modo hardware sin escritura), además de pruebas de velocidad y capacidad real estilo H2testw sobre espacio libre con limpieza automática.
 - **Gestor de Atributos de Discos (HDD / SSD / USB):** Inspecciona y administra atributos de disco y volumen mediante `Diskpart` (quitar/aplicar `readonly`, `hidden`, etc.) con bloqueo de seguridad para la unidad del sistema.
 - **Estado de Salud S.M.A.R.T. Avanzado:** Visor estilo CrystalDiskInfo conectado a WMI/CIM para evaluar salud física, temperatura y atributos de discos SATA y SSD NVMe.
 - **Monitoreo en Vivo de Tareas de Almacenamiento:** Consulta `Get-StorageJob` en segundo plano para mostrar barra de progreso determinista en formateos y optimizaciones.
 
-### 2. Seguridad Operativa y Control de Energía
-- **Sistema de Advertencias Pre-Ejecución:** Diálogo modal de confirmación en dos niveles (**Crítico** y **Precaución**) en 35 comandos que modifican el sistema, red, permisos o eliminan datos, con vista previa del comando y exclusión automática en modos de solo lectura (`inspect` / `hardware`).
+### 2. Seguridad Operativa, Combos Inteligentes y Control de Energía
+- **Combos Inteligentes (Antes / Después) y Cola Encadenada:** 32 comandos integran 62 sugerencias contextuales organizadas en *Protocolo Seguro (Antes)* y *Continuación (Después)*. Permite autoejecutar toda la cola en un solo clic, hereda automáticamente parámetros de contexto (`{disk}`, `{drive}`, `{path}`) y muestra una advertencia unificada antes de iniciar el servicio completo.
+- **Borrado Seguro Irreversible (Sysinternals SDelete):** Plugin oficial descargable bajo demanda (`sdelete64.exe`) para destruir archivos/carpetas o sobrescribir espacio libre (`-z` / `-c`) con pasadas configurables, advertencia automática en unidades SSD, guardia contra rutas críticas del sistema (`Windows`, `Program Files`, `Users`, raíces de unidad) y progreso en tiempo real.
+- **Sistema de Advertencias Pre-Ejecución:** Diálogo modal de confirmación en dos niveles (**Crítico** y **Precaución**) en 37 comandos que modifican el sistema, red, permisos o eliminan datos, con vista previa del comando y exclusión automática en modos de solo lectura (`inspect` / `hardware`).
 - **Controles de Energía Integrados (debajo de la consola):**
   - **Evitar suspensión / hibernación:** Utiliza `SetThreadExecutionState` (`ES_CONTINUOUS | ES_SYSTEM_REQUIRED`) para mantener el equipo activo durante tareas largas permitiendo que el monitor se apague normalmente para ahorrar energía.
   - **Apagar PC al finalizar:** Al terminar la ejecución inicia una cuenta regresiva cancelable de 60 segundos. Si la tarea finalizó con error, genera y guarda automáticamente un **reporte HTML en el Escritorio** antes de apagar para que el usuario pueda revisar el diagnóstico al encender el equipo.
@@ -64,7 +88,7 @@ Exportación autocontenida con perfil visual automático, métricas extraídas, 
 ### 5. Bóveda IA, Productividad y Portabilidad
 - **Intérprete de Reportes y Bóveda IA (Tren de Modelos):** Soporta Google Gemini, OpenAI, Anthropic Claude, Deepseek y Groq con conmutación automática ante errores de cuota (HTTP 429) y analizador local offline.
 - **Herramientas Internas Adicionales:** Gestor de Procesos y Servicios (con detector de bloatware e historial), Bóveda de Credenciales (`cmdkey`), Limpieza Selectiva de Temporales, Búsqueda Avanzada de Texto (`findstr` con regex), Sanitizador de Nombres, Compresión/Verificación 7-Zip y Despliegue de Microsoft Office (ODT LTSC 2019/2021/2024).
-- **Interfaz Moderna y Portable:** CustomTkinter con tema claro/oscuro, búsqueda global instantánea, sistema de `⭐ Favoritos`, monitoreo en vivo de CPU/RAM, gestor de complementos bajo demanda y persistencia aislada en `C:\GuiCmdAdvance`.
+- **Interfaz Moderna y Portable:** CustomTkinter con tema oscuro y tema claro **Soft Slate**, nombres amigables con comando entre paréntesis, contadores dinámicos de progreso y ETA por color, botón sólido ámbar **Limpiar**, búsqueda global instantánea, sistema de `⭐ Favoritos`, monitoreo en vivo de CPU/RAM, gestor de complementos bajo demanda y persistencia aislada en `C:\GuiCmdAdvance`.
 
 ---
 
@@ -128,12 +152,12 @@ python main.py
 ```
 
 ### Pruebas Automatizadas
-El proyecto cuenta con una suite de **40 pruebas unitarias** en `tests/` que validan:
+El proyecto cuenta con una suite de **55 pruebas unitarias** en `tests/` que validan:
 - Integridad de módulos, `HIDDEN_IMPORTS` de PyInstaller y compatibilidad con `sys.frozen=True` / `sys.stdout=None`.
 - Ausencia de comandos duplicados y validez de sintaxis AST de todos los scripts PowerShell en `resources/commands_config.json`.
-- Mapeo de perfiles de reportes HTML, esquema de advertencias pre-ejecución y controles de energía (`power_manager`).
+- Mapeo de perfiles de reportes HTML, esquema de advertencias pre-ejecución, paleta del tema claro *Soft Slate* y controles de energía (`power_manager`).
 - Higiene de código (sin emojis decorativos, sin `except:` desnudos y `CREATE_NO_WINDOW` en todos los subprocesos).
-- Módulos críticos: compresor multimedia, atributos de disco (`Diskpart`) y auditor de autenticidad USB.
+- Módulos críticos: motor de combos inteligentes (`combo_engine`), escáner de superficie (`surface_scanner`), borrado seguro (`sdelete_runner`), compresor multimedia, atributos de disco (`Diskpart`) y auditor de autenticidad USB.
 
 ```powershell
 .\.venv\Scripts\python.exe -m unittest discover -s tests -v
@@ -155,9 +179,14 @@ El ejecutable resultante se genera en `dist/Gui Cmd Advance Beta.exe` (o `dist/G
 ```text
 gui-cmd-advance/
 ├── main.py                      # Punto de entrada y enrutador CLI (--run-*)
-├── gui_app.py                   # Interfaz principal CustomTkinter, alertas y controles de energía
+├── gui_app.py                   # Interfaz principal CustomTkinter, combos, alertas y energía
+├── docs/
+│   └── images/                  # Capturas de pantalla reales de la UI y reportes HTML
 ├── functions/                   # Módulos internos (almacenamiento, multimedia, red, IA, energía, reportes)
 │   ├── cmd_executor.py          # Ejecución asíncrona de comandos y resolución __INTERNAL__
+│   ├── combo_engine.py          # Motor de combos inteligentes, herencia de contexto y cola encadenada
+│   ├── surface_scanner.py       # Escáner de superficie/sectores Win32 y reasignación segura (Remap)
+│   ├── sdelete_runner.py        # Integración Sysinternals SDelete con guardia de rutas y aviso SSD
 │   ├── power_manager.py         # Anti-suspensión (Win32) y apagado programado
 │   ├── report_generator.py      # Motor de reportes HTML por dominio
 │   ├── usb_auditor.py           # Auditoría de autenticidad y capacidad real (USB/SSD/HDD)
@@ -165,20 +194,20 @@ gui-cmd-advance/
 │   ├── compressor.py            # Compresor multimedia con memoria de tareas
 │   └── ...
 ├── resources/
-│   ├── commands_config.json     # Catálogo declarativo de categorías, comandos, args y warnings
-│   ├── custom_github_theme.json # Tema visual CustomTkinter
+│   ├── commands_config.json     # Catálogo declarativo de categorías, comandos, args, warnings y combos
+│   ├── custom_github_theme.json # Tema visual CustomTkinter (Oscuro + Soft Slate Claro)
 │   └── templates/
 │       └── base_report.html     # Plantilla HTML interactiva de reportes
 ├── scripts/
 │   └── build_exe.py             # Automatización de compilación PyInstaller
-└── tests/                       # Suite de pruebas unitarias e integridad
+└── tests/                       # Suite de pruebas unitarias e integridad (55 tests)
 ```
 
 ---
 
 ## Cómo Agregar Nuevos Comandos
 
-Los comandos se declaran en `resources/commands_config.json`. Cada entrada soporta argumentos dinámicos (`checkbox`, `entry`, `dropdown` con strings o pares `{"name", "value"}`, `radio_group`, `disk_dropdown`, `drive_dropdown`, etc.) y un bloque opcional `"warning"` para confirmación previa:
+Los comandos se declaran en `resources/commands_config.json`. Cada entrada soporta argumentos dinámicos (`checkbox`, `entry`, `dropdown` con strings o pares `{"name", "value"}`, `radio_group`, `disk_dropdown`, `drive_dropdown`, etc.), un bloque opcional `"warning"` para confirmación previa y un bloque opcional `"combos"` para sugerir pasos antes o después:
 
 ```json
 {
@@ -191,6 +220,14 @@ Los comandos se declaran en `resources/commands_config.json`. Cada entrada sopor
         "message": "Explica claramente qué cambios se aplicarán al sistema.",
         "skip_if_flag_in": ["--mode readonly"]
     },
+    "combos": [
+        {
+            "command": "Ver Discos Lógicos y Esquema GPT/MBR (Get-Disk)",
+            "when": "before",
+            "reason": "Verifica el número y estado de los discos antes de continuar.",
+            "auto_command": "powershell -Command \"Get-Disk | Format-Table -AutoSize\""
+        }
+    ],
     "args": [
         {
             "name": "Tiempo de Espera",
