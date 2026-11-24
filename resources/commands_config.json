@@ -1421,6 +1421,68 @@
                     }
                 },
                 {
+                    "name": "Esc\u00e1ner de Superficie y Sectores (HDD / SSD / USB)",
+                    "description": "Analiza la superficie f\u00edsica de un disco por bloques (sin cach\u00e9) para localizar sectores lentos o da\u00f1ados, mostrar un mapa visual 0%-100%, calcular la mayor zona sana contigua y (solo en HDD no-sistema) intentar reasignar sectores pendientes.",
+                    "command": "__INTERNAL__ --run-surface-scan",
+                    "args": [
+                        {
+                            "name": "Disco F\u00edsico (HDD / SSD / USB)",
+                            "flag": "--disk",
+                            "type": "disk_dropdown",
+                            "description": "Selecciona el disco f\u00edsico a escanear."
+                        },
+                        {
+                            "name": "Modo de Escaneo",
+                            "type": "radio_group",
+                            "options": [
+                                {
+                                    "name": "Muestreo R\u00e1pido (~250 zonas, 0 escritura, 1-2 min)",
+                                    "flag": "--mode quick"
+                                },
+                                {
+                                    "name": "Escaneo Completo de Superficie (0 escritura)",
+                                    "flag": "--mode scan"
+                                },
+                                {
+                                    "name": "Reasignar Sectores Pendientes (Remap con ceros — Solo HDD)",
+                                    "flag": "--mode remap"
+                                }
+                            ],
+                            "description": "Quick y Scan son 100% solo lectura. Remap sobrescribe con ceros unicamente los bloques defectuosos en discos mec\u00e1nicos (HDD) no-sistema para forzar su reasignaci\u00f3n SMART."
+                        },
+                        {
+                            "name": "Tama\u00f1o de Bloque",
+                            "flag": "--block-mb",
+                            "type": "dropdown",
+                            "options": [
+                                {
+                                    "name": "4 MB (Recomendado)",
+                                    "value": "4"
+                                },
+                                {
+                                    "name": "1 MB (Alta precisi\u00f3n)",
+                                    "value": "1"
+                                },
+                                {
+                                    "name": "8 MB (M\u00e1s r\u00e1pido en discos grandes)",
+                                    "value": "8"
+                                }
+                            ],
+                            "value": "4 MB (Recomendado)",
+                            "description": "Tama\u00f1o de cada bloque de lectura directa."
+                        }
+                    ],
+                    "warning": {
+                        "level": "danger",
+                        "title": "Reasignaci\u00f3n de Sectores con Escritura (Remap)",
+                        "message": "El modo Remap escribir\u00e1 ceros sobre los bloques defectuosos para forzar al firmware del HDD a reasignarlos. Cualquier archivo ubicado en esos sectores ser\u00e1 destruido. Bloqueado en discos de sistema y SSD.",
+                        "skip_if_flag_in": [
+                            "--mode quick",
+                            "--mode scan"
+                        ]
+                    }
+                },
+                {
                     "name": "Estado de Salud SMART Avanzado",
                     "description": "Abre un visor estilo CrystalDiskInfo para evaluar la salud f\u00edsica y temperatura de tus discos.",
                     "command": "__INTERNAL__ --run-smart-info",
@@ -1457,8 +1519,8 @@
             "commands": [
                 {
                     "name": "CHKDSK (Reparar Sistema de Archivos)",
-                    "description": "Busca y repara errores l\u00f3gicos en el sistema de archivos. NO funciona en discos RAW.",
-                    "command": "powershell -Command \"& {param($letra, [switch]$reparar, [switch]$forzar) $d = $letra.Trim(':') + ':'; $argList = $d; if($reparar){ $argList += ' /r' }; if($forzar){ $argList += ' /x' }; Write-Host 'Abriendo consola de CHKDSK para interactuar (se mostrara progreso en ventana nueva)...'; Start-Process chkdsk -ArgumentList $argList -Wait; Write-Host 'Proceso finalizado.' }\"",
+                    "description": "Busca y repara errores l\u00f3gicos y sectores defectuosos en NTFS/FAT32/exFAT. Detecta autom\u00e1ticamente si la unidad est\u00e1 en RAW.",
+                    "command": "powershell -Command \"& {param($letra, [switch]$reparar, [switch]$reevaluar, [switch]$online, [switch]$forzar) if([string]::IsNullOrWhiteSpace($letra)){ Write-Host 'Error: Selecciona una unidad.'; exit 1 } $l = $letra.Trim(':'); $d = $l + ':'; $vol = Get-Volume -DriveLetter $l -ErrorAction SilentlyContinue; if($vol -and ([string]::IsNullOrWhiteSpace($vol.FileSystem) -or $vol.FileSystem -eq 'RAW')){ Write-Host ('Error: La unidad ' + $d + ' esta en formato RAW. Realiza primero un Formato Rapido NTFS antes de ejecutar CHKDSK.'); exit 1 } $argList = $d; if($online){ $argList += ' /scan' } else { if($reevaluar){ $argList += ' /b' } elseif($reparar){ $argList += ' /r' } if($forzar){ $argList += ' /x' } } Write-Host ('Abriendo consola de CHKDSK (' + $argList + ')...'); Start-Process chkdsk -ArgumentList $argList -Wait; Write-Host 'Proceso finalizado.' }\"",
                     "args": [
                         {
                             "name": "Unidad (Letra)",
@@ -1473,6 +1535,18 @@
                             "description": "Localiza sectores defectuosos y recupera la informaci\u00f3n legible (puede tardar horas)."
                         },
                         {
+                            "name": "Re-evaluar Cl\u00fasteres Malos NTFS (/b)",
+                            "flag": "-reevaluar",
+                            "type": "checkbox",
+                            "description": "Solo NTFS: borra la lista previa de cl\u00fasteres defectuosos y vuelve a analizar todos los sectores (implica /r)."
+                        },
+                        {
+                            "name": "Escaneo en L\u00ednea sin Desmontar (/scan)",
+                            "flag": "-online",
+                            "type": "checkbox",
+                            "description": "Solo NTFS: ejecuta un an\u00e1lisis r\u00e1pido sin desmontar ni bloquear el acceso a la unidad."
+                        },
+                        {
                             "name": "Forzar Desmontaje (/x)",
                             "flag": "-forzar",
                             "type": "checkbox",
@@ -1482,7 +1556,7 @@
                     "warning": {
                         "level": "caution",
                         "title": "Reparaci\u00f3n de Sistema de Archivos (CHKDSK)",
-                        "message": "CHKDSK analizar\u00e1 la unidad y, si activaste reparaci\u00f3n o desmontaje forzado (/r, /x), podr\u00e1 desmontar temporalmente el volumen y reparar sectores."
+                        "message": "CHKDSK analizar\u00e1 la unidad y, si activaste /r, /b o /x, podr\u00e1 desmontar temporalmente el volumen y marcar sectores defectuosos."
                     }
                 },
                 {

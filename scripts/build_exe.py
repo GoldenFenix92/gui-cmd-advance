@@ -59,6 +59,7 @@ HIDDEN_IMPORTS = [
     "functions.report_generator",
     "functions.setup_manager",
     "functions.smart_info",
+    "functions.surface_scanner",
     "functions.tabular_viewer",
     "functions.task_memory",
     "functions.telemetry",

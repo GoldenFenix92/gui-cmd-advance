@@ -168,6 +168,11 @@ if __name__ == "__main__":
             sys.argv.pop(1)
             usb_auditor.main()
             sys.exit(0)
+        elif sys.argv[1] == "--run-surface-scan":
+            from functions import surface_scanner
+            sys.argv.pop(1)
+            surface_scanner.main()
+            sys.exit(0)
             
     if is_admin():
         hwnd = ctypes.windll.kernel32.GetConsoleWindow()

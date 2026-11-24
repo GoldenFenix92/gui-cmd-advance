@@ -49,7 +49,8 @@ def detect_report_profile(category="", title="", command=""):
     if any(k in blob for k in (
         "almacenamiento", "formateo y gestión", "formateo y gestion", "diagnóstico y salud", "diagnostico y salud",
         "recuperación de datos", "recuperacion de datos", "diskpart",
-        "--run-disk-attributes", "--run-usb-audit", "autenticidad", "get-disk", "get-physicaldisk",
+        "--run-disk-attributes", "--run-usb-audit", "--run-surface-scan", "superficie",
+        "autenticidad", "get-disk", "get-physicaldisk",
         "get-volume", "clear-disk", "format-volume", "initialize-disk", "optimize-volume",
         "chkdsk", "winfr", "photorec", "smart",
     )):
