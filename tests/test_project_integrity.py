@@ -447,6 +447,35 @@ class TestProjectIntegrity(unittest.TestCase):
         self.assertEqual(bare_except_hits, [], f"Bloques except: desnudos detectados: {bare_except_hits}")
         self.assertEqual(subprocess_hits, [], f"Llamadas subprocess sin CREATE_NO_WINDOW: {subprocess_hits}")
 
+    def test_progress_eta_colors_and_light_theme_contrast(self):
+        from gui_app import App
+
+        # 1. Duración y estimación ETA
+        self.assertEqual(App.format_duration(65), "01:05")
+        self.assertEqual(App.format_duration(3661), "01:01:01")
+        self.assertIsNone(App.estimate_remaining_seconds(10, 0.5))
+        self.assertEqual(App.estimate_remaining_seconds(60, 50.0), 60)
+        self.assertEqual(App.estimate_remaining_seconds(120, 100.0), 0)
+
+        # 2. Colores dinámicos de Progreso (Rojo -> Naranja -> Amarillo -> Verde) y ETA viceversa
+        self.assertEqual(App.get_progress_color(10), "#dc3545")
+        self.assertEqual(App.get_progress_color(35), "#fd7e14")
+        self.assertEqual(App.get_progress_color(85), "#28a745")
+
+        self.assertEqual(App.get_eta_color(10), "#28a745")
+        self.assertEqual(App.get_eta_color(60), "#fd7e14")
+        self.assertEqual(App.get_eta_color(85), "#dc3545")
+        self.assertEqual(App.get_eta_color(100), "#28a745")
+
+        # 3. Tema claro tiene jerarquía visual distinta entre ventana, paneles y consola
+        theme_path = os.path.join(PROJECT_ROOT, "resources", "custom_github_theme.json")
+        with open(theme_path, "r", encoding="utf-8") as f:
+            theme = json.load(f)
+        win_bg = theme["CTk"]["fg_color"][0].lower()
+        frame_bg = theme["CTkFrame"]["fg_color"][0].lower()
+        box_bg = theme["CTkTextbox"]["fg_color"][0].lower()
+        self.assertEqual(len({win_bg, frame_bg, box_bg}), 3, "Modo claro debe diferenciar ventana, paneles y consola")
+
 
 if __name__ == "__main__":
     unittest.main()

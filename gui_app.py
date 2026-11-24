@@ -161,6 +161,9 @@ class App(ctk.CTk):
         self.lbl_progress = ctk.CTkLabel(self.progress_frame, text="Listo (0%)", font=("Consolas", 12, "bold"), anchor="e")
         self.lbl_progress.grid(row=0, column=1, padx=(10, 0), sticky="e")
 
+        self.lbl_eta = ctk.CTkLabel(self.progress_frame, text="ETA: --:--", font=("Consolas", 12, "bold"), anchor="e")
+        self.lbl_eta.grid(row=0, column=2, padx=(10, 0), sticky="e")
+
         # Export Buttons
         self.btn_frame = ctk.CTkFrame(self.right_frame, fg_color="transparent")
         self.btn_frame.grid(row=3, column=0, padx=10, pady=(0, 5), sticky="sw")
@@ -229,7 +232,15 @@ class App(ctk.CTk):
         self.auto_clear_cb.pack(side="left", padx=(0, 10))
         if CTkToolTip: CTkToolTip(self.auto_clear_cb, message="Limpiar la consola antes de ejecutar un nuevo comando")
 
-        self.clear_btn = ctk.CTkButton(self.clear_frame, text="Limpiar", width=100, fg_color="transparent", text_color=("#24292F", "#C9D1D9"), command=self.clear_output)
+        self.clear_btn = ctk.CTkButton(
+            self.clear_frame,
+            text="Limpiar",
+            width=100,
+            fg_color="#D97706",
+            hover_color="#B45309",
+            text_color="#FFFFFF",
+            command=self.clear_output,
+        )
         self.clear_btn.pack(side="left")
         if CTkToolTip: CTkToolTip(self.clear_btn, message="Limpiar la consola manualmente (Ctrl+L)")
 
@@ -1371,12 +1382,76 @@ class App(ctk.CTk):
             pass
         return None
 
-    def _format_elapsed(self):
-        import time
-        elapsed = int(max(0, time.time() - getattr(self, "_cmd_start_time", time.time())))
-        h, rem = divmod(elapsed, 3600)
+    @staticmethod
+    def format_duration(seconds):
+        sec = int(max(0, seconds))
+        h, rem = divmod(sec, 3600)
         m, s = divmod(rem, 60)
         return f"{h:02d}:{m:02d}:{s:02d}" if h > 0 else f"{m:02d}:{s:02d}"
+
+    @staticmethod
+    def estimate_remaining_seconds(elapsed_sec, pct):
+        """Estima segundos restantes según tiempo transcurrido y porcentaje completado."""
+        try:
+            p = float(pct)
+            e = float(elapsed_sec)
+        except Exception:
+            return None
+        if p >= 100.0:
+            return 0
+        if p < 1.0 or e < 1.0:
+            return None
+        return int(max(0.0, e * (100.0 - p) / p))
+
+    @staticmethod
+    def get_progress_color(pct):
+        """Escala de avance (0% -> 100%): Rojo -> Naranja -> Amarillo/Ámbar -> Verde."""
+        p = max(0.0, min(100.0, float(pct)))
+        if p < 25.0:
+            return "#dc3545"  # Rojo
+        if p < 50.0:
+            return "#fd7e14"  # Naranja
+        if p < 75.0:
+            return ("#B45309", "#ffc107")  # Ámbar en claro / Amarillo en oscuro
+        return "#28a745"  # Verde
+
+    @staticmethod
+    def get_eta_color(pct):
+        """Escala inversa para el ETA: Verde al inicio -> Amarillo -> Naranja -> Rojo cerca del final (Verde al completar)."""
+        p = max(0.0, min(100.0, float(pct)))
+        if p >= 100.0:
+            return "#28a745"  # Completado (00:00)
+        if p < 25.0:
+            return "#28a745"  # Verde
+        if p < 50.0:
+            return ("#B45309", "#ffc107")  # Amarillo/Ámbar
+        if p < 75.0:
+            return "#fd7e14"  # Naranja
+        return "#dc3545"  # Rojo
+
+    def _get_elapsed_seconds(self):
+        import time
+        return max(0.0, time.time() - getattr(self, "_cmd_start_time", time.time()))
+
+    def _format_elapsed(self):
+        return self.format_duration(self._get_elapsed_seconds())
+
+    def _refresh_progress_labels(self, pct, detail=None):
+        elapsed_sec = self._get_elapsed_seconds()
+        elapsed_str = self.format_duration(elapsed_sec)
+        if hasattr(self, 'lbl_progress'):
+            prefix = f"{detail}: " if detail else ""
+            self.lbl_progress.configure(
+                text=f"{prefix}{pct:.0f}% ({elapsed_str})",
+                text_color=self.get_progress_color(pct),
+            )
+        if hasattr(self, 'lbl_eta'):
+            rem = self.estimate_remaining_seconds(elapsed_sec, pct)
+            eta_str = self.format_duration(rem) if rem is not None else "--:--"
+            self.lbl_eta.configure(
+                text=f"ETA: {eta_str}",
+                text_color=self.get_eta_color(pct),
+            )
 
     def _set_determinate_progress(self, pct, detail=None):
         if not hasattr(self, 'progressbar'):
@@ -1392,23 +1467,21 @@ class App(ctk.CTk):
         self._last_progress_pct = pct_clamped
         self._last_progress_detail = detail
         self.progressbar.set(pct_clamped / 100.0)
-        if hasattr(self, 'lbl_progress'):
-            elapsed = self._format_elapsed()
-            prefix = f"{detail}: " if detail else ""
-            self.lbl_progress.configure(text=f"{prefix}{pct_clamped:.0f}% ({elapsed})")
+        self._refresh_progress_labels(pct_clamped, detail=detail)
 
     def _tick_progress_timer(self):
         if not getattr(self, "is_running", False):
             return
-        if hasattr(self, 'lbl_progress'):
+        if getattr(self, "_has_determinate_progress", False):
+            pct = getattr(self, "_last_progress_pct", 0.0)
+            detail = getattr(self, "_last_progress_detail", None)
+            self._refresh_progress_labels(pct, detail=detail)
+        else:
             elapsed = self._format_elapsed()
-            if getattr(self, "_has_determinate_progress", False):
-                pct = getattr(self, "_last_progress_pct", 0.0)
-                detail = getattr(self, "_last_progress_detail", None)
-                prefix = f"{detail}: " if detail else ""
-                self.lbl_progress.configure(text=f"{prefix}{pct:.0f}% ({elapsed})")
-            else:
-                self.lbl_progress.configure(text=f"Ejecutando... ({elapsed})")
+            if hasattr(self, 'lbl_progress'):
+                self.lbl_progress.configure(text=f"Ejecutando... ({elapsed})", text_color="#dc3545")
+            if hasattr(self, 'lbl_eta'):
+                self.lbl_eta.configure(text="ETA: --:--", text_color="#28a745")
         self._progress_timer_id = self.after(1000, self._tick_progress_timer)
 
     def _start_storage_job_monitor(self, command_str):
@@ -1466,7 +1539,9 @@ class App(ctk.CTk):
             except Exception:
                 self.progressbar.set(0)
             if hasattr(self, 'lbl_progress'):
-                self.lbl_progress.configure(text="Ejecutando... (00:00)")
+                self.lbl_progress.configure(text="Ejecutando... (00:00)", text_color="#dc3545")
+            if hasattr(self, 'lbl_eta'):
+                self.lbl_eta.configure(text="ETA: --:--", text_color="#28a745")
 
         self.append_output(f"\n> {command_str}\n")
         self.is_running = True
@@ -1520,12 +1595,16 @@ class App(ctk.CTk):
                 if rc == 0:
                     self.progressbar.set(1.0)
                     if hasattr(self, 'lbl_progress'):
-                        self.lbl_progress.configure(text=f"100% Completado ({elapsed})")
+                        self.lbl_progress.configure(text=f"100% Completado ({elapsed})", text_color="#28a745")
+                    if hasattr(self, 'lbl_eta'):
+                        self.lbl_eta.configure(text="ETA: 00:00", text_color="#28a745")
                 else:
                     last_pct = getattr(self, "_last_progress_pct", 0.0) if getattr(self, "_has_determinate_progress", False) else 0.0
                     self.progressbar.set(last_pct / 100.0)
                     if hasattr(self, 'lbl_progress'):
-                        self.lbl_progress.configure(text=f"Detenido / Error ({elapsed})")
+                        self.lbl_progress.configure(text=f"Detenido / Error ({elapsed})", text_color="#dc3545")
+                    if hasattr(self, 'lbl_eta'):
+                        self.lbl_eta.configure(text="ETA: --:--", text_color="#dc3545")
 
             self.execute_btn.configure(text="Ejecutar Comando", fg_color=["#1F883D", "#238636"], hover_color=["#1A7F37", "#2EA043"])
             self.cat_menu.configure(state="normal")
