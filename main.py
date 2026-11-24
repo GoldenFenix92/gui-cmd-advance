@@ -173,6 +173,11 @@ if __name__ == "__main__":
             sys.argv.pop(1)
             surface_scanner.main()
             sys.exit(0)
+        elif sys.argv[1] == "--run-sdelete":
+            from functions import sdelete_runner
+            sys.argv.pop(1)
+            sdelete_runner.main()
+            sys.exit(0)
             
     if is_admin():
         hwnd = ctypes.windll.kernel32.GetConsoleWindow()

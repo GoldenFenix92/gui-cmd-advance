@@ -50,6 +50,17 @@ PLUGINS = {
         "is_zip": False,
         "size_str": "~1MB",
         "cmds": ["__INTERNAL__ --run-7z"]
+    },
+    "sdelete": {
+        "id": "sdelete",
+        "name": "Sysinternals SDelete (Borrado Seguro)",
+        "filename": "sdelete64.exe",
+        "desc": "Habilita: Borrado seguro irreversible de archivos/carpetas y sanitización de espacio libre (Microsoft Sysinternals).",
+        "url": "https://download.sysinternals.com/files/SDelete.zip",
+        "is_zip": True,
+        "zip_target": "sdelete64.exe",
+        "size_str": "~500KB",
+        "cmds": ["__INTERNAL__ --run-sdelete"]
     }
 }
 

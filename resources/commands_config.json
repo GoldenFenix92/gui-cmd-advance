@@ -538,6 +538,82 @@
                     "args": []
                 },
                 {
+                    "name": "Borrado Seguro Irreversible (SDelete)",
+                    "description": "Destruye archivos o carpetas de forma irreversible o sanitiza el espacio libre de una unidad usando Microsoft Sysinternals SDelete (plugin oficial). Ideal antes de vender/donar un HDD o USB, borrar documentos confidenciales o compactar discos virtuales (-z). En SSD se recomienda 1 pasada (-p 1), TRIM o BitLocker para evitar desgaste innecesario (TBW).",
+                    "command": "__INTERNAL__ --run-sdelete",
+                    "args": [
+                        {
+                            "name": "Modo de Operaci\u00f3n",
+                            "type": "radio_group",
+                            "options": [
+                                {
+                                    "name": "Destruir Archivo o Carpeta (Irreversible)",
+                                    "flag": "--mode file"
+                                },
+                                {
+                                    "name": "Rellenar Espacio Libre con Ceros (-z, ideal para VMs y USB)",
+                                    "flag": "--mode free-zero"
+                                },
+                                {
+                                    "name": "Limpiar Espacio Libre Seguro (-c, anti-recuperaci\u00f3n HDD)",
+                                    "flag": "--mode free-clean"
+                                }
+                            ],
+                            "description": "Elige si deseas destruir un archivo/carpeta espec\u00edfico o sanitizar el espacio libre de una unidad sin borrar los archivos existentes."
+                        },
+                        {
+                            "name": "Archivo o Carpeta a Destruir (Modo Archivo)",
+                            "flag": "--target",
+                            "type": "file_entry",
+                            "description": "Ruta del archivo o carpeta a destruir permanentemente (solo se usa en modo Archivo/Carpeta; ra\u00edces y carpetas de Windows est\u00e1n bloqueadas por seguridad)."
+                        },
+                        {
+                            "name": "Unidad para Espacio Libre (Modos -z / -c)",
+                            "flag": "--drive",
+                            "type": "drive_dropdown",
+                            "description": "Letra de unidad cuyo espacio libre ser\u00e1 sobrescrito (solo se usa en modos -z o -c; no borra archivos actuales)."
+                        },
+                        {
+                            "name": "N\u00famero de Pasadas (-p)",
+                            "flag": "--passes",
+                            "type": "dropdown",
+                            "options": [
+                                {
+                                    "name": "1 pasada (Recomendado — r\u00e1pido y seguro para SSD/HDD)",
+                                    "value": "1"
+                                },
+                                {
+                                    "name": "3 pasadas (Est\u00e1ndar DoD — solo recomendado en HDD)",
+                                    "value": "3"
+                                },
+                                {
+                                    "name": "7 pasadas (M\u00e1xima seguridad — solo HDD, muy lento)",
+                                    "value": "7"
+                                }
+                            ],
+                            "value": "1 pasada (Recomendado — r\u00e1pido y seguro para SSD/HDD)",
+                            "description": "Cantidad de sobrescrituras. Por defecto 1 pasada. En SSD evita 3 o 7 pasadas porque desgastan la memoria NAND sin garantizar borrado de bloques reasignados por wear leveling."
+                        },
+                        {
+                            "name": "Incluir Subcarpetas (-s)",
+                            "flag": "--recursive",
+                            "type": "checkbox",
+                            "description": "En modo Archivo/Carpeta, destruye recursivamente todo el contenido de las subcarpetas."
+                        },
+                        {
+                            "name": "Quitar Solo Lectura (-r)",
+                            "flag": "--remove-readonly",
+                            "type": "checkbox",
+                            "description": "Remueve el atributo de solo lectura antes de sobrescribir y eliminar el archivo."
+                        }
+                    ],
+                    "warning": {
+                        "level": "danger",
+                        "title": "Borrado Seguro Irreversible (SDelete)",
+                        "message": "Los datos eliminados o el espacio libre sobrescrito con SDelete NO podr\u00e1n recuperarse con ninguna herramienta (ni WINFR ni PhotoRec). Si seleccionas un SSD, recuerda usar 1 sola pasada (-p 1) o TRIM/BitLocker para evitar desgaste innecesario de la unidad."
+                    }
+                },
+                {
                     "name": "Gestor de Firewall",
                     "description": "Habilita o deshabilita el Firewall de Windows en los perfiles Dominio, P\u00fablico y Privado. \u00datil temporalmente para diagnosticar bloqueos de red local. Requiere permisos de Administrador.",
                     "command": "powershell -Command \"& {param($op) try { if($op -eq 'on'){ Set-NetFirewallProfile -Profile Domain,Public,Private -Enabled True -ErrorAction Stop; Write-Host 'Firewall Habilitado.' } elseif($op -eq 'off'){ Set-NetFirewallProfile -Profile Domain,Public,Private -Enabled False -ErrorAction Stop; Write-Host 'Firewall Deshabilitado.' } else { throw 'Selecciona una opcion valida (on/off).' } } catch { Write-Host ('Error: ' + $_.Exception.Message); exit 1 } }\"",

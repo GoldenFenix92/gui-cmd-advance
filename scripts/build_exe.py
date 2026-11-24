@@ -57,6 +57,7 @@ HIDDEN_IMPORTS = [
     "functions.power_manager",
     "functions.process_manager",
     "functions.report_generator",
+    "functions.sdelete_runner",
     "functions.setup_manager",
     "functions.smart_info",
     "functions.surface_scanner",

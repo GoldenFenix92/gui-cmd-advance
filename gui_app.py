@@ -1201,9 +1201,10 @@ class App(ctk.CTk):
         cmd_str = self.preview_var.get()
         if not cmd_str: return
         
-        # Extraer posibles letras de unidad (ej. C:\ o E:\)
+        # Extraer posibles letras de unidad (ej. C:\, E:\ o --drive E:)
         import re, threading, subprocess
         drives = set(re.findall(r'([A-Za-z]):[\\/]', cmd_str))
+        drives.update(re.findall(r'--drive\s+([A-Za-z]):?', cmd_str, flags=re.IGNORECASE))
         
         # Si no hay unidades evidentes, ejecutamos normal
         if not drives:
@@ -1239,6 +1240,12 @@ class App(ctk.CTk):
                                     warnings.append(f"• Vas a ejecutar CHKDSK /R en un SSD ({d}:). Esto causa desgaste y escrituras masivas innecesarias. En SSDs, los sectores se reasignan automáticamente por firmware.")
                                 if "clear-disk" in cmd_lower:
                                     warnings.append(f"• CUIDADO: Clear-Disk borrará TODA la información y particiones del SSD ({d}:) de forma irrecuperable.")
+                                if "--run-sdelete" in cmd_lower:
+                                    warnings.append(
+                                        f"• ADVERTENCIA SSD ({d}:): Vas a ejecutar SDelete sobre un SSD. Debido al wear leveling (nivelación de desgaste), "
+                                        "sobrescribir espacio o usar múltiples pasadas desgasta los ciclos de vida (TBW) sin garantizar el borrado de bloques reasignados.\n"
+                                        "  Modo seguro recomendado en SSD: utiliza 1 sola pasada (-p 1), ejecuta Optimizar/TRIM o utiliza cifrado BitLocker."
+                                    )
             except Exception as e:
                 pass
                 

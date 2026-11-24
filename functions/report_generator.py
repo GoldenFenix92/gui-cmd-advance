@@ -63,7 +63,7 @@ def detect_report_profile(category="", title="", command=""):
         return "network"
 
     if any(k in blob for k in (
-        "seguridad", "privacidad", "permisos", "--run-vault", "firewall",
+        "seguridad", "privacidad", "permisos", "--run-vault", "--run-sdelete", "sdelete", "firewall",
         "icacls", "takeown", "attrib", "eventos de seguridad", "cmdkey", "credenciales",
     )):
         return "security"

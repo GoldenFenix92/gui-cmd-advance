@@ -35,9 +35,10 @@ This file tracks the commands that are planned, in progress, and completed for t
 - [x] Reiniciar Explorador de Windows
 - [x] Limpieza Selectiva de Temporales
 
-## Seguridad y Permisos (7)
+## Seguridad y Permisos (8)
 
 - [x] Credenciales de Red (Bóveda)
+- [x] Borrado Seguro Irreversible (SDelete)
 - [x] Gestor de Firewall
 - [x] Verificar Permisos de Archivo/Carpeta (icacls)
 - [x] Conceder Control Total (icacls)
