@@ -45,6 +45,7 @@ HIDDEN_IMPORTS = [
     "CTkToolTip",
     "functions.advanced_search",
     "functions.cmd_executor",
+    "functions.combo_engine",
     "functions.compressor",
     "functions.credentials_vault_cli",
     "functions.disk_attributes",

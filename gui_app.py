@@ -202,11 +202,24 @@ class App(ctk.CTk):
             text="Apagar PC al finalizar",
             variable=self.shutdown_after_var,
         )
-        self.shutdown_after_cb.pack(side="left")
+        self.shutdown_after_cb.pack(side="left", padx=(0, 18))
         if CTkToolTip:
             CTkToolTip(
                 self.shutdown_after_cb,
                 message="Al terminar la ejecución, inicia una cuenta regresiva cancelable de 60s para apagar el equipo. Si ocurre un error, guarda un reporte HTML en el Escritorio antes de apagar.",
+            )
+
+        self.combo_suggestions_var = ctk.BooleanVar(value=True)
+        self.combo_suggestions_cb = ctk.CTkCheckBox(
+            self.power_frame,
+            text="Sugerencias de combos",
+            variable=self.combo_suggestions_var,
+        )
+        self.combo_suggestions_cb.pack(side="left")
+        if CTkToolTip:
+            CTkToolTip(
+                self.combo_suggestions_cb,
+                message="Muestra un modal con funciones recomendadas antes (Protocolo Seguro) o después del comando actual para encadenarlas automáticamente.",
             )
 
         # Dashboard (Status Bar)
@@ -1182,18 +1195,250 @@ class App(ctk.CTk):
         cancel_btn.focus_set()
         state["timer_id"] = win.after(1000, tick)
 
+    def navigate_to_command(self, target_cmd_name):
+        """Navega automáticamente a la categoría y comando indicado."""
+        if hasattr(self, "search_var") and self.search_var.get():
+            self.search_var.set("")
+        for cat in self.commands_config.get("categories", []):
+            cname = cat.get("name", "")
+            for cmd in cat.get("commands", []):
+                if cmd.get("name") == target_cmd_name:
+                    self.cat_var.set(cname)
+                    self.on_category_change(cname)
+                    self.cmd_var.set(target_cmd_name)
+                    self.on_command_change(target_cmd_name)
+                    return True
+        return False
+
+    def show_combo_suggestions_dialog(self, main_cmd_name, before_list, after_list):
+        """Muestra un modal con sugerencias de combo (Protocolo Seguro ANTES y Continuación DESPUÉS)
+        y checkbox para autoejecutar la cola completa en un solo clic.
+
+        Retorna None si el usuario cancela, o (selected_before, selected_after, auto_execute).
+        """
+        from functions.utils import apply_window_theme
+
+        result = {"action": None, "before": [], "after": [], "auto_execute": True}
+        before_vars = []
+        after_vars = []
+        auto_exec_var = ctk.BooleanVar(value=True)
+
+        win = ctk.CTkToplevel(self)
+        win.title(f"Sugerencias de Combo — {main_cmd_name}")
+        win.geometry("640x510")
+        win.resizable(False, False)
+        win.transient(self)
+        win.grab_set()
+
+        win.update_idletasks()
+        x = int(self.winfo_x() + (self.winfo_width() / 2) - 320)
+        y = int(self.winfo_y() + (self.winfo_height() / 2) - 255)
+        win.geometry(f"+{x}+{y}")
+        apply_window_theme(win)
+
+        header = ctk.CTkFrame(win, fg_color="#1F6AA5", corner_radius=6)
+        header.pack(fill="x", padx=18, pady=(16, 10))
+        ctk.CTkLabel(
+            header,
+            text=f"Combos Recomendados para: {main_cmd_name}",
+            font=("Segoe UI", 14, "bold"),
+            text_color="#FFFFFF",
+            wraplength=580,
+            justify="left",
+        ).pack(padx=12, pady=10, anchor="w")
+
+        scroll = ctk.CTkScrollableFrame(win, fg_color="transparent")
+        scroll.pack(fill="both", expand=True, padx=16, pady=(0, 8))
+
+        confirm_btn_ref = {"btn": None}
+
+        def refresh_confirm_label(*_args):
+            btn = confirm_btn_ref["btn"]
+            if not btn:
+                return
+            sel_count = sum(1 for v, _ in before_vars if v.get()) + sum(1 for v, _ in after_vars if v.get())
+            total_steps = 1 + sel_count
+            if sel_count > 0 and auto_exec_var.get():
+                btn.configure(text=f"Ejecutar Servicio ({total_steps} pasos)")
+            else:
+                btn.configure(text="Aceptar y Continuar")
+
+        def add_section(title_txt, accent_color, items, target_vars):
+            ctk.CTkLabel(
+                scroll,
+                text=title_txt,
+                font=("Segoe UI", 13, "bold"),
+                text_color=accent_color,
+                anchor="w",
+            ).pack(fill="x", pady=(6, 4))
+            for item in items:
+                var = ctk.BooleanVar(value=False)
+                var.trace_add("write", refresh_confirm_label)
+                target_vars.append((var, item))
+                mode_tag = "[Automático en cola]" if item["mode"] == "auto" else "[Abrir para configurar]"
+                row = ctk.CTkFrame(scroll, corner_radius=6)
+                row.pack(fill="x", pady=4)
+                cb = ctk.CTkCheckBox(
+                    row,
+                    text=f"{item['command']}  {mode_tag}",
+                    variable=var,
+                    font=("Segoe UI", 12, "bold"),
+                )
+                cb.pack(anchor="w", padx=10, pady=(8, 2))
+                if item.get("reason"):
+                    ctk.CTkLabel(
+                        row,
+                        text=item["reason"],
+                        font=("Segoe UI", 11),
+                        wraplength=550,
+                        justify="left",
+                        anchor="w",
+                    ).pack(fill="x", padx=34, pady=(0, 8))
+
+        if before_list:
+            add_section(
+                "PROTOCOLO SEGURO — Ejecutar ANTES de tu comando (tu comando esperará al terminar):",
+                ("#B45309", "#F39C12"),
+                before_list,
+                before_vars,
+            )
+        if after_list:
+            add_section(
+                "CONTINUACIÓN — Ejecutar o abrir DESPUÉS de tu comando:",
+                ("#1F883D", "#2EA043"),
+                after_list,
+                after_vars,
+            )
+
+        opt_bar = ctk.CTkFrame(win, corner_radius=6)
+        opt_bar.pack(fill="x", padx=18, pady=(2, 10))
+        auto_cb = ctk.CTkCheckBox(
+            opt_bar,
+            text="Autoejecutar cola completa en un solo clic (servicio continuo sin pausas)",
+            variable=auto_exec_var,
+            font=("Segoe UI", 12, "bold"),
+        )
+        auto_cb.pack(anchor="w", padx=10, pady=8)
+        auto_exec_var.trace_add("write", refresh_confirm_label)
+        if CTkToolTip:
+            CTkToolTip(
+                auto_cb,
+                message="Activo: ejecuta de corrido todos los pasos automáticos seleccionados. Desactivado: abre el siguiente paso al terminar para que lo revises antes de ejecutar.",
+            )
+
+        btn_row = ctk.CTkFrame(win, fg_color="transparent")
+        btn_row.pack(fill="x", padx=18, pady=(2, 14))
+
+        def on_cancel():
+            result["action"] = None
+            win.destroy()
+
+        def on_only_main():
+            result["action"] = "run"
+            result["before"] = []
+            result["after"] = []
+            result["auto_execute"] = False
+            win.destroy()
+
+        def on_confirm():
+            result["action"] = "run"
+            result["before"] = [it for v, it in before_vars if v.get()]
+            result["after"] = [it for v, it in after_vars if v.get()]
+            result["auto_execute"] = bool(auto_exec_var.get())
+            win.destroy()
+
+        ctk.CTkButton(
+            btn_row,
+            text="Cancelar",
+            width=110,
+            fg_color="transparent",
+            border_width=1,
+            text_color=("#24292F", "#C9D1D9"),
+            command=on_cancel,
+        ).pack(side="left")
+
+        ctk.CTkButton(
+            btn_row,
+            text="Solo mi comando",
+            width=145,
+            fg_color="#64748B",
+            hover_color="#475569",
+            text_color="#FFFFFF",
+            command=on_only_main,
+        ).pack(side="right", padx=(8, 0))
+
+        confirm_btn = ctk.CTkButton(
+            btn_row,
+            text="Aceptar y Continuar",
+            width=215,
+            fg_color="#1F883D",
+            hover_color="#1A7F37",
+            text_color="#FFFFFF",
+            font=("Segoe UI", 13, "bold"),
+            command=on_confirm,
+        )
+        confirm_btn.pack(side="right")
+        confirm_btn_ref["btn"] = confirm_btn
+
+        win.bind("<Escape>", lambda e: on_cancel())
+        win.protocol("WM_DELETE_WINDOW", on_cancel)
+        self.wait_window(win)
+        if result["action"] != "run":
+            return None
+        return result["before"], result["after"], result["auto_execute"]
+
     def toggle_execution(self):
         if self.is_running:
             self._stopped_by_user = True
+            self._execution_queue = []
             cmd_executor.stop_command()
         else:
             cmd_str = self.preview_var.get()
             if not cmd_str:
                 return
-            cmd_data = self.get_command_data(self.cmd_var.get())
-            warning = self.get_active_warning(cmd_data, cmd_str)
+            cmd_name = self.cmd_var.get()
+            cmd_data = self.get_command_data(cmd_name)
+            self._pending_queue = None
+            unified_warning = None
+
+            if getattr(self, "combo_suggestions_var", None) and self.combo_suggestions_var.get():
+                from functions import combo_engine
+                ctx = combo_engine.extract_command_context(cmd_str)
+                before_list, after_list = combo_engine.get_command_combos(cmd_data, context=ctx)
+                if before_list or after_list:
+                    choice = self.show_combo_suggestions_dialog(cmd_name, before_list, after_list)
+                    if choice is None:
+                        return
+                    sel_before, sel_after, auto_exec = choice
+                    queue = combo_engine.build_execution_queue(
+                        cmd_name,
+                        cmd_str,
+                        sel_before,
+                        sel_after,
+                        auto_execute=auto_exec,
+                        context=ctx,
+                    )
+                    nav_before = [s for s in queue if s["role"] == "before" and s["mode"] == "navigate"]
+                    if nav_before:
+                        prereq_name = nav_before[0]["name"]
+                        self.navigate_to_command(prereq_name)
+                        self.append_output(
+                            f"\n[COMBO - PROTOCOLO SEGURO] Configura y ejecuta primero '{prereq_name}' antes de continuar con '{cmd_name}'.\n"
+                        )
+                        return
+                    if len(queue) > 1:
+                        self._pending_queue = queue
+                        all_cmds = {
+                            c["name"]: c
+                            for cat in self.commands_config.get("categories", [])
+                            for c in cat.get("commands", [])
+                        }
+                        unified_warning = combo_engine.build_unified_warning(queue, all_cmds)
+
+            warning = unified_warning if unified_warning else self.get_active_warning(cmd_data, cmd_str)
             if warning:
                 if not self.show_execution_warning_dialog(warning, cmd_str):
+                    self._pending_queue = None
                     return
             self.check_drives_and_run()
 
@@ -1534,23 +1779,17 @@ class App(ctk.CTk):
         if hasattr(self, 'auto_clear_var') and self.auto_clear_var.get():
             self.clear_output()
 
-        self._cmd_start_time = time.time()
-        self._has_determinate_progress = False
-        self._last_progress_pct = 0.0
-        self._last_progress_detail = None
+        current_cmd_name = self.cmd_var.get()
+        pending = getattr(self, "_pending_queue", None)
+        self._pending_queue = None
+        if pending:
+            self._execution_queue = list(pending)
+        else:
+            self._execution_queue = [{"name": current_cmd_name, "cmd_str": command_str, "mode": "auto", "role": "main"}]
+        self._queue_total = len(self._execution_queue)
+        self._queue_step_idx = 0
+        self._queue_had_error = False
 
-        if hasattr(self, 'progressbar'):
-            try:
-                self.progressbar.configure(mode="indeterminate")
-                self.progressbar.start()
-            except Exception:
-                self.progressbar.set(0)
-            if hasattr(self, 'lbl_progress'):
-                self.lbl_progress.configure(text="Ejecutando... (00:00)", text_color="#dc3545")
-            if hasattr(self, 'lbl_eta'):
-                self.lbl_eta.configure(text="ETA: --:--", text_color="#28a745")
-
-        self.append_output(f"\n> {command_str}\n")
         self.is_running = True
         self._stopped_by_user = False
         self._active_keep_awake = bool(getattr(self, "keep_awake_var", None) and self.keep_awake_var.get())
@@ -1558,7 +1797,6 @@ class App(ctk.CTk):
             from functions import power_manager
             if power_manager.prevent_sleep(keep_display=False):
                 self.append_output("[ENERGÍA] Anti-suspensión/hibernación activo durante la ejecución (la pantalla podrá apagarse normalmente).\n")
-        current_cmd_name = self.cmd_var.get()
         self.execute_btn.configure(text="Detener ejecución", fg_color="red", hover_color="#8B0000")
         self.cat_menu.configure(state="disabled")
         self.cmd_menu.configure(state="disabled")
@@ -1571,11 +1809,9 @@ class App(ctk.CTk):
             try: os.remove(flag_file)
             except Exception: pass
 
-        self._tick_progress_timer()
-        self._start_storage_job_monitor(command_str)
-
-        def on_finish():
+        def finalize_all(last_rc, last_step_name, last_cmd_str, next_navigate_name=None):
             self.is_running = False
+            self._execution_queue = []
             if getattr(self, "_active_keep_awake", False):
                 try:
                     from functions import power_manager
@@ -1592,14 +1828,13 @@ class App(ctk.CTk):
                 self._progress_timer_id = None
 
             elapsed = self._format_elapsed()
-            rc = cmd_executor.get_last_returncode()
             if hasattr(self, 'progressbar'):
                 try:
                     self.progressbar.stop()
                     self.progressbar.configure(mode="determinate")
                 except Exception:
                     pass
-                if rc == 0:
+                if last_rc == 0 and not self._queue_had_error:
                     self.progressbar.set(1.0)
                     if hasattr(self, 'lbl_progress'):
                         self.lbl_progress.configure(text=f"100% Completado ({elapsed})", text_color="#28a745")
@@ -1618,22 +1853,91 @@ class App(ctk.CTk):
             self.cmd_menu.configure(state="normal")
             self.pause_btn.pack_forget()
 
+            if next_navigate_name and not getattr(self, "_stopped_by_user", False):
+                self.navigate_to_command(next_navigate_name)
+                self.append_output(
+                    f"\n[COMBO] Siguiente paso listo para configurar y ejecutar: '{next_navigate_name}'.\n"
+                )
+
             should_shutdown = bool(getattr(self, "shutdown_after_var", None) and self.shutdown_after_var.get())
             if should_shutdown and not getattr(self, "_stopped_by_user", False):
                 self.shutdown_after_var.set(False)
-                had_error = rc != 0
+                had_error = (last_rc != 0) or self._queue_had_error
                 report_path = None
                 if had_error:
-                    report_path = self._save_error_report_to_desktop(current_cmd_name, command_str)
+                    report_path = self._save_error_report_to_desktop(last_step_name, last_cmd_str)
                     if report_path:
                         self.append_output(f"\n[ENERGÍA] Error detectado: reporte HTML guardado en Escritorio -> {report_path}\n")
                 self.show_shutdown_countdown_dialog(seconds=60, had_error=had_error, report_path=report_path)
 
-        cmd_executor.execute_command_async(
-            command_string=command_str,
-            output_callback=self.append_output,
-            finished_callback=lambda: self.after(0, on_finish)
-        )
+        def run_next_step():
+            if not self._execution_queue or getattr(self, "_stopped_by_user", False):
+                finalize_all(0, current_cmd_name, command_str)
+                return
+
+            step = self._execution_queue.pop(0)
+            self._queue_step_idx += 1
+
+            if step["mode"] == "navigate":
+                finalize_all(0, step["name"], command_str, next_navigate_name=step["name"])
+                return
+
+            self._cmd_start_time = time.time()
+            self._has_determinate_progress = False
+            self._last_progress_pct = 0.0
+            self._last_progress_detail = None
+
+            if hasattr(self, 'progressbar'):
+                try:
+                    self.progressbar.configure(mode="indeterminate")
+                    self.progressbar.start()
+                except Exception:
+                    self.progressbar.set(0)
+                step_prefix = f"[{self._queue_step_idx}/{self._queue_total}] " if self._queue_total > 1 else ""
+                if hasattr(self, 'lbl_progress'):
+                    self.lbl_progress.configure(text=f"{step_prefix}Ejecutando... (00:00)", text_color="#dc3545")
+                if hasattr(self, 'lbl_eta'):
+                    self.lbl_eta.configure(text="ETA: --:--", text_color="#28a745")
+
+            if self._queue_total > 1:
+                role_label = "PROTOCOLO SEGURO" if step["role"] == "before" else ("PRINCIPAL" if step["role"] == "main" else "CONTINUACIÓN")
+                self.append_output(f"\n================ [COMBO {self._queue_step_idx}/{self._queue_total} — {role_label}] {step['name']} ================\n")
+            self.append_output(f"\n> {step['cmd_str']}\n")
+
+            if getattr(self, "_progress_timer_id", None):
+                try:
+                    self.after_cancel(self._progress_timer_id)
+                except Exception:
+                    pass
+                self._progress_timer_id = None
+            self._tick_progress_timer()
+            self._start_storage_job_monitor(step["cmd_str"])
+
+            def on_step_finish():
+                rc = cmd_executor.get_last_returncode()
+                if rc != 0:
+                    self._queue_had_error = True
+                if getattr(self, "_stopped_by_user", False):
+                    finalize_all(rc, step["name"], step["cmd_str"])
+                    return
+                if step["role"] == "before" and rc != 0:
+                    self.append_output(
+                        f"\n[COMBO] El paso de Protocolo Seguro '{step['name']}' finalizó con error (código {rc}). Cola detenida por seguridad.\n"
+                    )
+                    finalize_all(rc, step["name"], step["cmd_str"])
+                    return
+                if self._execution_queue:
+                    run_next_step()
+                else:
+                    finalize_all(rc, step["name"], step["cmd_str"])
+
+            cmd_executor.execute_command_async(
+                command_string=step["cmd_str"],
+                output_callback=self.append_output,
+                finished_callback=lambda: self.after(0, on_step_finish),
+            )
+
+        run_next_step()
 
     def append_output(self, text):
         def _append():
