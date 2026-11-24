@@ -68,7 +68,7 @@ Exportación autocontenida con perfil visual automático, métricas extraídas, 
 
 ---
 
-## Catálogo de Funciones (10 Categorías — 70 Comandos)
+## Catálogo de Funciones (10 Categorías — 71 Comandos)
 
 | # | Categoría | Comandos | Perfil de Reporte |
 |---:|---|---:|---|
@@ -78,22 +78,22 @@ Exportación autocontenida con perfil visual automático, métricas extraídas, 
 | 4 | **Seguridad y Permisos** | 7 | `security` |
 | 5 | **Archivos y Compresión** | 10 | `system` |
 | 6 | **Almacenamiento: Formateo y Gestión** | 12 | `storage` |
-| 7 | **Almacenamiento: Diagnóstico y Salud** | 6 | `storage` |
+| 7 | **Almacenamiento: Diagnóstico y Salud** | 7 | `storage` |
 | 8 | **Recuperación de Datos** | 4 | `storage` |
 | 9 | **Multimedia** | 4 | `multimedia` |
 | 10 | **Instaladores Oficiales (Microsoft)** | 3 | `system` |
 
 <details>
-<summary>Ver listado completo de los 70 comandos por categoría</summary>
+<summary>Ver listado completo de los 71 comandos por categoría</summary>
 
-1. **Redes y Conectividad (13):** `ipconfig`, `ping`, `tracert`, `pathping`, `netstat`, `Conexiones TCP en Vivo`, `Tabla de Enrutamiento`, `getmac`, `arp`, `Consultar DNS (nslookup)`, `Limpiar Caché DNS (Flush DNS)`, `Gestor Adaptador de Red`, `Contraseñas WiFi Guardadas`.
-2. **Sistema y Procesos (6):** `systeminfo`, `tasklist`, `taskkill`, `Administrador de Apagado Programado`, `Visor de Eventos del Sistema (Errores/Avisos)`, `Reporte de Batería (Laptops)`.
-3. **Reparación y Mantenimiento (5):** `sfc`, `dism`, `Reparar Windows Update`, `Reiniciar Explorador de Windows`, `Limpieza Selectiva de Temporales`.
+1. **Redes y Conectividad (13):** `Configuración de Red IP (ipconfig)`, `Probar Conectividad y Latencia (ping)`, `Rastrear Ruta de Red (tracert)`, `Diagnóstico de Ruta y Pérdida de Paquetes (pathping)`, `Estadísticas y Conexiones de Red (netstat)`, `Conexiones TCP en Vivo`, `Tabla de Enrutamiento`, `Ver Direcciones MAC de Red (getmac)`, `Tabla de Direcciones IP a MAC (arp)`, `Consultar DNS (nslookup)`, `Limpiar Caché DNS (Flush DNS)`, `Gestor Adaptador de Red`, `Contraseñas WiFi Guardadas`.
+2. **Sistema y Procesos (6):** `Información Detallada del Equipo (systeminfo)`, `Listar Procesos en Ejecución (tasklist)`, `Finalizar / Cerrar Proceso (taskkill)`, `Administrador de Apagado Programado`, `Visor de Eventos del Sistema (Errores/Avisos)`, `Reporte de Batería (Laptops)`.
+3. **Reparación y Mantenimiento (5):** `Reparar Archivos de Sistema Windows (sfc)`, `Reparar Imagen del Sistema Windows (DISM)`, `Reparar Windows Update`, `Reiniciar Explorador de Windows`, `Limpieza Selectiva de Temporales`.
 4. **Seguridad y Permisos (7):** `Credenciales de Red (Bóveda)`, `Gestor de Firewall`, `Verificar Permisos de Archivo/Carpeta (icacls)`, `Conceder Control Total (icacls)`, `Tomar Posesión (takeown)`, `Quitar Solo Lectura (attrib)`, `Forzar Desbloqueo de Archivos`.
-5. **Archivos y Compresión (10):** `Sanitizador de Nombres`, `Búsqueda Avanzada de Texto`, `Comprimir Archivos (7-Zip)`, `Descomprimir Archivo (7-Zip)`, `Analizar Integridad de Archivo`, `Clonado/Copia Segura (Robocopy)`, `xcopy`, `dir`, `tree`, `Gestor de Atributos de Archivos (Ocultar/Sistema)`.
-6. **Almacenamiento: Formateo y Gestión (12):** `Formatear Disco (Avanzado estilo Rufus)`, `Initialize-Disk`, `New-Partition & Format`, `Clear-Disk (Formateo Completo)`, `Optimizar / TRIM / Desfragmentar Discos`, `Gestor de Atributos de Discos (HDD/SSD/USB)`, `Explorar Disco (Abrir Carpeta)`, `Asignar Letra (Montar)`, `Quitar Letra (Desmontar)`, `Desconectar Disco (Offline)`, `Conectar Disco (Online)`, `Expulsar Unidad Seguramente`.
-7. **Almacenamiento: Diagnóstico y Salud (6):** `Auditor de Autenticidad de Unidades (USB / SSD / HDD)`, `Estado de Salud SMART Avanzado`, `Get-PhysicalDisk`, `Get-Disk`, `Get-Volume`, `Info Discos Físicos`.
-8. **Recuperación de Datos (4):** `CHKDSK (Reparar Sistema de Archivos)`, `Recuperación de Archivos (WINFR)`, `PhotoRec Código Abierto (Descargar y Abrir)`, `PhotoRec Código Abierto (Desinstalar)`.
+5. **Archivos y Compresión (10):** `Sanitizador de Nombres`, `Búsqueda Avanzada de Texto`, `Comprimir Archivos (7-Zip)`, `Descomprimir Archivo (7-Zip)`, `Analizar Integridad de Archivo`, `Clonado/Copia Segura (Robocopy)`, `Copiar Archivos y Carpetas (xcopy)`, `Listar Archivos y Carpetas (dir)`, `Ver Árbol de Directorios (tree)`, `Gestor de Atributos de Archivos (Ocultar/Sistema)`.
+6. **Almacenamiento: Formateo y Gestión (12):** `Formatear Disco (Avanzado estilo Rufus)`, `Inicializar Disco Nuevo en GPT (Initialize-Disk)`, `Crear Partición y Formatear NTFS (New-Partition)`, `Borrar Todas las Particiones del Disco (Clear-Disk)`, `Optimizar / TRIM / Desfragmentar Discos`, `Gestor de Atributos de Discos (HDD/SSD/USB)`, `Explorar Disco (Abrir Carpeta)`, `Asignar Letra (Montar)`, `Quitar Letra (Desmontar)`, `Desconectar Disco (Offline)`, `Conectar Disco (Online)`, `Expulsar Unidad Seguramente`.
+7. **Almacenamiento: Diagnóstico y Salud (7):** `Auditor de Autenticidad de Unidades (USB / SSD / HDD)`, `Escáner de Superficie y Sectores (HDD / SSD / USB)`, `Estado de Salud SMART Avanzado`, `Listar Discos Físicos y Salud (Get-PhysicalDisk)`, `Ver Discos Lógicos y Esquema GPT/MBR (Get-Disk)`, `Listar Volúmenes y Letras de Unidad (Get-Volume)`, `Info Discos Físicos`.
+8. **Recuperación de Datos (4):** `Reparar Sistema de Archivos y Sectores (chkdsk)`, `Recuperación de Archivos (WINFR)`, `PhotoRec Código Abierto (Descargar y Abrir)`, `PhotoRec Código Abierto (Desinstalar)`.
 9. **Multimedia (4):** `Compresor de Multimedia`, `Reparador de Multimedia`, `Analizador de Salud Multimedia`, `Buscador de Duplicados`.
 10. **Instaladores Oficiales (Microsoft) (3):** `Desplegar Microsoft Office (ODT)`, `Descargar ISO Windows 11`, `Descargar ISO Windows 10`.
 

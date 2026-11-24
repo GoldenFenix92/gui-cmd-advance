@@ -224,9 +224,9 @@ class TestProjectIntegrity(unittest.TestCase):
             cfg = json.load(f)
 
         target_names = {
-            "Initialize-Disk",
-            "New-Partition & Format",
-            "Clear-Disk (Formateo Completo)",
+            "Inicializar Disco Nuevo en GPT (Initialize-Disk)",
+            "Crear Partición y Formatear NTFS (New-Partition)",
+            "Borrar Todas las Particiones del Disco (Clear-Disk)",
             "Formatear Disco (Avanzado estilo Rufus)",
         }
         found = {}
@@ -373,14 +373,19 @@ class TestProjectIntegrity(unittest.TestCase):
         # Comandos críticos obligatorios con warning danger
         for critical in (
             "Formatear Disco (Avanzado estilo Rufus)",
-            "Clear-Disk (Formateo Completo)",
+            "Borrar Todas las Particiones del Disco (Clear-Disk)",
             "Limpieza Selectiva de Temporales",
             "Administrador de Apagado Programado",
         ):
             self.assertEqual(warned[critical]["level"], "danger")
 
         # Comandos de solo consulta sin warning
-        for readonly in ("ipconfig", "Get-Disk", "systeminfo", "Estado de Salud SMART Avanzado"):
+        for readonly in (
+            "Configuración de Red IP (ipconfig)",
+            "Ver Discos Lógicos y Esquema GPT/MBR (Get-Disk)",
+            "Información Detallada del Equipo (systeminfo)",
+            "Estado de Salud SMART Avanzado",
+        ):
             self.assertNotIn(readonly, warned)
 
         # skip_if_flag_in funciona en modos de solo lectura

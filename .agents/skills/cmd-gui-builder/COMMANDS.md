@@ -4,15 +4,15 @@ This file tracks the commands that are planned, in progress, and completed for t
 
 ## Redes y Conectividad (13)
 
-- [x] ipconfig
-- [x] ping
-- [x] tracert
-- [x] pathping
-- [x] netstat
+- [x] Configuración de Red IP (ipconfig)
+- [x] Probar Conectividad y Latencia (ping)
+- [x] Rastrear Ruta de Red (tracert)
+- [x] Diagnóstico de Ruta y Pérdida de Paquetes (pathping)
+- [x] Estadísticas y Conexiones de Red (netstat)
 - [x] Conexiones TCP en Vivo
 - [x] Tabla de Enrutamiento
-- [x] getmac
-- [x] arp
+- [x] Ver Direcciones MAC de Red (getmac)
+- [x] Tabla de Direcciones IP a MAC (arp)
 - [x] Consultar DNS (nslookup)
 - [x] Limpiar Caché DNS (Flush DNS)
 - [x] Gestor Adaptador de Red
@@ -20,17 +20,17 @@ This file tracks the commands that are planned, in progress, and completed for t
 
 ## Sistema y Procesos (6)
 
-- [x] systeminfo
-- [x] tasklist
-- [x] taskkill
+- [x] Información Detallada del Equipo (systeminfo)
+- [x] Listar Procesos en Ejecución (tasklist)
+- [x] Finalizar / Cerrar Proceso (taskkill)
 - [x] Administrador de Apagado Programado
 - [x] Visor de Eventos del Sistema (Errores/Avisos)
 - [x] Reporte de Batería (Laptops)
 
 ## Reparación y Mantenimiento (5)
 
-- [x] sfc
-- [x] dism
+- [x] Reparar Archivos de Sistema Windows (sfc)
+- [x] Reparar Imagen del Sistema Windows (DISM)
 - [x] Reparar Windows Update
 - [x] Reiniciar Explorador de Windows
 - [x] Limpieza Selectiva de Temporales
@@ -53,17 +53,17 @@ This file tracks the commands that are planned, in progress, and completed for t
 - [x] Descomprimir Archivo (7-Zip)
 - [x] Analizar Integridad de Archivo
 - [x] Clonado/Copia Segura (Robocopy)
-- [x] xcopy
-- [x] dir
-- [x] tree
+- [x] Copiar Archivos y Carpetas (xcopy)
+- [x] Listar Archivos y Carpetas (dir)
+- [x] Ver Árbol de Directorios (tree)
 - [x] Gestor de Atributos de Archivos (Ocultar/Sistema)
 
 ## Almacenamiento: Formateo y Gestión (12)
 
 - [x] Formatear Disco (Avanzado estilo Rufus)
-- [x] Initialize-Disk
-- [x] New-Partition & Format
-- [x] Clear-Disk (Formateo Completo)
+- [x] Inicializar Disco Nuevo en GPT (Initialize-Disk)
+- [x] Crear Partición y Formatear NTFS (New-Partition)
+- [x] Borrar Todas las Particiones del Disco (Clear-Disk)
 - [x] Optimizar / TRIM / Desfragmentar Discos
 - [x] Gestor de Atributos de Discos (HDD/SSD/USB)
 - [x] Explorar Disco (Abrir Carpeta)
@@ -73,18 +73,19 @@ This file tracks the commands that are planned, in progress, and completed for t
 - [x] Conectar Disco (Online)
 - [x] Expulsar Unidad Seguramente
 
-## Almacenamiento: Diagnóstico y Salud (6)
+## Almacenamiento: Diagnóstico y Salud (7)
 
 - [x] Auditor de Autenticidad de Unidades (USB / SSD / HDD)
+- [x] Escáner de Superficie y Sectores (HDD / SSD / USB)
 - [x] Estado de Salud SMART Avanzado
-- [x] Get-PhysicalDisk
-- [x] Get-Disk
-- [x] Get-Volume
+- [x] Listar Discos Físicos y Salud (Get-PhysicalDisk)
+- [x] Ver Discos Lógicos y Esquema GPT/MBR (Get-Disk)
+- [x] Listar Volúmenes y Letras de Unidad (Get-Volume)
 - [x] Info Discos Físicos
 
 ## Recuperación de Datos (4)
 
-- [x] CHKDSK (Reparar Sistema de Archivos)
+- [x] Reparar Sistema de Archivos y Sectores (chkdsk)
 - [x] Recuperación de Archivos (WINFR)
 - [x] PhotoRec Código Abierto (Descargar y Abrir)
 - [x] PhotoRec Código Abierto (Desinstalar)
@@ -101,12 +102,6 @@ This file tracks the commands that are planned, in progress, and completed for t
 - [x] Desplegar Microsoft Office (ODT)
 - [x] Descargar ISO Windows 11
 - [x] Descargar ISO Windows 10
-
-## Mejoras Premium (Enterprise)
-
-- [x] Fase 1: Motor Visual (Resaltado de Sintaxis) e Información en Vivo (Dashboard de Estado).
-- [x] Fase 2: Interactividad y Productividad (Sistema de Favoritos y Exportación HTML).
-- [x] Fase 3: Arquitectura Avanzada (Salidas Tabulares Interactivas).
 
 ## Pendientes Futuros
 

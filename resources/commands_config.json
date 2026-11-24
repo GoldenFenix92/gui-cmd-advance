@@ -4,8 +4,8 @@
             "name": "Redes y Conectividad",
             "commands": [
                 {
-                    "name": "ipconfig",
-                    "description": "Muestra la configuraci\u00f3n de red actual.",
+                    "name": "Configuraci\u00f3n de Red IP (ipconfig)",
+                    "description": "Muestra la configuraci\u00f3n TCP/IP de tus adaptadores de red (IPv4, IPv6, m\u00e1scara, puerta de enlace y DNS) y permite renovar o liberar la direcci\u00f3n IP asignada por DHCP. \u00datil cuando pierdes conexi\u00f3n o cambias de red.",
                     "command": "ipconfig",
                     "args": [
                         {
@@ -29,8 +29,8 @@
                     ]
                 },
                 {
-                    "name": "ping",
-                    "description": "Env\u00eda paquetes ICMP a un host para comprobar la conectividad de red.",
+                    "name": "Probar Conectividad y Latencia (ping)",
+                    "description": "Env\u00eda paquetes ICMP a una IP o dominio (ej. 8.8.8.8 o google.com) para comprobar si hay respuesta, medir el tiempo de latencia en milisegundos y detectar p\u00e9rdida de paquetes. Operaci\u00f3n de solo consulta.",
                     "command": "ping",
                     "args": [
                         {
@@ -48,8 +48,8 @@
                     ]
                 },
                 {
-                    "name": "tracert",
-                    "description": "Rastrea la ruta (los saltos) que toman los paquetes para llegar a un destino.",
+                    "name": "Rastrear Ruta de Red (tracert)",
+                    "description": "Muestra cada salto (router o servidor intermedio) que recorren los paquetes desde tu equipo hasta el destino indicado. \u00datil para localizar en qu\u00e9 punto exacto se corta o se vuelve lenta la conexi\u00f3n.",
                     "command": "tracert",
                     "args": [
                         {
@@ -67,8 +67,8 @@
                     ]
                 },
                 {
-                    "name": "pathping",
-                    "description": "Combina ping y tracert. Muestra el grado de p\u00e9rdida de paquetes en cualquier enrutador o v\u00ednculo intermedio.",
+                    "name": "Diagn\u00f3stico de Ruta y P\u00e9rdida de Paquetes (pathping)",
+                    "description": "Combina ping y tracert: analiza durante varios segundos cada salto intermedio hasta el destino para medir con precisi\u00f3n qu\u00e9 nodo est\u00e1 perdiendo paquetes o introduciendo latencia. Operaci\u00f3n de solo consulta.",
                     "command": "pathping",
                     "args": [
                         {
@@ -80,8 +80,8 @@
                     ]
                 },
                 {
-                    "name": "netstat",
-                    "description": "Muestra estad\u00edsticas del protocolo y conexiones de red TCP/IP actuales.",
+                    "name": "Estad\u00edsticas y Conexiones de Red (netstat)",
+                    "description": "Muestra las conexiones TCP/UDP activas, puertos en escucha y procesos asociados en tu equipo. \u00datil para auditar qu\u00e9 aplicaciones usan la red o verificar si un puerto local est\u00e1 abierto.",
                     "command": "netstat",
                     "args": [
                         {
@@ -106,19 +106,19 @@
                 },
                 {
                     "name": "Conexiones TCP en Vivo",
-                    "description": "Muestra las conexiones TCP activas de forma detallada usando PowerShell.",
+                    "description": "Consulta en tiempo real todas las conexiones TCP activas mediante PowerShell (Get-NetTCPConnection), mostrando direcciones locales/remotas, puertos, estado y PID del proceso propietario. Operaci\u00f3n de solo lectura.",
                     "command": "powershell -Command \"Get-NetTCPConnection | Select-Object LocalAddress, LocalPort, RemoteAddress, RemotePort, State, OwningProcess | Format-Table -AutoSize\"",
                     "args": []
                 },
                 {
                     "name": "Tabla de Enrutamiento",
-                    "description": "Muestra la tabla de enrutamiento IP local.",
+                    "description": "Muestra la tabla de enrutamiento IP local (route print) que determina por qu\u00e9 interfaz y puerta de enlace sale el tr\u00e1fico de red. \u00datil para diagnosticar problemas con VPNs o m\u00faltiples adaptadores.",
                     "command": "route print",
                     "args": []
                 },
                 {
-                    "name": "getmac",
-                    "description": "Muestra la direcci\u00f3n MAC de los adaptadores de red del sistema.",
+                    "name": "Ver Direcciones MAC de Red (getmac)",
+                    "description": "Lista la direcci\u00f3n f\u00edsica (MAC) y el transporte asociado de cada adaptador de red instalado en el equipo. \u00datil para configurar reservas DHCP o filtrado MAC en tu router.",
                     "command": "getmac",
                     "args": [
                         {
@@ -130,8 +130,8 @@
                     ]
                 },
                 {
-                    "name": "arp",
-                    "description": "Muestra y modifica las tablas de traducci\u00f3n de direcciones IP a f\u00edsicas (MAC).",
+                    "name": "Tabla de Direcciones IP a MAC (arp)",
+                    "description": "Consulta la tabla ARP local que relaciona cada direcci\u00f3n IP de tu red con su direcci\u00f3n f\u00edsica (MAC). \u00datil para identificar dispositivos conectados en la misma red local o diagnosticar conflictos de IP.",
                     "command": "arp",
                     "args": [
                         {
@@ -222,14 +222,14 @@
             "name": "Sistema y Procesos",
             "commands": [
                 {
-                    "name": "systeminfo",
-                    "description": "Muestra informaci\u00f3n detallada sobre la configuraci\u00f3n del equipo y el sistema operativo.",
+                    "name": "Informaci\u00f3n Detallada del Equipo (systeminfo)",
+                    "description": "Muestra un inventario completo del sistema operativo, compilaci\u00f3n de Windows, procesador, memoria RAM instalada, zona horaria, tarjetas de red y actualizaciones (Hotfixes). Operaci\u00f3n de solo lectura.",
                     "command": "systeminfo",
                     "args": []
                 },
                 {
-                    "name": "tasklist",
-                    "description": "Muestra una lista de todas las tareas y procesos en ejecuci\u00f3n.",
+                    "name": "Listar Procesos en Ejecuci\u00f3n (tasklist)",
+                    "description": "Muestra todos los procesos y programas actualmente activos en el equipo junto con su PID, sesi\u00f3n y consumo de memoria RAM. \u00datil para localizar un proceso antes de cerrarlo con taskkill.",
                     "command": "tasklist",
                     "args": [
                         {
@@ -241,8 +241,8 @@
                     ]
                 },
                 {
-                    "name": "taskkill",
-                    "description": "Termina uno o m\u00e1s procesos o tareas.",
+                    "name": "Finalizar / Cerrar Proceso (taskkill)",
+                    "description": "Termina uno o m\u00e1s procesos en ejecuci\u00f3n usando su PID o nombre de ejecutable (ej. notepad.exe). Con /F fuerza el cierre inmediato de programas congelados. Precauci\u00f3n: puede perder trabajo no guardado.",
                     "command": "taskkill",
                     "args": [
                         {
@@ -272,7 +272,7 @@
                 },
                 {
                     "name": "Administrador de Apagado Programado",
-                    "description": "Configura un apagado, reinicio o cierra sesi\u00f3n programado.",
+                    "description": "Programa el apagado, reinicio o cierre de sesi\u00f3n del equipo eligiendo un tiempo sugerido (desde inmediato hasta 10 horas), o cancela un apagado pendiente (shutdown /a). \u00datil para dejar tareas largas terminando sin supervisi\u00f3n.",
                     "command": "shutdown",
                     "args": [
                         {
@@ -402,8 +402,8 @@
             "name": "Reparaci\u00f3n y Mantenimiento",
             "commands": [
                 {
-                    "name": "sfc",
-                    "description": "Comprueba y repara archivos de sistema de Windows da\u00f1ados.",
+                    "name": "Reparar Archivos de Sistema Windows (sfc)",
+                    "description": "Examina la integridad de los archivos protegidos del sistema operativo y reemplaza autom\u00e1ticamente los da\u00f1ados desde la cach\u00e9 local. \u00datil ante pantallas azules, errores de DLL o fallos tras actualizaciones. Requiere Administrador.",
                     "command": "sfc",
                     "args": [
                         {
@@ -426,8 +426,8 @@
                     }
                 },
                 {
-                    "name": "dism",
-                    "description": "Repara la imagen de Windows. Complemento ideal de SFC.",
+                    "name": "Reparar Imagen del Sistema Windows (DISM)",
+                    "description": "Analiza y repara el almac\u00e9n de componentes e imagen de Windows (/CheckHealth, /ScanHealth, /RestoreHealth). Complemento recomendado antes o despu\u00e9s de ejecutar SFC si este no logra reparar archivos. Requiere Administrador.",
                     "command": "DISM /Online /Cleanup-Image",
                     "args": [
                         {
@@ -539,7 +539,7 @@
                 },
                 {
                     "name": "Gestor de Firewall",
-                    "description": "Habilita o deshabilita el Firewall de Windows para todos los perfiles.",
+                    "description": "Habilita o deshabilita el Firewall de Windows en los perfiles Dominio, P\u00fablico y Privado. \u00datil temporalmente para diagnosticar bloqueos de red local. Requiere permisos de Administrador.",
                     "command": "powershell -Command \"& {param($op) try { if($op -eq 'on'){ Set-NetFirewallProfile -Profile Domain,Public,Private -Enabled True -ErrorAction Stop; Write-Host 'Firewall Habilitado.' } elseif($op -eq 'off'){ Set-NetFirewallProfile -Profile Domain,Public,Private -Enabled False -ErrorAction Stop; Write-Host 'Firewall Deshabilitado.' } else { throw 'Selecciona una opcion valida (on/off).' } } catch { Write-Host ('Error: ' + $_.Exception.Message); exit 1 } }\"",
                     "args": [
                         {
@@ -685,7 +685,7 @@
                 },
                 {
                     "name": "Forzar Desbloqueo de Archivos",
-                    "description": "Identifica qu\u00e9 proceso tiene bloqueado un archivo y permite forzar su cierre.",
+                    "description": "Verifica si un archivo est\u00e1 bloqueado en uso por otro proceso y, de estarlo, abre el Monitor de Recursos (resmon.exe) para localizar el identificador (handle) responsable y cerrarlo de forma controlada.",
                     "command": "powershell -Command \"& {param($path) if([string]::IsNullOrWhiteSpace($path)){ Write-Host 'Error: Ingresa una ruta de archivo.'; exit 1 } $file = Get-Item $path -ErrorAction SilentlyContinue; if(!$file){ Write-Host 'Error: Archivo no encontrado.'; exit 1 } try { $stream = [System.IO.File]::Open($path, 'Open', 'ReadWrite', 'None'); $stream.Close(); Write-Host 'El archivo NO esta bloqueado.' } catch { Write-Host 'EL ARCHIVO ESTA BLOQUEADO. Abriendo Monitor de Recursos para encontrar el proceso manejador (handle)...'; Start-Process resmon.exe; Write-Host 'Ve a la pestana CPU -> Handles Asociados, busca el nombre del archivo y finaliza el proceso.' } }\"",
                     "args": [
                         {
@@ -913,8 +913,8 @@
                     }
                 },
                 {
-                    "name": "xcopy",
-                    "description": "Copia archivos y \u00e1rboles de directorios.",
+                    "name": "Copiar Archivos y Carpetas (xcopy)",
+                    "description": "Copia archivos y estructuras completas de directorios entre una ruta origen y destino (con opciones para subcarpetas, archivos ocultos y continuar ante errores). Para respaldos cr\u00edticos se recomienda Robocopy.",
                     "command": "xcopy",
                     "args": [
                         {
@@ -962,8 +962,8 @@
                     }
                 },
                 {
-                    "name": "dir",
-                    "description": "Muestra una lista de archivos y subdirectorios en un directorio.",
+                    "name": "Listar Archivos y Carpetas (dir)",
+                    "description": "Muestra el listado de archivos y subcarpetas dentro de la ruta indicada (con opci\u00f3n de recorrido recursivo y formato compacto). \u00datil para inventariar carpetas o exportar listados.",
                     "command": "dir",
                     "args": [
                         {
@@ -981,8 +981,8 @@
                     ]
                 },
                 {
-                    "name": "tree",
-                    "description": "Muestra la estructura de directorios de una ruta.",
+                    "name": "Ver \u00c1rbol de Directorios (tree)",
+                    "description": "Representa visualmente en formato de \u00e1rbol jer\u00e1rquico todas las subcarpetas (y opcionalmente archivos) dentro de una ruta. Ideal para documentar estructuras de proyectos o respaldos.",
                     "command": "tree",
                     "args": [
                         {
@@ -1001,7 +1001,7 @@
                 },
                 {
                     "name": "Gestor de Atributos de Archivos (Ocultar/Sistema)",
-                    "description": "Modifica los atributos de un archivo o carpeta.",
+                    "description": "Agrega o quita atributos de Windows (Oculto, Sistema, Solo Lectura) sobre un archivo o carpeta mediante attrib. \u00datil para mostrar archivos ocultados por malware o proteger archivos espec\u00edficos.",
                     "command": "attrib",
                     "args": [
                         {
@@ -1117,8 +1117,8 @@
                     }
                 },
                 {
-                    "name": "Initialize-Disk",
-                    "description": "Inicializa un disco en estado 'Desconocido' o 'Sin inicializar'.",
+                    "name": "Inicializar Disco Nuevo en GPT (Initialize-Disk)",
+                    "description": "Inicializa un disco nuevo o en estado RAW/Sin inicializar con tabla de particiones GPT moderna (UEFI). Incluye bloqueo de seguridad para discos de sistema y arranque. Requiere Administrador.",
                     "command": "powershell -Command \"& {param($num) if($null -eq $num){ Write-Host 'Error: Ingresa el numero de disco.'; exit 1 } $d = Get-Disk -Number $num -ErrorAction SilentlyContinue; if($null -eq $d){ Write-Host 'Error: Disco no encontrado.'; exit 1 } if($d.IsSystem -or $d.IsBoot){ Write-Host 'ADVERTENCIA EXTREMA: Esta unidad contiene el sistema operativo. Operacion CANCELADA por seguridad.'; exit 1 } try { if($d.IsOffline){ Set-Disk -Number $num -IsOffline $false -ErrorAction Stop } if($d.IsReadOnly){ Set-Disk -Number $num -IsReadOnly $false -ErrorAction Stop } Update-Disk -Number $num -ErrorAction SilentlyContinue; $d = Get-Disk -Number $num -ErrorAction Stop; if($d.PartitionStyle -ne 'RAW' -and $d.PartitionStyle -ne 'Unknown'){ Write-Host ('El disco ya esta inicializado (' + $d.PartitionStyle + ').'); exit 0 } Initialize-Disk -Number $num -PartitionStyle GPT -ErrorAction Stop; Write-Host 'Disco inicializado como GPT.' } catch { Write-Host ('Error al inicializar: ' + $_.Exception.Message); exit 1 } }\"",
                     "args": [
                         {
@@ -1135,8 +1135,8 @@
                     }
                 },
                 {
-                    "name": "New-Partition & Format",
-                    "description": "Crea una nueva partici\u00f3n usando todo el espacio disponible y formatea como NTFS (recomendado para discos > 32 GB y archivos > 4 GB en Windows).",
+                    "name": "Crear Partici\u00f3n y Formatear NTFS (New-Partition)",
+                    "description": "Crea una partici\u00f3n primaria ocupando todo el espacio libre del disco seleccionado, asigna letra de unidad y formatea en NTFS (recomendado para discos > 32 GB y archivos > 4 GB en Windows). Auto-inicializa en GPT si est\u00e1 RAW.",
                     "command": "powershell -Command \"& {param($num) if($null -eq $num){ Write-Host 'Error: Ingresa el numero de disco.'; exit 1 } $d = Get-Disk -Number $num -ErrorAction SilentlyContinue; if($null -eq $d){ Write-Host 'Error: Disco no encontrado.'; exit 1 } if($d.IsSystem -or $d.IsBoot){ Write-Host 'ADVERTENCIA EXTREMA: Esta unidad contiene el sistema operativo. Operacion CANCELADA por seguridad.'; exit 1 } try { if($d.IsOffline){ Set-Disk -Number $num -IsOffline $false -ErrorAction Stop } if($d.IsReadOnly){ Set-Disk -Number $num -IsReadOnly $false -ErrorAction Stop } Update-Disk -Number $num -ErrorAction SilentlyContinue; $d = Get-Disk -Number $num -ErrorAction Stop; if($d.PartitionStyle -eq 'RAW' -or $d.PartitionStyle -eq 'Unknown'){ Initialize-Disk -Number $num -PartitionStyle GPT -ErrorAction Stop; Start-Sleep -Milliseconds 500; Update-Disk -Number $num -ErrorAction SilentlyContinue } $part = New-Partition -DiskNumber $num -UseMaximumSize -AssignDriveLetter -ErrorAction Stop; $part | Format-Volume -FileSystem NTFS -Confirm:$false -Force -ErrorAction Stop | Out-Null; Write-Host ('Particion creada y formateada con exito en ' + $part.DriveLetter + ':.') } catch { Write-Host ('Error: ' + $_.Exception.Message); exit 1 } }\"",
                     "args": [
                         {
@@ -1153,8 +1153,8 @@
                     }
                 },
                 {
-                    "name": "Clear-Disk (Formateo Completo)",
-                    "description": "\u00a1PRECAUCI\u00d3N! Borra ABSOLUTAMENTE TODO el contenido y particiones del disco seleccionado. \u00dasalo bajo tu propio riesgo.",
+                    "name": "Borrar Todas las Particiones del Disco (Clear-Disk)",
+                    "description": "Elimina absolutamente todas las particiones (incluidas OEM) y datos del disco seleccionado dej\u00e1ndolo limpio/RAW, con respaldo autom\u00e1tico en Diskpart si Clear-Disk falla. Bloqueado en discos de sistema/arranque.",
                     "command": "powershell -Command \"& {param($num) if($null -eq $num){ Write-Host 'Error: Ingresa el numero de disco.'; exit 1 } $d = Get-Disk -Number $num -ErrorAction SilentlyContinue; if($null -eq $d){ Write-Host 'Error: Disco no encontrado.'; exit 1 } if($d.IsSystem -or $d.IsBoot){ Write-Host 'ADVERTENCIA EXTREMA: Esta unidad contiene el sistema operativo. Operacion CANCELADA por seguridad.'; exit 1 } try { if($d.IsOffline){ Set-Disk -Number $num -IsOffline $false -ErrorAction Stop } if($d.IsReadOnly){ Set-Disk -Number $num -IsReadOnly $false -ErrorAction Stop } Update-Disk -Number $num -ErrorAction SilentlyContinue; $d = Get-Disk -Number $num -ErrorAction Stop; if($d.PartitionStyle -eq 'RAW' -or $d.PartitionStyle -eq 'Unknown'){ Write-Host 'El disco ya esta limpio (sin inicializar / RAW).'; exit 0 } try { Clear-Disk -Number $num -RemoveData -RemoveOEM -Confirm:$false -ErrorAction Stop } catch { @('select disk ' + $num, 'clean', 'exit') | diskpart | Out-Null; if($LASTEXITCODE -ne 0){ throw 'Fallo al limpiar el disco con Clear-Disk y Diskpart.' } } Write-Host 'Disco limpiado completamente.' } catch { Write-Host ('Error al limpiar: ' + $_.Exception.Message); exit 1 } }\"",
                     "args": [
                         {
@@ -1323,7 +1323,7 @@
                 },
                 {
                     "name": "Desconectar Disco (Offline)",
-                    "description": "Pone el disco en estado Fuera de L\u00ednea (Offline) para el sistema operativo.",
+                    "description": "Pone el disco f\u00edsico en estado Fuera de L\u00ednea (Offline) para Windows, dej\u00e1ndolo inaccesible para el sistema y aplicaciones sin borrar datos. Bloqueado en la unidad del sistema.",
                     "command": "powershell -Command \"& {param($num) if($null -eq $num){ Write-Host 'Error: Selecciona un disco.'; exit 1 } $d = Get-Disk -Number $num -ErrorAction SilentlyContinue; if($null -eq $d){ Write-Host 'Error: Disco no encontrado.'; exit 1 } if($d.IsSystem -or $d.IsBoot){ Write-Host 'ADVERTENCIA: No se puede desconectar el disco del sistema.'; exit 1 } try { Set-Disk -Number $num -IsOffline $true -ErrorAction Stop; Write-Host 'Disco puesto Fuera de Linea (Offline).' } catch { Write-Host ('Error: ' + $_.Exception.Message); exit 1 } }\"",
                     "args": [
                         {
@@ -1341,7 +1341,7 @@
                 },
                 {
                     "name": "Conectar Disco (Online)",
-                    "description": "Pone el disco en estado En L\u00ednea (Online).",
+                    "description": "Vuelve a poner en estado En L\u00ednea (Online) un disco que se encontraba desconectado (Offline) para hacerlo accesible nuevamente en Windows.",
                     "command": "powershell -Command \"& {param($num) if($null -eq $num){ Write-Host 'Error: Selecciona un disco.'; exit 1 } try { Set-Disk -Number $num -IsOffline $false -ErrorAction Stop; Write-Host 'Disco puesto En Linea (Online).' } catch { Write-Host ('Error: ' + $_.Exception.Message); exit 1 } }\"",
                     "args": [
                         {
@@ -1444,7 +1444,7 @@
                                     "flag": "--mode scan"
                                 },
                                 {
-                                    "name": "Reasignar Sectores Pendientes (Remap con ceros — Solo HDD)",
+                                    "name": "Reasignar Sectores Pendientes (Remap con ceros \u2014 Solo HDD)",
                                     "flag": "--mode remap"
                                 }
                             ],
@@ -1489,20 +1489,20 @@
                     "args": []
                 },
                 {
-                    "name": "Get-PhysicalDisk",
-                    "description": "Lista todos los discos f\u00edsicos conectados, mostrando su salud y estado operativo.",
+                    "name": "Listar Discos F\u00edsicos y Salud (Get-PhysicalDisk)",
+                    "description": "Muestra todos los discos f\u00edsicos conectados (HDD, SSD, NVMe, USB) con su tipo de medio, bus, capacidad real, salud general y estado operativo. Operaci\u00f3n de solo lectura.",
                     "command": "powershell -Command \"Get-PhysicalDisk | Format-Table -AutoSize\"",
                     "args": []
                 },
                 {
-                    "name": "Get-Disk",
-                    "description": "Muestra informaci\u00f3n l\u00f3gica de los discos, incluyendo estilo de partici\u00f3n (MBR/GPT) y estado.",
+                    "name": "Ver Discos L\u00f3gicos y Esquema GPT/MBR (Get-Disk)",
+                    "description": "Lista los discos reconocidos por Windows con su n\u00famero de disco, nombre, estilo de partici\u00f3n (GPT/MBR/RAW), tama\u00f1o y estado Online/Offline. Ideal para verificar el n\u00famero de disco antes de formatear.",
                     "command": "powershell -Command \"Get-Disk | Format-Table -AutoSize\"",
                     "args": []
                 },
                 {
-                    "name": "Get-Volume",
-                    "description": "Lista todos los vol\u00famenes, su letra de unidad, sistema de archivos y salud.",
+                    "name": "Listar Vol\u00famenes y Letras de Unidad (Get-Volume)",
+                    "description": "Muestra todos los vol\u00famenes y particiones montadas con su letra de unidad, etiqueta, sistema de archivos (NTFS/FAT32/exFAT/RAW), espacio libre y estado de salud. Operaci\u00f3n de solo lectura.",
                     "command": "powershell -Command \"Get-Volume | Format-Table -AutoSize\"",
                     "args": []
                 },
@@ -1518,8 +1518,8 @@
             "name": "Recuperaci\u00f3n de Datos",
             "commands": [
                 {
-                    "name": "CHKDSK (Reparar Sistema de Archivos)",
-                    "description": "Busca y repara errores l\u00f3gicos y sectores defectuosos en NTFS/FAT32/exFAT. Detecta autom\u00e1ticamente si la unidad est\u00e1 en RAW.",
+                    "name": "Reparar Sistema de Archivos y Sectores (chkdsk)",
+                    "description": "Analiza y repara errores l\u00f3gicos y sectores defectuosos en vol\u00famenes NTFS/FAT32/exFAT (incluye opciones /r, /b para re-evaluar cl\u00fasteres malos en NTFS y /scan en l\u00ednea). Detecta autom\u00e1ticamente si la unidad est\u00e1 en formato RAW.",
                     "command": "powershell -Command \"& {param($letra, [switch]$reparar, [switch]$reevaluar, [switch]$online, [switch]$forzar) if([string]::IsNullOrWhiteSpace($letra)){ Write-Host 'Error: Selecciona una unidad.'; exit 1 } $l = $letra.Trim(':'); $d = $l + ':'; $vol = Get-Volume -DriveLetter $l -ErrorAction SilentlyContinue; if($vol -and ([string]::IsNullOrWhiteSpace($vol.FileSystem) -or $vol.FileSystem -eq 'RAW')){ Write-Host ('Error: La unidad ' + $d + ' esta en formato RAW. Realiza primero un Formato Rapido NTFS antes de ejecutar CHKDSK.'); exit 1 } $argList = $d; if($online){ $argList += ' /scan' } else { if($reevaluar){ $argList += ' /b' } elseif($reparar){ $argList += ' /r' } if($forzar){ $argList += ' /x' } } Write-Host ('Abriendo consola de CHKDSK (' + $argList + ')...'); Start-Process chkdsk -ArgumentList $argList -Wait; Write-Host 'Proceso finalizado.' }\"",
                     "args": [
                         {
