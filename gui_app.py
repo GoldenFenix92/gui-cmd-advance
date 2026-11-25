@@ -16,7 +16,6 @@ from tkinter import filedialog, messagebox
 
 import psutil
 import ttkbootstrap as tb
-from ttkbootstrap.widgets.floodgauge import Floodgauge
 from ttkbootstrap.widgets.meter import Meter
 from ttkbootstrap.widgets.scrolled import ScrolledFrame, ScrolledText
 
@@ -72,22 +71,24 @@ class App(tb.Window):
         self.left_frame.grid_rowconfigure(2, weight=1)
         self.left_frame.grid_columnconfigure(0, weight=1)
 
-        # Barra superior: selector de 30 temas + herramientas rápidas
+        # Barra superior: interruptor animado Oscuro/Claro (pulse-dark <-> pulse-light) + herramientas rápidas
         self.top_bar = tb.Frame(self.left_frame)
-        self.top_bar.grid(row=0, column=0, pady=(0, 8), sticky="ew")
+        self.top_bar.grid(row=0, column=0, pady=(0, 10), sticky="ew")
 
-        tb.Label(self.top_bar, text="Tema:", font=("Segoe UI", 9, "bold")).pack(side="left", padx=(0, 4))
-        self.theme_var = tk.StringVar(value=self.current_theme)
-        self.theme_combo = tb.Combobox(
+        self.theme_toggle = ui_theme.ThemeToggleSwitch(
             self.top_bar,
-            textvariable=self.theme_var,
-            values=ui_theme.get_available_themes(),
-            state="readonly",
-            width=16,
+            is_dark=ui_theme.is_dark_theme(self.current_theme),
+            command=self.on_theme_toggle,
         )
-        self.theme_combo.pack(side="left")
-        self.theme_combo.bind("<<ComboboxSelected>>", self.on_theme_change)
-        ui_theme.add_tooltip(self.theme_combo, "Cambiar tema visual en vivo (30 temas Bootstrap 2.x)")
+        self.theme_toggle.pack(side="left", padx=(0, 6))
+        ui_theme.add_tooltip(self.theme_toggle, "Alternar entre Pulse Oscuro y Pulse Claro")
+
+        self.lbl_theme_mode = tb.Label(
+            self.top_bar,
+            text="Oscuro" if ui_theme.is_dark_theme(self.current_theme) else "Claro",
+            font=("Segoe UI", 9, "bold"),
+        )
+        self.lbl_theme_mode.pack(side="left", padx=(0, 8))
 
         self.credits_btn = tb.Button(self.top_bar, text="Créditos", bootstyle="secondary-outline", command=self.show_credits)
         self.credits_btn.pack(side="right")
@@ -103,9 +104,10 @@ class App(tb.Window):
         self.ram_btn.pack(side="right", padx=(0, 6))
         ui_theme.add_tooltip(self.ram_btn, "Liberar memoria inactiva (RAM)")
 
-        # Tarjeta: Selección de Comando
-        cmd_card = tb.Labelframe(self.left_frame, text="Selección de Comando", padding=10, bootstyle="primary")
-        cmd_card.grid(row=1, column=0, pady=(0, 8), sticky="ew")
+        # Tarjeta redondeada (12px): Selección de Comando
+        cmd_card_wrap = ui_theme.RoundedCard(self.left_frame, title="Selección de Comando", padding=(4, 2))
+        cmd_card_wrap.grid(row=1, column=0, pady=(0, 10), sticky="ew")
+        cmd_card = cmd_card_wrap.body
         cmd_card.grid_columnconfigure(0, weight=1)
 
         self.search_var = tk.StringVar()
@@ -113,17 +115,17 @@ class App(tb.Window):
         self.search_entry.grid(row=0, column=0, pady=(0, 8), sticky="ew")
         self.search_var.trace_add("write", self.on_search)
 
-        tb.Label(cmd_card, text="Categoría:", font=("Segoe UI", 9, "bold")).grid(row=1, column=0, sticky="w")
+        tb.Label(cmd_card, text="Categoría:", style="PulseCard.TLabel", font=("Segoe UI", 9, "bold")).grid(row=1, column=0, sticky="w")
         categories = [cat.get("name", "Unknown") for cat in self.commands_config.get("categories", [])]
         self.cat_var = tk.StringVar(value=categories[0] if categories else "")
         self.cat_menu = tb.Combobox(cmd_card, values=categories, textvariable=self.cat_var, state="readonly")
         self.cat_menu.grid(row=2, column=0, pady=(2, 8), sticky="ew")
         self.cat_menu.bind("<<ComboboxSelected>>", lambda _e: self.on_category_change(self.cat_var.get()))
 
-        cmd_label_frame = tb.Frame(cmd_card)
+        cmd_label_frame = tb.Frame(cmd_card, style="PulseCardInner.TFrame")
         cmd_label_frame.grid(row=3, column=0, sticky="ew")
 
-        tb.Label(cmd_label_frame, text="Comando:", font=("Segoe UI", 9, "bold")).pack(side="left")
+        tb.Label(cmd_label_frame, text="Comando:", style="PulseCard.TLabel", font=("Segoe UI", 9, "bold")).pack(side="left")
 
         self.cmd_info_btn = tb.Button(
             cmd_label_frame, image=self._icons["info"], bootstyle="info", command=self.show_command_info
@@ -142,13 +144,13 @@ class App(tb.Window):
         self.cmd_menu.grid(row=4, column=0, pady=(4, 0), sticky="ew")
         self.cmd_menu.bind("<<ComboboxSelected>>", lambda _e: self.on_command_change(self.cmd_var.get()))
 
-        # Tarjeta: Parámetros y Argumentos
-        args_card = tb.Labelframe(self.left_frame, text="Parámetros y Opciones", padding=6, bootstyle="secondary")
-        args_card.grid(row=2, column=0, pady=(0, 8), sticky="nsew")
-        args_card.grid_rowconfigure(0, weight=1)
-        args_card.grid_columnconfigure(0, weight=1)
+        # Tarjeta redondeada (12px): Parámetros y Argumentos
+        args_card_wrap = ui_theme.RoundedCard(self.left_frame, title="Parámetros y Opciones", padding=(2, 2))
+        args_card_wrap.grid(row=2, column=0, pady=(0, 10), sticky="nsew")
+        args_card_wrap.body.grid_rowconfigure(0, weight=1)
+        args_card_wrap.body.grid_columnconfigure(0, weight=1)
 
-        self.args_frame = ScrolledFrame(args_card, auto_hide=True, padding=6)
+        self.args_frame = ScrolledFrame(args_card_wrap.body, auto_hide=True, padding=4)
         self.args_frame.grid(row=0, column=0, sticky="nsew")
 
         # Botonera de ejecución
@@ -179,8 +181,9 @@ class App(tb.Window):
         self.right_frame.grid_rowconfigure(0, weight=1)
         self.right_frame.grid_columnconfigure(0, weight=1)
 
-        console_card = tb.Labelframe(self.right_frame, text="Consola y Ejecución en Vivo", padding=10, bootstyle="info")
-        console_card.grid(row=0, column=0, sticky="nsew")
+        console_card_wrap = ui_theme.RoundedCard(self.right_frame, title="Consola y Ejecución en Vivo", padding=(4, 2))
+        console_card_wrap.grid(row=0, column=0, sticky="nsew")
+        console_card = console_card_wrap.body
         console_card.grid_rowconfigure(1, weight=1)
         console_card.grid_columnconfigure(0, weight=1)
 
@@ -194,18 +197,13 @@ class App(tb.Window):
         self.output_textbox.grid(row=1, column=0, pady=(0, 8), sticky="nsew")
         self.output_textbox.text.configure(state="disabled")
 
-        # Barra de progreso Floodgauge + contadores de avance y ETA
-        self.progress_frame = tb.Frame(console_card)
+        # Barra de progreso redondeada tipo píldora (10px) + contadores de avance y ETA
+        self.progress_frame = tb.Frame(console_card, style="PulseCardInner.TFrame")
         self.progress_frame.grid(row=2, column=0, pady=(0, 8), sticky="ew")
         self.progress_frame.grid_columnconfigure(0, weight=1)
 
-        self.progressbar = Floodgauge(
-            self.progress_frame,
-            maximum=100,
-            value=0,
-            mask="{}%",
-            font=("Segoe UI", 9, "bold"),
-            bootstyle="info",
+        self.progressbar = ui_theme.RoundedProgressBar(
+            self.progress_frame, maximum=100, value=0, height=24, radius=10, theme_name=self.current_theme
         )
         self.progressbar.grid(row=0, column=0, sticky="ew")
 
@@ -216,7 +214,7 @@ class App(tb.Window):
         self.lbl_eta.grid(row=0, column=2, padx=(10, 0), sticky="e")
 
         # Acciones de salida y limpieza
-        actions_row = tb.Frame(console_card)
+        actions_row = tb.Frame(console_card, style="PulseCardInner.TFrame")
         actions_row.grid(row=3, column=0, pady=(0, 6), sticky="ew")
 
         self.export_btn = tb.Button(actions_row, text="Exportar Actual", bootstyle="success", command=self.export_output)
@@ -248,7 +246,7 @@ class App(tb.Window):
         ui_theme.add_tooltip(self.auto_clear_cb, "Limpiar la consola antes de ejecutar un nuevo comando")
 
         # Controles de energía y combos
-        self.power_frame = tb.Frame(console_card)
+        self.power_frame = tb.Frame(console_card, style="PulseCardInner.TFrame")
         self.power_frame.grid(row=4, column=0, pady=(2, 0), sticky="ew")
 
         self.keep_awake_var = tk.BooleanVar(value=False)
@@ -281,11 +279,11 @@ class App(tb.Window):
             "Muestra un modal con funciones recomendadas antes (Protocolo Seguro) o después del comando actual para encadenarlas automáticamente.",
         )
 
-        # ---------- DASHBOARD DINÁMICO DE SENSORES (Meters radiales en tiempo real) ----------
-        self.sensors_card = tb.Labelframe(self.right_frame, text="Sensores del Sistema en Tiempo Real", padding=(10, 6), bootstyle="secondary")
-        self.sensors_card.grid(row=1, column=0, pady=(8, 0), sticky="ew")
+        # ---------- DASHBOARD DINÁMICO DE SENSORES (Tarjeta redondeada 12px + Meters) ----------
+        self.sensors_card = ui_theme.RoundedCard(self.right_frame, title="Sensores del Sistema en Tiempo Real", padding=(6, 2))
+        self.sensors_card.grid(row=1, column=0, pady=(10, 0), sticky="ew")
 
-        meters_wrap = tb.Frame(self.sensors_card)
+        meters_wrap = tb.Frame(self.sensors_card.body, style="PulseCardInner.TFrame")
         meters_wrap.pack(side="left")
 
         self.meter_cpu = Meter(
@@ -339,17 +337,17 @@ class App(tb.Window):
         )
         self.meter_disk.pack(side="left", padx=(0, 14))
 
-        stats_info = tb.Frame(self.sensors_card)
+        stats_info = tb.Frame(self.sensors_card.body, style="PulseCardInner.TFrame")
         stats_info.pack(side="right", fill="y", padx=(8, 4))
 
-        self.lbl_cpu = tb.Label(stats_info, text="CPU: --% | Hilos: --", font=("Consolas", 9, "bold"), anchor="e")
-        self.lbl_cpu.pack(anchor="e", pady=1)
+        self.lbl_cpu = tb.Label(stats_info, text="CPU: --% | Hilos: --", font=("Consolas", 9, "bold"), anchor="e", style="PulseCard.TLabel")
+        self.lbl_cpu.pack(anchor="e", pady=2)
 
-        self.lbl_ram = tb.Label(stats_info, text="RAM: -- / -- GB", font=("Consolas", 9, "bold"), anchor="e")
-        self.lbl_ram.pack(anchor="e", pady=1)
+        self.lbl_ram = tb.Label(stats_info, text="RAM: -- / -- GB", font=("Consolas", 9, "bold"), anchor="e", style="PulseCard.TLabel")
+        self.lbl_ram.pack(anchor="e", pady=2)
 
-        self.lbl_disk = tb.Label(stats_info, text="Disco C: -- GB libres", font=("Consolas", 9, "bold"), anchor="e")
-        self.lbl_disk.pack(anchor="e", pady=1)
+        self.lbl_disk = tb.Label(stats_info, text="Disco C: -- GB libres", font=("Consolas", 9, "bold"), anchor="e", style="PulseCard.TLabel")
+        self.lbl_disk.pack(anchor="e", pady=2)
 
         self.update_console_tags()
         self.update_status_dashboard()
@@ -541,31 +539,40 @@ class App(tb.Window):
             options.append(str(i))
         return options
 
-    def on_theme_change(self, _event=None):
-        selected = self.theme_var.get()
-        saved = ui_theme.set_saved_theme(selected)
+    def on_theme_toggle(self, is_dark):
+        target = ui_theme.DEFAULT_DARK_THEME if is_dark else ui_theme.DEFAULT_LIGHT_THEME
+        saved = ui_theme.set_saved_theme(target)
         self.current_theme = saved
         try:
             self.style.theme_use(saved)
         except Exception:
             pass
-        ui_theme.apply_dwm_titlebar(self, dark=ui_theme.is_dark_theme(saved))
+        ui_theme.apply_rounded_styles(self.style, saved)
+        ui_theme.apply_dwm_titlebar(self, dark=is_dark)
+        if hasattr(self, "lbl_theme_mode"):
+            self.lbl_theme_mode.configure(text="Oscuro" if is_dark else "Claro")
+        if hasattr(self, "theme_toggle"):
+            self.theme_toggle.apply_bg(saved)
+        if hasattr(self, "progressbar"):
+            self.progressbar.apply_palette(saved)
         self.update_console_tags()
 
     def update_console_tags(self):
         is_dark = ui_theme.is_dark_theme(self.current_theme)
+        pal = ui_theme.get_pulse_palette(self.current_theme)
         tk_txt = self.output_textbox.text
+        tk_txt.configure(bg=pal["well_bg"], fg=pal["fg"], insertbackground=pal["fg"], relief="flat", bd=1)
         tk_txt.tag_config("error", foreground="#FF5C5C" if is_dark else "#C62828")
-        tk_txt.tag_config("success", foreground="#4ADE80" if is_dark else "#2E7D32")
-        tk_txt.tag_config("ip", foreground="#60A5FA" if is_dark else "#1565C0")
-        tk_txt.tag_config("path", foreground="#FBBF24" if is_dark else "#D97706")
-        tk_txt.tag_config("highlight", foreground="#F472B6" if is_dark else "#C2185B")
+        tk_txt.tag_config("success", foreground="#4ADE80" if is_dark else "#148F47")
+        tk_txt.tag_config("ip", foreground="#60A5FA" if is_dark else "#008CC7")
+        tk_txt.tag_config("path", foreground="#FBBF24" if is_dark else "#D98A00")
+        tk_txt.tag_config("highlight", foreground="#F472B6" if is_dark else "#5B3299")
 
-        bg = self.style.colors.bg
-        fg = self.style.colors.fg
+        card_bg = pal["card_bg"]
+        fg = pal["fg"]
         for lbl in (getattr(self, "lbl_progress", None), getattr(self, "lbl_eta", None)):
             if lbl is not None:
-                lbl.configure(bg=bg, fg=fg)
+                lbl.configure(bg=card_bg, fg=fg)
 
     def get_category_data(self, cat_name):
         for cat in self.commands_config.get("categories", []):
@@ -1657,12 +1664,15 @@ class App(tb.Window):
             self._has_determinate_progress = True
             try:
                 self.progressbar.stop()
-                self.progressbar.configure(mode="determinate")
             except Exception:
                 pass
         self._last_progress_pct = pct_clamped
         self._last_progress_detail = detail
-        self.progressbar.configure(value=int(round(pct_clamped)), bootstyle=self._progress_bootstyle(pct_clamped))
+        self.progressbar.set_progress(
+            value=pct_clamped,
+            mode="determinate",
+            bootstyle=self._progress_bootstyle(pct_clamped),
+        )
         self._refresh_progress_labels(pct_clamped, detail=detail)
 
     def _tick_progress_timer(self):
@@ -1773,16 +1783,15 @@ class App(tb.Window):
             if hasattr(self, "progressbar"):
                 try:
                     self.progressbar.stop()
-                    self.progressbar.configure(mode="determinate")
                 except Exception:
                     pass
                 if last_rc == 0 and not self._queue_had_error:
-                    self.progressbar.configure(value=100, bootstyle="success")
+                    self.progressbar.set_progress(value=100, mode="determinate", bootstyle="success")
                     self.lbl_progress.configure(text=f"100% Completado ({elapsed})", fg="#28a745")
                     self.lbl_eta.configure(text="ETA: 00:00", fg="#28a745")
                 else:
                     last_pct = getattr(self, "_last_progress_pct", 0.0) if getattr(self, "_has_determinate_progress", False) else 0.0
-                    self.progressbar.configure(value=int(round(last_pct)), bootstyle="danger")
+                    self.progressbar.set_progress(value=last_pct, mode="determinate", bootstyle="danger")
                     self.lbl_progress.configure(text=f"Detenido / Error ({elapsed})", fg="#dc3545")
                     self.lbl_eta.configure(text="ETA: --:--", fg="#dc3545")
 
@@ -1826,8 +1835,8 @@ class App(tb.Window):
 
             if hasattr(self, "progressbar"):
                 try:
-                    self.progressbar.configure(mode="indeterminate", bootstyle="info", value=0)
-                    self.progressbar.start(12)
+                    self.progressbar.set_progress(value=0, mode="indeterminate", bootstyle="info")
+                    self.progressbar.start(35)
                 except Exception:
                     pass
                 step_prefix = f"[{self._queue_step_idx}/{self._queue_total}] " if self._queue_total > 1 else ""
