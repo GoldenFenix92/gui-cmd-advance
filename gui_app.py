@@ -199,7 +199,14 @@ class App(tb.Window):
         self.progress_frame.grid(row=2, column=0, pady=(0, 8), sticky="ew")
         self.progress_frame.grid_columnconfigure(0, weight=1)
 
-        self.progressbar = Floodgauge(self.progress_frame, maximum=100, value=0, mask="{}%", bootstyle="info")
+        self.progressbar = Floodgauge(
+            self.progress_frame,
+            maximum=100,
+            value=0,
+            mask="{}%",
+            font=("Segoe UI", 9, "bold"),
+            bootstyle="info",
+        )
         self.progressbar.grid(row=0, column=0, sticky="ew")
 
         self.lbl_progress = tk.Label(self.progress_frame, text="Listo (0%)", font=("Consolas", 10, "bold"), anchor="e")
@@ -283,7 +290,7 @@ class App(tb.Window):
 
         self.meter_cpu = Meter(
             meters_wrap,
-            metersize=74,
+            metersize=92,
             amountused=0,
             amounttotal=100,
             metertype="semi",
@@ -291,8 +298,8 @@ class App(tb.Window):
             textright="%",
             meterthickness=7,
             stripethickness=2,
-            textfont=("Segoe UI", 10, "bold"),
-            subtextfont=("Segoe UI", 8, "bold"),
+            textfont=("Segoe UI", 9, "bold"),
+            subtextfont=("Segoe UI", 8),
             bootstyle="success",
             interactive=False,
         )
@@ -300,7 +307,7 @@ class App(tb.Window):
 
         self.meter_ram = Meter(
             meters_wrap,
-            metersize=74,
+            metersize=92,
             amountused=0,
             amounttotal=100,
             metertype="semi",
@@ -308,8 +315,8 @@ class App(tb.Window):
             textright="%",
             meterthickness=7,
             stripethickness=2,
-            textfont=("Segoe UI", 10, "bold"),
-            subtextfont=("Segoe UI", 8, "bold"),
+            textfont=("Segoe UI", 9, "bold"),
+            subtextfont=("Segoe UI", 8),
             bootstyle="success",
             interactive=False,
         )
@@ -317,7 +324,7 @@ class App(tb.Window):
 
         self.meter_disk = Meter(
             meters_wrap,
-            metersize=74,
+            metersize=92,
             amountused=0,
             amounttotal=100,
             metertype="semi",
@@ -325,8 +332,8 @@ class App(tb.Window):
             textright="%",
             meterthickness=7,
             stripethickness=2,
-            textfont=("Segoe UI", 10, "bold"),
-            subtextfont=("Segoe UI", 8, "bold"),
+            textfont=("Segoe UI", 9, "bold"),
+            subtextfont=("Segoe UI", 8),
             bootstyle="info",
             interactive=False,
         )
@@ -704,7 +711,7 @@ class App(tb.Window):
                     tb.Label(row_frame, text=f"{arg_name}:", wraplength=170, justify="left").pack(side="left", padx=(0, 6))
 
                     btn_info = tb.Button(
-                        row_frame, image=self._icons["info"], bootstyle="info-outline",
+                        row_frame, image=self._icons["info"], bootstyle="info",
                         command=lambda n=arg_name, d=arg_desc: self.show_arg_info(n, d),
                     )
                     btn_info.pack(side="right", padx=(4, 0))
@@ -757,7 +764,7 @@ class App(tb.Window):
                     header_r.pack(fill="x")
                     tb.Label(header_r, text=f"{arg_name}:", font=("Segoe UI", 9, "bold")).pack(side="left")
                     tb.Button(
-                        header_r, image=self._icons["info"], bootstyle="info-outline",
+                        header_r, image=self._icons["info"], bootstyle="info",
                         command=lambda n=arg_name, d=arg_desc: self.show_arg_info(n, d),
                     ).pack(side="right")
 
@@ -804,7 +811,7 @@ class App(tb.Window):
                     header_w.pack(fill="x")
                     tb.Label(header_w, text=f"{arg_name}:", font=("Segoe UI", 9, "bold")).pack(side="left")
                     tb.Button(
-                        header_w, image=self._icons["info"], bootstyle="info-outline",
+                        header_w, image=self._icons["info"], bootstyle="info",
                         command=lambda n=arg_name, d=arg_desc: self.show_arg_info(n, d),
                     ).pack(side="right")
 
@@ -861,7 +868,7 @@ class App(tb.Window):
                     header_p.pack(fill="x")
                     tb.Label(header_p, text=f"{arg_name}:").pack(side="left")
                     tb.Button(
-                        header_p, image=self._icons["info"], bootstyle="info-outline",
+                        header_p, image=self._icons["info"], bootstyle="info",
                         command=lambda n=arg_name, d=arg_desc: self.show_arg_info(n, d),
                     ).pack(side="right")
 
@@ -913,7 +920,7 @@ class App(tb.Window):
                 }
 
                 tb.Button(
-                    row_frame, image=self._icons["info"], bootstyle="info-outline",
+                    row_frame, image=self._icons["info"], bootstyle="info",
                     command=lambda n=arg_name, d=arg_desc: self.show_arg_info(n, d),
                 ).pack(side="right")
 
