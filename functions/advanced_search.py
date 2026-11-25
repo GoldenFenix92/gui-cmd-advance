@@ -1,43 +1,49 @@
-import customtkinter as ctk
+import os
 import subprocess
 import threading
-import os
-from tkinter import filedialog
-from functions.utils import center_window, get_resource_path
+import tkinter as tk
+from tkinter import filedialog, messagebox
+import ttkbootstrap as tb
+from ttkbootstrap.widgets.scrolled import ScrolledFrame, ScrolledText
+from functions.utils import center_window
+from functions import ui_theme
 
-class MultiSelectDropdown(ctk.CTkButton):
+
+class MultiSelectDropdown(tb.Button):
     def __init__(self, master, options, **kwargs):
-        super().__init__(master, text="Extensiones", command=self.toggle_dropdown, **kwargs)
+        kwargs.setdefault("bootstyle", "secondary")
+        super().__init__(master, text="Todas (*.*)", command=self.toggle_dropdown, **kwargs)
         self.options = options
-        self.vars = {opt: ctk.BooleanVar(value=True if opt == "*.*" else False) for opt in options}
+        self.vars = {opt: tk.BooleanVar(value=(opt == "*.*")) for opt in options}
         self.dropdown_window = None
 
     def toggle_dropdown(self):
         if self.dropdown_window is None or not self.dropdown_window.winfo_exists():
-            self.dropdown_window = ctk.CTkToplevel(self)
+            self.dropdown_window = tb.Toplevel(self)
             self.dropdown_window.title("Seleccionar Extensiones")
-            # Hacer que sea una ventana modal pequeña
-            self.dropdown_window.attributes('-topmost', True)
+            self.dropdown_window.attributes("-topmost", True)
             self.dropdown_window.resizable(False, False)
-            
-            # Position relative to button
+
             x = self.winfo_rootx()
             y = self.winfo_rooty() + self.winfo_height()
-            self.dropdown_window.geometry(f"200x250+{x}+{y}")
-            self.dropdown_window.overrideredirect(True) # Sin bordes de windows
+            self.dropdown_window.geometry(f"210x260+{x}+{y}")
+            self.dropdown_window.overrideredirect(True)
 
-            frame = ctk.CTkFrame(self.dropdown_window, border_width=2, border_color="#1f6aa5")
+            frame = tb.Frame(self.dropdown_window, padding=6, bootstyle="secondary")
             frame.pack(fill="both", expand=True)
 
-            scroll = ctk.CTkScrollableFrame(frame, fg_color="transparent")
-            scroll.pack(fill="both", expand=True, padx=5, pady=5)
+            inner = tb.Frame(frame, padding=4)
+            inner.pack(fill="both", expand=True)
+
+            scroll = ScrolledFrame(inner, autohide=True)
+            scroll.pack(fill="both", expand=True, padx=2, pady=2)
 
             for opt in self.options:
-                cb = ctk.CTkCheckBox(scroll, text=opt, variable=self.vars[opt], command=self.update_text)
-                cb.pack(anchor="w", pady=2)
-                
-            btn_close = ctk.CTkButton(frame, text="Cerrar", command=self.dropdown_window.destroy, fg_color="#E74C3C", hover_color="#C0392B", height=24)
-            btn_close.pack(pady=5)
+                cb = tb.Checkbutton(scroll, text=opt, variable=self.vars[opt], command=self.update_text, bootstyle="primary")
+                cb.pack(anchor="w", pady=2, padx=4)
+
+            btn_close = tb.Button(inner, text="Cerrar", command=self.dropdown_window.destroy, bootstyle="danger")
+            btn_close.pack(fill="x", pady=(6, 0))
         else:
             self.dropdown_window.destroy()
 
@@ -56,183 +62,163 @@ class MultiSelectDropdown(ctk.CTkButton):
             return ["*.*"]
         return selected
 
-class AdvancedSearchApp(ctk.CTk):
+
+class AdvancedSearchApp(tb.Window):
     def __init__(self):
-        super().__init__()
+        theme = ui_theme.get_saved_theme()
+        super().__init__(themename=theme)
         self.title("Búsqueda Avanzada de Texto (FindStr Ultra)")
-        center_window(self, 900, 600)
-        try: self.iconbitmap(get_resource_path("resources/app_icon.ico"))
-        except Exception: pass
-        
+        center_window(self, 920, 620)
+        ui_theme.apply_window_chrome(self, theme)
+
         self.grid_rowconfigure(2, weight=1)
         self.grid_columnconfigure(0, weight=1)
-        
-        # Filtros (sin border_width=0 para mantener los bordes predeterminados de CTk)
-        top_frame = ctk.CTkFrame(self, fg_color="transparent")
-        top_frame.grid(row=0, column=0, padx=20, pady=10, sticky="ew")
-        
-        ctk.CTkLabel(top_frame, text="Directorio:").grid(row=0, column=0, padx=5, pady=5, sticky="w")
-        self.dir_var = ctk.StringVar()
-        ctk.CTkEntry(top_frame, textvariable=self.dir_var, width=250).grid(row=0, column=1, padx=5, pady=5)
-        
-        # Botón Secundario (Azul)
-        self.btn_browse = ctk.CTkButton(top_frame, text="Examinar", width=80, command=self.browse, fg_color="#2980B9", hover_color="#1F618D")
+
+        top_frame = tb.Labelframe(self, text="Filtros de Búsqueda", padding=12, bootstyle="info")
+        top_frame.grid(row=0, column=0, padx=16, pady=(12, 6), sticky="ew")
+        top_frame.grid_columnconfigure(1, weight=1)
+        top_frame.grid_columnconfigure(4, weight=1)
+
+        tb.Label(top_frame, text="Directorio:").grid(row=0, column=0, padx=5, pady=5, sticky="w")
+        self.dir_var = tk.StringVar()
+        self.dir_entry = ui_theme.PlaceholderEntry(top_frame, textvariable=self.dir_var, placeholder="Selecciona una carpeta...")
+        self.dir_entry.grid(row=0, column=1, padx=5, pady=5, sticky="ew")
+
+        self.btn_browse = tb.Button(top_frame, text="Examinar", command=self.browse, bootstyle="info")
         self.btn_browse.grid(row=0, column=2, padx=5, pady=5)
-        
-        ctk.CTkLabel(top_frame, text="Texto a buscar:").grid(row=0, column=3, padx=15, pady=5, sticky="w")
-        self.term_var = ctk.StringVar()
-        ctk.CTkEntry(top_frame, textvariable=self.term_var, width=200).grid(row=0, column=4, padx=5, pady=5)
-        
-        ctk.CTkLabel(top_frame, text="Extensiones:").grid(row=1, column=0, padx=5, pady=5, sticky="w")
-        exts = ["*.*", "*.txt", "*.log", "*.json", "*.py", "*.csv", "*.xml", "*.md", "*.ini", "*.cfg", "*.html", "*.css", "*.js", "*.php", "*.cpp", "*.java", "*.bat", "*.pdf"]
-        
-        # Terciario (Gris Oscuro)
-        self.ext_dropdown = MultiSelectDropdown(top_frame, options=exts, fg_color="#34495E", hover_color="#2C3E50", width=150)
+
+        tb.Label(top_frame, text="Texto a buscar:").grid(row=0, column=3, padx=(14, 5), pady=5, sticky="w")
+        self.term_var = tk.StringVar()
+        self.term_entry = ui_theme.PlaceholderEntry(top_frame, textvariable=self.term_var, placeholder="Palabra o patrón...")
+        self.term_entry.grid(row=0, column=4, padx=5, pady=5, sticky="ew")
+
+        tb.Label(top_frame, text="Extensiones:").grid(row=1, column=0, padx=5, pady=5, sticky="w")
+        exts = [
+            "*.*", "*.txt", "*.log", "*.json", "*.py", "*.csv", "*.xml", "*.md",
+            "*.ini", "*.cfg", "*.html", "*.css", "*.js", "*.php", "*.cpp", "*.java", "*.bat", "*.pdf",
+        ]
+        self.ext_dropdown = MultiSelectDropdown(top_frame, options=exts, width=18)
         self.ext_dropdown.grid(row=1, column=1, padx=5, pady=5, sticky="w")
-        
-        self.ignore_case_var = ctk.BooleanVar(value=True)
-        ctk.CTkCheckBox(top_frame, text="Ignorar Mayúsculas (/i)", variable=self.ignore_case_var).grid(row=1, column=3, padx=5, pady=5)
-        
-        self.regex_var = ctk.BooleanVar(value=False)
-        ctk.CTkCheckBox(top_frame, text="Expresión Regular (/r)", variable=self.regex_var).grid(row=1, column=4, padx=5, pady=5)
-        
-        # Botón Primario (Verde)
-        self.btn_search = ctk.CTkButton(self, text="Buscar Ahora", command=self.run_search, fg_color="#27AE60", hover_color="#1E8449", font=("Arial", 14, "bold"))
-        self.btn_search.grid(row=1, column=0, padx=20, pady=5)
-        
-        self.results_frame = ctk.CTkScrollableFrame(self, fg_color="transparent")
-        self.results_frame.grid(row=2, column=0, padx=20, pady=10, sticky="nsew")
+
+        self.ignore_case_var = tk.BooleanVar(value=True)
+        tb.Checkbutton(top_frame, text="Ignorar Mayúsculas (/i)", variable=self.ignore_case_var, bootstyle="primary").grid(row=1, column=3, padx=5, pady=5, sticky="w")
+
+        self.regex_var = tk.BooleanVar(value=False)
+        tb.Checkbutton(top_frame, text="Expresión Regular (/r)", variable=self.regex_var, bootstyle="primary").grid(row=1, column=4, padx=5, pady=5, sticky="w")
+
+        self.btn_search = tb.Button(self, text="Buscar Ahora", command=self.run_search, bootstyle="success", width=22)
+        self.btn_search.grid(row=1, column=0, padx=16, pady=6)
+
+        self.results_frame = ScrolledFrame(self, autohide=True, padding=8)
+        self.results_frame.grid(row=2, column=0, padx=16, pady=(4, 14), sticky="nsew")
 
     def browse(self):
-        f = filedialog.askdirectory()
-        if f: self.dir_var.set(f.replace("/", "\\"))
+        f = filedialog.askdirectory(parent=self)
+        if f:
+            self.dir_entry.set_value(f.replace("/", "\\"))
 
     def run_search(self):
-        if not self.dir_var.get() or not self.term_var.get(): return
+        d = self.dir_entry.get_value().strip()
+        t = self.term_entry.get_value().strip()
+        if not d or not t:
+            return
         self.btn_search.configure(state="disabled")
-        
-        for w in self.results_frame.winfo_children(): w.destroy()
-        
-        ctk.CTkLabel(self.results_frame, text="Buscando...", font=("Arial", 14)).pack(pady=20)
-        
+
+        for w in self.results_frame.winfo_children():
+            w.destroy()
+
+        tb.Label(self.results_frame, text="Buscando coincidencias...", font=("Segoe UI", 12), bootstyle="info").pack(pady=20)
+
         def task():
-            d = self.dir_var.get()
-            t = self.term_var.get()
             exts = self.ext_dropdown.get_selected()
-            
             flags = "/s /n "
-            if self.ignore_case_var.get(): flags += "/i "
-            if self.regex_var.get(): flags += "/r "
-            else: flags += "/c:"
-            
-            # Formatear multiples extensiones para findstr
+            if self.ignore_case_var.get():
+                flags += "/i "
+            if self.regex_var.get():
+                flags += "/r "
+            else:
+                flags += "/c:"
+
             paths = " ".join([f'"{d}\\{ext}"' for ext in exts])
             cmd = f'findstr {flags}"{t}" {paths}'
-            
+
             try:
-                out = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, creationflags=subprocess.CREATE_NO_WINDOW)
-                text = out.decode('mbcs', 'ignore')
+                out = subprocess.check_output(
+                    cmd,
+                    shell=True,
+                    stderr=subprocess.STDOUT,
+                    creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+                )
+                text = out.decode("mbcs", "ignore")
             except subprocess.CalledProcessError as err:
-                text = err.output.decode('mbcs', 'ignore') if err.output else ""
-                
+                text = err.output.decode("mbcs", "ignore") if err.output else ""
+
             self.after(0, self.done, text)
-            
+
         threading.Thread(target=task, daemon=True).start()
 
     def done(self, text):
-        for w in self.results_frame.winfo_children(): w.destroy()
+        for w in self.results_frame.winfo_children():
+            w.destroy()
         self.btn_search.configure(state="normal")
-        
+
         if not text.strip():
-            ctk.CTkLabel(self.results_frame, text="No se encontraron coincidencias.", font=("Arial", 14)).pack(pady=20)
+            tb.Label(self.results_frame, text="No se encontraron coincidencias.", font=("Segoe UI", 12), bootstyle="secondary").pack(pady=20)
             return
 
-        lines = text.strip().split('\n')
+        lines = text.strip().split("\n")
         grouped = {}
-        
+
         for line in lines:
             line = line.strip()
-            if not line or line.startswith("FINDSTR:"): continue
-            
+            if not line or line.startswith("FINDSTR:"):
+                continue
+
             parts = line.split(":", 2)
             if len(parts) >= 3:
-                # Si contiene letra de unidad (ej. C:\...)
                 if len(parts[0]) == 1 and parts[0].isalpha() and "\\" in parts[1]:
                     path = parts[0] + ":" + parts[1]
                     rem = parts[2].split(":", 1)
                     if len(rem) == 2:
-                        line_num = rem[0]
-                        content = rem[1]
+                        line_num, content = rem[0], rem[1]
                     else:
-                        line_num = "?"
-                        content = parts[2]
+                        line_num, content = "?", parts[2]
                 else:
-                    # En caso de que devuelva ruta relativa (no debería por cómo armamos el comando)
-                    path = parts[0]
-                    line_num = parts[1]
-                    content = parts[2]
-                    
-                if path not in grouped:
-                    grouped[path] = []
-                grouped[path].append((line_num, content))
+                    path, line_num, content = parts[0], parts[1], parts[2]
+
+                grouped.setdefault(path, []).append((line_num, content))
 
         for path, matches in grouped.items():
-            # Contenedor sin fondo visible para evitar cuadros feos
-            file_frame = ctk.CTkFrame(self.results_frame, fg_color="transparent")
-            file_frame.pack(fill="x", pady=15, padx=5)
-            
-            header = ctk.CTkFrame(file_frame, fg_color="transparent")
-            header.pack(fill="x", padx=5, pady=2)
-            header.grid_columnconfigure(0, weight=1)
-            
-            # Nombre de archivo truncado pero visible
-            lbl_path = ctk.CTkLabel(header, text=f"{path}", font=("Arial", 14, "bold"), text_color="#F39C12", anchor="w", justify="left")
-            lbl_path.grid(row=0, column=0, sticky="w")
-            
-            # Botón Primario para Abrir Archivo, alineado a la derecha
-            btn_open = ctk.CTkButton(header, text="Abrir Archivo", width=120, height=28, command=lambda p=path: self.open_file(p), fg_color="#2980B9", hover_color="#1F618D")
-            btn_open.grid(row=0, column=1, sticky="e", padx=(10, 0))
-            
-            # Separador visual
-            ctk.CTkFrame(file_frame, height=1, fg_color="#333333").pack(fill="x", pady=(2, 8))
-            
-            # Caja de texto grande en lugar de múltiples labels individuales
-            # Esto soluciona los contenedores feos y emula un bloque de código
-            matches_text = ""
-            for line_num, content in matches:
-                matches_text += f"Línea {line_num:>5} |  {content}\n"
-                
-            tb = ctk.CTkTextbox(file_frame, font=("Consolas", 13), height=min(200, len(matches)*20 + 10), fg_color="#1E1E1E", text_color="#A9CCE3")
-            tb.pack(fill="x", padx=10)
-            tb.insert("1.0", matches_text)
-            tb.configure(state="disabled")
+            card = tb.Labelframe(self.results_frame, text=f"{path} ({len(matches)} coincidencias)", padding=8, bootstyle="warning")
+            card.pack(fill="x", pady=8, padx=4)
+
+            header = tb.Frame(card)
+            header.pack(fill="x", pady=(0, 6))
+            tb.Button(header, text="Abrir Archivo", command=lambda p=path: self.open_file(p), bootstyle="info-outline").pack(side="right")
+
+            matches_text = "".join(f"Línea {line_num:>5} |  {content}\n" for line_num, content in matches)
+            box_h = min(10, max(2, len(matches) + 1))
+            box = ScrolledText(card, font=("Consolas", 10), height=box_h, autohide=True)
+            box.pack(fill="x")
+            box.text.insert("1.0", matches_text)
+            box.text.configure(state="disabled")
 
     def open_file(self, path):
-        import os
-        from tkinter import messagebox
-        import subprocess
-        
-        # Limpiar la ruta por si tiene espacios residuales
         clean_path = path.strip()
-        
         if not os.path.exists(clean_path):
-            messagebox.showerror("Error", f"Windows no puede encontrar la ruta:\n{clean_path}")
+            messagebox.showerror("Error", f"Windows no puede encontrar la ruta:\n{clean_path}", parent=self)
             return
-            
         try:
-            # Dado que la aplicación principal se ejecuta como Administrador (elevada),
-            # algunos programas (como Edge, Chrome o Adobe) bloquean la apertura de archivos
-            # por motivos de seguridad (UIPI).
-            # Para evitarlo, le pedimos a 'explorer.exe' (que corre como usuario normal) que lo abra.
             subprocess.Popen(
-                ['explorer.exe', clean_path],
+                ["explorer.exe", clean_path],
                 creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
             )
-        except Exception as e:
+        except Exception:
             try:
                 os.startfile(clean_path)
             except Exception as e2:
-                messagebox.showerror("Error Crítico", f"No se pudo abrir el archivo.\n{e2}")
+                messagebox.showerror("Error Crítico", f"No se pudo abrir el archivo.\n{e2}", parent=self)
+
 
 if __name__ == "__main__":
     app = AdvancedSearchApp()

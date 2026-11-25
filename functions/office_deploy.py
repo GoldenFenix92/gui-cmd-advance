@@ -1,9 +1,12 @@
 import os
 import threading
 import subprocess
-import customtkinter as ctk
+import tkinter as tk
 from tkinter import messagebox
+import ttkbootstrap as tb
+from ttkbootstrap.widgets.scrolled import ScrolledText
 from functions.utils import center_window, get_user_data_path
+from functions import ui_theme
 
 
 def get_channel_for_suite(suite_id):
@@ -51,83 +54,80 @@ def get_config_xml_path():
     os.makedirs(tools_dir, exist_ok=True)
     return os.path.join(tools_dir, "config.xml")
 
-class OfficeDeployApp(ctk.CTk):
-    def __init__(self):
-        super().__init__()
-        self.title("Despliegue de Microsoft Office (ODT)")
-        center_window(self, 700, 600)
 
-        # Definir datos para Office
+class OfficeDeployApp(tb.Window):
+    def __init__(self):
+        theme = ui_theme.get_saved_theme()
+        super().__init__(themename=theme)
+        self.title("Despliegue de Microsoft Office (ODT)")
+        center_window(self, 720, 620)
+        ui_theme.apply_window_chrome(self, theme)
+
         self.office_suites = {
             "Office LTSC Professional Plus 2024": "ProPlus2024Volume",
             "Office LTSC Professional Plus 2021": "ProPlus2021Volume",
-            "Office Professional Plus 2019": "ProPlus2019Volume"
+            "Office Professional Plus 2019": "ProPlus2019Volume",
         }
         self.languages = {
             "Español (España)": "es-es",
             "Español (México)": "es-mx",
-            "Inglés (Estados Unidos)": "en-us"
+            "Inglés (Estados Unidos)": "en-us",
         }
 
         self.setup_ui()
 
     def setup_ui(self):
         self.grid_columnconfigure(0, weight=1)
+        self.grid_rowconfigure(3, weight=1)
 
-        title = ctk.CTkLabel(self, text="Configurador de Instalación Office", font=ctk.CTkFont(size=20, weight="bold"))
-        title.grid(row=0, column=0, pady=20)
+        title = tb.Label(self, text="Configurador de Instalación Office", font=("Segoe UI", 16, "bold"), bootstyle="primary")
+        title.grid(row=0, column=0, pady=(16, 8))
 
-        # Contenedor principal
-        main_frame = ctk.CTkFrame(self)
-        main_frame.grid(row=1, column=0, padx=20, pady=10, sticky="nsew")
+        main_frame = tb.Labelframe(self, text="Configuración de Suite", padding=14, bootstyle="info")
+        main_frame.grid(row=1, column=0, padx=20, pady=8, sticky="nsew")
         main_frame.grid_columnconfigure(1, weight=1)
 
-        # Suite
-        ctk.CTkLabel(main_frame, text="Versión de Office:").grid(row=0, column=0, padx=10, pady=15, sticky="w")
-        self.suite_var = ctk.StringVar(value=list(self.office_suites.keys())[0])
-        self.suite_menu = ctk.CTkOptionMenu(main_frame, variable=self.suite_var, values=list(self.office_suites.keys()))
-        self.suite_menu.grid(row=0, column=1, padx=10, pady=15, sticky="ew")
+        tb.Label(main_frame, text="Versión de Office:").grid(row=0, column=0, padx=8, pady=10, sticky="w")
+        self.suite_var = tk.StringVar(value=list(self.office_suites.keys())[0])
+        self.suite_menu = tb.Combobox(main_frame, textvariable=self.suite_var, values=list(self.office_suites.keys()), state="readonly")
+        self.suite_menu.grid(row=0, column=1, padx=8, pady=10, sticky="ew")
 
-        # Arquitectura
-        ctk.CTkLabel(main_frame, text="Arquitectura:").grid(row=1, column=0, padx=10, pady=15, sticky="w")
-        self.arch_var = ctk.StringVar(value="64")
-        self.arch_menu = ctk.CTkOptionMenu(main_frame, variable=self.arch_var, values=["64", "32"])
-        self.arch_menu.grid(row=1, column=1, padx=10, pady=15, sticky="ew")
+        tb.Label(main_frame, text="Arquitectura:").grid(row=1, column=0, padx=8, pady=10, sticky="w")
+        self.arch_var = tk.StringVar(value="64")
+        self.arch_menu = tb.Combobox(main_frame, textvariable=self.arch_var, values=["64", "32"], state="readonly")
+        self.arch_menu.grid(row=1, column=1, padx=8, pady=10, sticky="ew")
 
-        # Idioma
-        ctk.CTkLabel(main_frame, text="Idioma:").grid(row=2, column=0, padx=10, pady=15, sticky="w")
-        self.lang_var = ctk.StringVar(value=list(self.languages.keys())[0])
-        self.lang_menu = ctk.CTkOptionMenu(main_frame, variable=self.lang_var, values=list(self.languages.keys()))
-        self.lang_menu.grid(row=2, column=1, padx=10, pady=15, sticky="ew")
-        
-        # Opciones extra
-        self.visio_var = ctk.BooleanVar(value=False)
-        ctk.CTkCheckBox(main_frame, text="Incluir Visio LTSC Pro", variable=self.visio_var).grid(row=3, column=0, padx=10, pady=15)
-        
-        self.project_var = ctk.BooleanVar(value=False)
-        ctk.CTkCheckBox(main_frame, text="Incluir Project LTSC Pro", variable=self.project_var).grid(row=3, column=1, padx=10, pady=15)
+        tb.Label(main_frame, text="Idioma:").grid(row=2, column=0, padx=8, pady=10, sticky="w")
+        self.lang_var = tk.StringVar(value=list(self.languages.keys())[0])
+        self.lang_menu = tb.Combobox(main_frame, textvariable=self.lang_var, values=list(self.languages.keys()), state="readonly")
+        self.lang_menu.grid(row=2, column=1, padx=8, pady=10, sticky="ew")
 
-        # Botones de Acción
-        action_frame = ctk.CTkFrame(self, fg_color="transparent")
-        action_frame.grid(row=2, column=0, pady=20)
+        self.visio_var = tk.BooleanVar(value=False)
+        tb.Checkbutton(main_frame, text="Incluir Visio LTSC Pro", variable=self.visio_var, bootstyle="round-toggle").grid(row=3, column=0, padx=8, pady=10, sticky="w")
 
-        self.btn_generate = ctk.CTkButton(action_frame, text="1. Generar config.xml", command=self.generate_xml)
-        self.btn_generate.grid(row=0, column=0, padx=10)
+        self.project_var = tk.BooleanVar(value=False)
+        tb.Checkbutton(main_frame, text="Incluir Project LTSC Pro", variable=self.project_var, bootstyle="round-toggle").grid(row=3, column=1, padx=8, pady=10, sticky="w")
 
-        self.btn_download = ctk.CTkButton(action_frame, text="2. Descargar ODT (setup.exe)", command=self.download_odt, fg_color="gray")
-        self.btn_download.grid(row=0, column=1, padx=10)
+        action_frame = tb.Frame(self)
+        action_frame.grid(row=2, column=0, pady=12)
 
-        self.btn_install = ctk.CTkButton(action_frame, text="3. Instalar Office", command=self.install_office, fg_color="#27ae60", hover_color="#2ecc71")
-        self.btn_install.grid(row=0, column=2, padx=10)
-        
-        self.log_textbox = ctk.CTkTextbox(self, height=150)
-        self.log_textbox.grid(row=3, column=0, padx=20, pady=10, sticky="nsew")
+        self.btn_generate = tb.Button(action_frame, text="1. Generar config.xml", command=self.generate_xml, bootstyle="primary")
+        self.btn_generate.grid(row=0, column=0, padx=8)
+
+        self.btn_download = tb.Button(action_frame, text="2. Descargar ODT (setup.exe)", command=self.download_odt, bootstyle="secondary")
+        self.btn_download.grid(row=0, column=1, padx=8)
+
+        self.btn_install = tb.Button(action_frame, text="3. Instalar Office", command=self.install_office, bootstyle="success")
+        self.btn_install.grid(row=0, column=2, padx=8)
+
+        self.log_textbox = ScrolledText(self, height=10, font=("Consolas", 10), autohide=True)
+        self.log_textbox.grid(row=3, column=0, padx=20, pady=(4, 16), sticky="nsew")
         self.log("Sistema listo. Elige tu configuración y genera el XML.")
 
     def log(self, text):
         def _append():
-            self.log_textbox.insert("end", text + "\n")
-            self.log_textbox.see("end")
+            self.log_textbox.text.insert("end", text + "\n")
+            self.log_textbox.text.see("end")
         if threading.current_thread() is threading.main_thread():
             _append()
         else:
@@ -150,9 +150,9 @@ class OfficeDeployApp(ctk.CTk):
             config_path = get_config_xml_path()
             with open(config_path, "w", encoding="utf-8") as f:
                 f.write(xml_content)
-            
+
             self.log(f"[+] config.xml generado exitosamente en: {config_path}")
-            messagebox.showinfo("Éxito", f"config.xml ha sido generado correctamente en:\n{config_path}")
+            messagebox.showinfo("Éxito", f"config.xml ha sido generado correctamente en:\n{config_path}", parent=self)
         except Exception as e:
             self.log(f"[-] Error al generar XML: {str(e)}")
 
@@ -168,18 +168,18 @@ class OfficeDeployApp(ctk.CTk):
         setup_path = get_user_data_path(os.path.join("tools", "setup.exe"))
         if not os.path.exists(setup_path) and os.path.exists("setup.exe"):
             setup_path = "setup.exe"
-            
+
         if not os.path.exists(setup_path):
-            messagebox.showerror("Error", "No se encontró 'setup.exe'. Por favor asegúrate de instalar el complemento ODT.")
+            messagebox.showerror("Error", "No se encontró 'setup.exe'. Por favor asegúrate de instalar el complemento ODT.", parent=self)
             return
-            
+
         config_path = get_config_xml_path()
         if not os.path.exists(config_path):
-            messagebox.showerror("Error", "Primero debes generar el archivo config.xml.")
+            messagebox.showerror("Error", "Primero debes generar el archivo config.xml.", parent=self)
             return
 
         self.log("[*] Iniciando instalación de Office. Esto tomará varios minutos...")
-        
+
         def run_install():
             try:
                 subprocess.run(
@@ -190,12 +190,14 @@ class OfficeDeployApp(ctk.CTk):
                 self.log("[+] Instalación finalizada exitosamente (o proceso delegado a Windows).")
             except Exception as e:
                 self.log(f"[-] Ocurrió un error en la instalación: {str(e)}")
-                
+
         threading.Thread(target=run_install, daemon=True).start()
+
 
 def main():
     app = OfficeDeployApp()
     app.mainloop()
+
 
 if __name__ == "__main__":
     main()
