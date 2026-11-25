@@ -2,8 +2,8 @@ import re
 
 
 def extract_command_context(cmd_str):
-    """Extrae contexto reutilizable (disk, drive, path) del comando principal actual."""
-    ctx = {"disk": "", "drive": "", "path": ""}
+    """Extrae contexto reutilizable (disk, drive, path, recursive_flag, media_type) del comando principal actual."""
+    ctx = {"disk": "", "drive": "", "path": "", "recursive_flag": "", "media_type": "all"}
     if not cmd_str:
         return ctx
 
@@ -14,6 +14,13 @@ def extract_command_context(cmd_str):
     m_drive = re.search(r"(?:-letra|--drive)\s+([A-Za-z]):?", cmd_str, flags=re.IGNORECASE)
     if m_drive:
         ctx["drive"] = m_drive.group(1).upper() + ":"
+
+    if re.search(r"(?:^|\s)--recursive(?:\s|$)", cmd_str, flags=re.IGNORECASE):
+        ctx["recursive_flag"] = "--recursive"
+
+    m_mtype = re.search(r"--media-type\s+(all|videos|images)\b", cmd_str, flags=re.IGNORECASE)
+    if m_mtype:
+        ctx["media_type"] = m_mtype.group(1).lower()
 
     # Ruta entre comillas o ruta Windows tipo C:\...
     m_quoted = re.search(r'"([A-Za-z]:\\[^"]+)"', cmd_str)
@@ -28,22 +35,23 @@ def extract_command_context(cmd_str):
 
 
 def resolve_step_command(item, context=None):
-    """Resuelve el auto_command de un combo sustituyendo {disk}, {drive}, {path}.
+    """Resuelve el auto_command de un combo sustituyendo placeholders de contexto.
 
-    Retorna '' si no tiene auto_command o si falta algún placeholder requerido.
+    Retorna '' si no tiene auto_command o si falta algún placeholder obligatorio (disk/drive/path).
     """
     tmpl = (item.get("auto_command") or "").strip()
     if not tmpl:
         return ""
     ctx = context or {}
-    needed = set(re.findall(r"\{(disk|drive|path)\}", tmpl))
-    for key in needed:
+    required_keys = {"disk", "drive", "path"}
+    needed = set(re.findall(r"\{(disk|drive|path|recursive_flag|media_type)\}", tmpl))
+    for key in needed & required_keys:
         if not ctx.get(key):
             return ""
     resolved = tmpl
     for key in needed:
-        resolved = resolved.replace("{" + key + "}", str(ctx[key]))
-    return resolved
+        resolved = resolved.replace("{" + key + "}", str(ctx.get(key, "")))
+    return re.sub(r"\s{2,}", " ", resolved).strip()
 
 
 def get_command_combos(cmd_data, context=None):
@@ -99,9 +107,17 @@ def build_execution_queue(
             "role": "before",
         })
 
+    has_health_before = any(
+        s["role"] == "before" and s["mode"] == "auto" and "--run-health-analyzer" in s["cmd_str"]
+        for s in queue
+    )
+    effective_main_cmd = main_cmd_str
+    if has_health_before and "--run-media-repair" in effective_main_cmd and "--from-manifest" not in effective_main_cmd:
+        effective_main_cmd = f"{effective_main_cmd} --from-manifest"
+
     queue.append({
         "name": main_name,
-        "cmd_str": main_cmd_str,
+        "cmd_str": effective_main_cmd,
         "mode": "auto",
         "role": "main",
     })

@@ -709,8 +709,11 @@ class App(tb.Window):
                 arg_type = arg.get("type")
                 arg_flag = arg.get("flag", "")
                 arg_desc = arg.get("description", "")
+                visible_when = arg.get("visible_when")
 
-                row_frame = tb.Frame(self.args_frame)
+                holder_frame = tb.Frame(self.args_frame)
+                holder_frame.pack(fill="x")
+                row_frame = tb.Frame(holder_frame)
                 row_frame.pack(fill="x", pady=6, padx=2)
 
                 var = tk.StringVar(value=arg.get("value", ""))
@@ -771,7 +774,13 @@ class App(tb.Window):
                     entry_widget.pack(side="left", fill="x", expand=True, padx=(0, 4))
 
                     self.current_args_vars[arg_name] = {
-                        "var": var, "type": arg_type, "flag": arg_flag, "option_map": option_map
+                        "var": var,
+                        "type": arg_type,
+                        "flag": arg_flag,
+                        "option_map": option_map,
+                        "row_frame": row_frame,
+                        "visible_when": visible_when,
+                        "is_visible": True,
                     }
                     continue
 
@@ -792,7 +801,13 @@ class App(tb.Window):
                         ).pack(anchor="w", pady=2)
 
                     self.current_args_vars[arg_name] = {
-                        "var": var, "type": arg_type, "flag": arg_flag, "option_map": option_map
+                        "var": var,
+                        "type": arg_type,
+                        "flag": arg_flag,
+                        "option_map": option_map,
+                        "row_frame": row_frame,
+                        "visible_when": visible_when,
+                        "is_visible": True,
                     }
                     continue
 
@@ -840,7 +855,13 @@ class App(tb.Window):
                         tb.Radiobutton(rb_frame, text=prof, variable=var, value=prof, bootstyle="info").pack(anchor="w", pady=2)
 
                     self.current_args_vars[arg_name] = {
-                        "var": var, "type": arg_type, "flag": arg_flag, "option_map": option_map
+                        "var": var,
+                        "type": arg_type,
+                        "flag": arg_flag,
+                        "option_map": option_map,
+                        "row_frame": row_frame,
+                        "visible_when": visible_when,
+                        "is_visible": True,
                     }
                     continue
 
@@ -924,7 +945,13 @@ class App(tb.Window):
                     var2.trace_add("write", check_match)
 
                     self.current_args_vars[arg_name] = {
-                        "var": var, "type": arg_type, "flag": arg_flag, "option_map": option_map
+                        "var": var,
+                        "type": arg_type,
+                        "flag": arg_flag,
+                        "option_map": option_map,
+                        "row_frame": row_frame,
+                        "visible_when": visible_when,
+                        "is_visible": True,
                     }
                     continue
 
@@ -933,6 +960,9 @@ class App(tb.Window):
                     "type": arg_type,
                     "flag": arg_flag,
                     "option_map": option_map,
+                    "row_frame": row_frame,
+                    "visible_when": visible_when,
+                    "is_visible": True,
                 }
 
                 tb.Button(
@@ -941,6 +971,30 @@ class App(tb.Window):
                 ).pack(side="right")
 
         self.update_preview()
+
+    def _refresh_conditional_args(self):
+        """Muestra u oculta campos condicionales según visible_when sin alterar el orden vertical."""
+        for _name, arg_data in self.current_args_vars.items():
+            cond = arg_data.get("visible_when")
+            row = arg_data.get("row_frame")
+            if not cond or row is None:
+                arg_data["is_visible"] = True
+                continue
+            parent = self.current_args_vars.get(cond.get("arg"))
+            if not parent:
+                arg_data["is_visible"] = True
+                continue
+            raw_val = parent["var"].get().strip()
+            opt_map = parent.get("option_map")
+            eff_val = opt_map.get(raw_val, raw_val) if opt_map else raw_val
+            should_show = eff_val in (cond.get("values") or [])
+            arg_data["is_visible"] = should_show
+            if should_show:
+                if not row.winfo_ismapped():
+                    row.pack(fill="x", pady=6, padx=2)
+            else:
+                if row.winfo_ismapped():
+                    row.pack_forget()
 
     def update_hardware_options(self, cmd_data):
         has_nvenc = False
@@ -986,8 +1040,12 @@ class App(tb.Window):
         if not cmd_data:
             return
 
+        self._refresh_conditional_args()
+
         command_list = [cmd_data.get("command", "")]
         for _arg_name, arg_data in self.current_args_vars.items():
+            if not arg_data.get("is_visible", True):
+                continue
             val = arg_data["var"].get().strip()
             if val:
                 if arg_data["type"] in ["checkbox", "radio_group"]:

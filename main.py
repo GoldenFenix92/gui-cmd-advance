@@ -82,8 +82,17 @@ if __name__ == "__main__":
             parser.add_argument("--recursive", action="store_true")
             parser.add_argument("--threads", type=int, default=0)
             parser.add_argument("--quick", action="store_true")
+            parser.add_argument("--media-type", choices=["all", "videos", "images"], default="all")
+            parser.add_argument("--manifest-out", default=None)
             args, _ = parser.parse_known_args(sys.argv[1:])
-            health_analyzer.main(args.folder, recursive=args.recursive, threads=args.threads, quick_mode=args.quick)
+            health_analyzer.main(
+                args.folder,
+                recursive=args.recursive,
+                threads=args.threads,
+                quick_mode=args.quick,
+                media_type=args.media_type,
+                manifest_out=args.manifest_out,
+            )
             sys.exit(0)
         elif sys.argv[1] == "--run-7z":
             from functions.utils import get_user_data_path, safe_print

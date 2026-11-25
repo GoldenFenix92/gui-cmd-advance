@@ -4,34 +4,34 @@
             "name": "Redes y Conectividad",
             "commands": [
                 {
-                    "name": "Configuraci\u00f3n de Red IP (ipconfig)",
-                    "description": "Muestra la configuraci\u00f3n TCP/IP de tus adaptadores de red (IPv4, IPv6, m\u00e1scara, puerta de enlace y DNS) y permite renovar o liberar la direcci\u00f3n IP asignada por DHCP. \u00datil cuando pierdes conexi\u00f3n o cambias de red.",
+                    "name": "Configuración de Red IP (ipconfig)",
+                    "description": "Muestra la configuración TCP/IP de tus adaptadores de red (IPv4, IPv6, máscara, puerta de enlace y DNS) y permite renovar o liberar la dirección IP asignada por DHCP. Útil cuando pierdes conexión o cambias de red.",
                     "command": "ipconfig",
                     "args": [
                         {
                             "name": "Todo (All)",
                             "flag": "/all",
                             "type": "checkbox",
-                            "description": "Muestra la configuraci\u00f3n completa de todos los adaptadores de red."
+                            "description": "Muestra la configuración completa de todos los adaptadores de red."
                         },
                         {
                             "name": "Renovar (Renew)",
                             "flag": "/renew",
                             "type": "checkbox",
-                            "description": "Renueva la direcci\u00f3n IPv4 para el adaptador especificado (o todos si no se especifica)."
+                            "description": "Renueva la dirección IPv4 para el adaptador especificado (o todos si no se especifica)."
                         },
                         {
                             "name": "Liberar (Release)",
                             "flag": "/release",
                             "type": "checkbox",
-                            "description": "Libera la direcci\u00f3n IPv4 actual, desconectando el equipo de la red."
+                            "description": "Libera la dirección IPv4 actual, desconectando el equipo de la red."
                         }
                     ],
                     "combos": [
                         {
-                            "command": "Limpiar Cach\u00e9 DNS (Flush DNS)",
+                            "command": "Limpiar Caché DNS (Flush DNS)",
                             "when": "after",
-                            "reason": "Vac\u00eda la cach\u00e9 DNS para resolver fallos de navegaci\u00f3n tras revisar tu configuraci\u00f3n IP.",
+                            "reason": "Vacía la caché DNS para resolver fallos de navegación tras revisar tu configuración IP.",
                             "auto_command": "ipconfig /flushdns"
                         },
                         {
@@ -44,14 +44,14 @@
                 },
                 {
                     "name": "Probar Conectividad y Latencia (ping)",
-                    "description": "Env\u00eda paquetes ICMP a una IP o dominio (ej. 8.8.8.8 o google.com) para comprobar si hay respuesta, medir el tiempo de latencia en milisegundos y detectar p\u00e9rdida de paquetes. Operaci\u00f3n de solo consulta.",
+                    "description": "Envía paquetes ICMP a una IP o dominio (ej. 8.8.8.8 o google.com) para comprobar si hay respuesta, medir el tiempo de latencia en milisegundos y detectar pérdida de paquetes. Operación de solo consulta.",
                     "command": "ping",
                     "args": [
                         {
                             "name": "Destino (IP/Dominio)",
                             "flag": "",
                             "type": "entry",
-                            "description": "Escribe la direcci\u00f3n IP o el dominio (ej. 8.8.8.8 o google.com)."
+                            "description": "Escribe la dirección IP o el dominio (ej. 8.8.8.8 o google.com)."
                         },
                         {
                             "name": "Ping Continuo (-t)",
@@ -64,50 +64,50 @@
                         {
                             "command": "Rastrear Ruta de Red (tracert)",
                             "when": "after",
-                            "reason": "Si detectaste p\u00e9rdida o alta latencia en ping, rastrea en qu\u00e9 salto intermedio falla la ruta."
+                            "reason": "Si detectaste pérdida o alta latencia en ping, rastrea en qué salto intermedio falla la ruta."
                         },
                         {
-                            "command": "Diagn\u00f3stico de Ruta y P\u00e9rdida de Paquetes (pathping)",
+                            "command": "Diagnóstico de Ruta y Pérdida de Paquetes (pathping)",
                             "when": "after",
-                            "reason": "An\u00e1lisis detallado de p\u00e9rdida de paquetes por cada nodo intermedio."
+                            "reason": "Análisis detallado de pérdida de paquetes por cada nodo intermedio."
                         }
                     ]
                 },
                 {
                     "name": "Rastrear Ruta de Red (tracert)",
-                    "description": "Muestra cada salto (router o servidor intermedio) que recorren los paquetes desde tu equipo hasta el destino indicado. \u00datil para localizar en qu\u00e9 punto exacto se corta o se vuelve lenta la conexi\u00f3n.",
+                    "description": "Muestra cada salto (router o servidor intermedio) que recorren los paquetes desde tu equipo hasta el destino indicado. Útil para localizar en qué punto exacto se corta o se vuelve lenta la conexión.",
                     "command": "tracert",
                     "args": [
                         {
                             "name": "Destino (IP/Dominio)",
                             "flag": "",
                             "type": "entry",
-                            "description": "Escribe la direcci\u00f3n IP o el dominio destino."
+                            "description": "Escribe la dirección IP o el dominio destino."
                         },
                         {
                             "name": "Sin resolver nombres (-d)",
                             "flag": "-d",
                             "type": "checkbox",
-                            "description": "No convierte direcciones en nombres de host (hace el comando m\u00e1s r\u00e1pido)."
+                            "description": "No convierte direcciones en nombres de host (hace el comando más rápido)."
                         }
                     ]
                 },
                 {
-                    "name": "Diagn\u00f3stico de Ruta y P\u00e9rdida de Paquetes (pathping)",
-                    "description": "Combina ping y tracert: analiza durante varios segundos cada salto intermedio hasta el destino para medir con precisi\u00f3n qu\u00e9 nodo est\u00e1 perdiendo paquetes o introduciendo latencia. Operaci\u00f3n de solo consulta.",
+                    "name": "Diagnóstico de Ruta y Pérdida de Paquetes (pathping)",
+                    "description": "Combina ping y tracert: analiza durante varios segundos cada salto intermedio hasta el destino para medir con precisión qué nodo está perdiendo paquetes o introduciendo latencia. Operación de solo consulta.",
                     "command": "pathping",
                     "args": [
                         {
                             "name": "Destino (IP/Dominio)",
                             "flag": "",
                             "type": "entry",
-                            "description": "Escribe la direcci\u00f3n IP o el dominio destino."
+                            "description": "Escribe la dirección IP o el dominio destino."
                         }
                     ]
                 },
                 {
-                    "name": "Estad\u00edsticas y Conexiones de Red (netstat)",
-                    "description": "Muestra las conexiones TCP/UDP activas, puertos en escucha y procesos asociados en tu equipo. \u00datil para auditar qu\u00e9 aplicaciones usan la red o verificar si un puerto local est\u00e1 abierto.",
+                    "name": "Estadísticas y Conexiones de Red (netstat)",
+                    "description": "Muestra las conexiones TCP/UDP activas, puertos en escucha y procesos asociados en tu equipo. Útil para auditar qué aplicaciones usan la red o verificar si un puerto local está abierto.",
                     "command": "netstat",
                     "args": [
                         {
@@ -117,21 +117,21 @@
                             "description": "Muestra todas las conexiones y puertos de escucha."
                         },
                         {
-                            "name": "Num\u00e9rico (-n)",
+                            "name": "Numérico (-n)",
                             "flag": "-n",
                             "type": "checkbox",
-                            "description": "Muestra direcciones y n\u00fameros de puerto en formato num\u00e9rico (sin resolver nombres)."
+                            "description": "Muestra direcciones y números de puerto en formato numérico (sin resolver nombres)."
                         },
                         {
                             "name": "Mostrar PID (-o)",
                             "flag": "-o",
                             "type": "checkbox",
-                            "description": "Muestra el ID de proceso (PID) asociado a cada conexi\u00f3n."
+                            "description": "Muestra el ID de proceso (PID) asociado a cada conexión."
                         }
                     ],
                     "combos": [
                         {
-                            "command": "Listar Procesos en Ejecuci\u00f3n (tasklist)",
+                            "command": "Listar Procesos en Ejecución (tasklist)",
                             "when": "after",
                             "reason": "Identifica el nombre del programa asociado a los PIDs mostrados por netstat.",
                             "auto_command": "tasklist"
@@ -139,18 +139,18 @@
                         {
                             "command": "Finalizar / Cerrar Proceso (taskkill)",
                             "when": "after",
-                            "reason": "Cierra un proceso sospechoso o que est\u00e9 bloqueando un puerto local."
+                            "reason": "Cierra un proceso sospechoso o que esté bloqueando un puerto local."
                         }
                     ]
                 },
                 {
                     "name": "Conexiones TCP en Vivo",
-                    "description": "Consulta en tiempo real todas las conexiones TCP activas mediante PowerShell (Get-NetTCPConnection), mostrando direcciones locales/remotas, puertos, estado y PID del proceso propietario. Operaci\u00f3n de solo lectura.",
+                    "description": "Consulta en tiempo real todas las conexiones TCP activas mediante PowerShell (Get-NetTCPConnection), mostrando direcciones locales/remotas, puertos, estado y PID del proceso propietario. Operación de solo lectura.",
                     "command": "powershell -Command \"Get-NetTCPConnection | Select-Object LocalAddress, LocalPort, RemoteAddress, RemotePort, State, OwningProcess | Format-Table -AutoSize\"",
                     "args": [],
                     "combos": [
                         {
-                            "command": "Listar Procesos en Ejecuci\u00f3n (tasklist)",
+                            "command": "Listar Procesos en Ejecución (tasklist)",
                             "when": "after",
                             "reason": "Relaciona los PIDs activos de las conexiones TCP con sus ejecutables.",
                             "auto_command": "tasklist"
@@ -164,33 +164,33 @@
                 },
                 {
                     "name": "Tabla de Enrutamiento",
-                    "description": "Muestra la tabla de enrutamiento IP local (route print) que determina por qu\u00e9 interfaz y puerta de enlace sale el tr\u00e1fico de red. \u00datil para diagnosticar problemas con VPNs o m\u00faltiples adaptadores.",
+                    "description": "Muestra la tabla de enrutamiento IP local (route print) que determina por qué interfaz y puerta de enlace sale el tráfico de red. Útil para diagnosticar problemas con VPNs o múltiples adaptadores.",
                     "command": "route print",
                     "args": []
                 },
                 {
                     "name": "Ver Direcciones MAC de Red (getmac)",
-                    "description": "Lista la direcci\u00f3n f\u00edsica (MAC) y el transporte asociado de cada adaptador de red instalado en el equipo. \u00datil para configurar reservas DHCP o filtrado MAC en tu router.",
+                    "description": "Lista la dirección física (MAC) y el transporte asociado de cada adaptador de red instalado en el equipo. Útil para configurar reservas DHCP o filtrado MAC en tu router.",
                     "command": "getmac",
                     "args": [
                         {
                             "name": "Detallado (/v)",
                             "flag": "/v",
                             "type": "checkbox",
-                            "description": "Muestra informaci\u00f3n detallada de todos los adaptadores."
+                            "description": "Muestra información detallada de todos los adaptadores."
                         }
                     ]
                 },
                 {
                     "name": "Tabla de Direcciones IP a MAC (arp)",
-                    "description": "Consulta la tabla ARP local que relaciona cada direcci\u00f3n IP de tu red con su direcci\u00f3n f\u00edsica (MAC). \u00datil para identificar dispositivos conectados en la misma red local o diagnosticar conflictos de IP.",
+                    "description": "Consulta la tabla ARP local que relaciona cada dirección IP de tu red con su dirección física (MAC). Útil para identificar dispositivos conectados en la misma red local o diagnosticar conflictos de IP.",
                     "command": "arp",
                     "args": [
                         {
                             "name": "Mostrar tabla (-a)",
                             "flag": "-a",
                             "type": "checkbox",
-                            "description": "Muestra la tabla de cach\u00e9 ARP actual con todas las interfaces."
+                            "description": "Muestra la tabla de caché ARP actual con todas las interfaces."
                         }
                     ]
                 },
@@ -208,14 +208,14 @@
                     ]
                 },
                 {
-                    "name": "Limpiar Cach\u00e9 DNS (Flush DNS)",
-                    "description": "Vac\u00eda y restablece la cach\u00e9 de resoluci\u00f3n del cliente DNS. \u00datil para problemas de navegaci\u00f3n.",
+                    "name": "Limpiar Caché DNS (Flush DNS)",
+                    "description": "Vacía y restablece la caché de resolución del cliente DNS. Útil para problemas de navegación.",
                     "command": "ipconfig /flushdns",
                     "args": [],
                     "warning": {
                         "level": "caution",
-                        "title": "Vaciar Cach\u00e9 DNS",
-                        "message": "Se limpiar\u00e1 la cach\u00e9 local de resoluci\u00f3n de nombres DNS del sistema."
+                        "title": "Vaciar Caché DNS",
+                        "message": "Se limpiará la caché local de resolución de nombres DNS del sistema."
                     },
                     "combos": [
                         {
@@ -233,7 +233,7 @@
                 },
                 {
                     "name": "Gestor Adaptador de Red",
-                    "description": "Escanea y lista tus adaptadores de red. Permite deshabilitarlos, habilitarlos o reiniciarlos f\u00e1cilmente.",
+                    "description": "Escanea y lista tus adaptadores de red. Permite deshabilitarlos, habilitarlos o reiniciarlos fácilmente.",
                     "command": "powershell -Command \"& {param($adapterName, $op) if([string]::IsNullOrWhiteSpace($adapterName)){ Write-Host 'Error: No seleccionaste adaptador.'; exit 1 } try { Write-Host ('Adaptador seleccionado: ' + $adapterName); if($op -eq 'disable'){ Disable-NetAdapter -Name $adapterName -Confirm:$false -ErrorAction Stop; Write-Host 'Deshabilitado.' } elseif($op -eq 'enable'){ Enable-NetAdapter -Name $adapterName -Confirm:$false -ErrorAction Stop; Write-Host 'Habilitado.' } elseif($op -eq 'reset'){ Restart-NetAdapter -Name $adapterName -Confirm:$false -ErrorAction Stop; Write-Host 'Reiniciado con exito.' } else { throw 'Operacion no valida.' } } catch { Write-Host ('Error: ' + $_.Exception.Message); exit 1 } }\"",
                     "args": [
                         {
@@ -243,7 +243,7 @@
                             "description": "Selecciona el adaptador de red que quieres modificar."
                         },
                         {
-                            "name": "Acci\u00f3n",
+                            "name": "Acción",
                             "type": "radio_group",
                             "options": [
                                 {
@@ -259,19 +259,19 @@
                                     "flag": "-op enable"
                                 }
                             ],
-                            "description": "Selecciona la acci\u00f3n a realizar sobre el adaptador seleccionado."
+                            "description": "Selecciona la acción a realizar sobre el adaptador seleccionado."
                         }
                     ],
                     "warning": {
                         "level": "caution",
                         "title": "Modificar Adaptador de Red",
-                        "message": "Se deshabilitar\u00e1, habilitar\u00e1 o reiniciar\u00e1 el adaptador de red seleccionado, lo cual interrumpir\u00e1 temporalmente tu conexi\u00f3n a Internet o red local."
+                        "message": "Se deshabilitará, habilitará o reiniciará el adaptador de red seleccionado, lo cual interrumpirá temporalmente tu conexión a Internet o red local."
                     },
                     "combos": [
                         {
-                            "command": "Configuraci\u00f3n de Red IP (ipconfig)",
+                            "command": "Configuración de Red IP (ipconfig)",
                             "when": "after",
-                            "reason": "Verifica que el adaptador obtuvo nuevamente su direcci\u00f3n IP tras reiniciarlo.",
+                            "reason": "Verifica que el adaptador obtuvo nuevamente su dirección IP tras reiniciarlo.",
                             "auto_command": "ipconfig /all"
                         },
                         {
@@ -283,15 +283,15 @@
                     ]
                 },
                 {
-                    "name": "Contrase\u00f1as WiFi Guardadas",
-                    "description": "Escanea y lista todas las redes guardadas. Selecciona la red deseada para mostrar su contrase\u00f1a en texto claro.",
+                    "name": "Contraseñas WiFi Guardadas",
+                    "description": "Escanea y lista todas las redes guardadas. Selecciona la red deseada para mostrar su contraseña en texto claro.",
                     "command": "powershell -Command \"& {param($red) if($null -eq $red -or $red -eq '') { netsh wlan show profiles } else { netsh wlan show profile name=\\\"$red\\\" key=clear | Select-String -Pattern 'Contenido de la clave|Key Content' } }\"",
                     "args": [
                         {
                             "name": "Selecciona la Red WiFi",
                             "flag": "-red",
                             "type": "wifi_radio_group",
-                            "description": "Se listan autom\u00e1ticamente todas las redes guardadas."
+                            "description": "Se listan automáticamente todas las redes guardadas."
                         }
                     ]
                 }
@@ -301,27 +301,27 @@
             "name": "Sistema y Procesos",
             "commands": [
                 {
-                    "name": "Informaci\u00f3n Detallada del Equipo (systeminfo)",
-                    "description": "Muestra un inventario completo del sistema operativo, compilaci\u00f3n de Windows, procesador, memoria RAM instalada, zona horaria, tarjetas de red y actualizaciones (Hotfixes). Operaci\u00f3n de solo lectura.",
+                    "name": "Información Detallada del Equipo (systeminfo)",
+                    "description": "Muestra un inventario completo del sistema operativo, compilación de Windows, procesador, memoria RAM instalada, zona horaria, tarjetas de red y actualizaciones (Hotfixes). Operación de solo lectura.",
                     "command": "systeminfo",
                     "args": []
                 },
                 {
-                    "name": "Listar Procesos en Ejecuci\u00f3n (tasklist)",
-                    "description": "Muestra todos los procesos y programas actualmente activos en el equipo junto con su PID, sesi\u00f3n y consumo de memoria RAM. \u00datil para localizar un proceso antes de cerrarlo con taskkill.",
+                    "name": "Listar Procesos en Ejecución (tasklist)",
+                    "description": "Muestra todos los procesos y programas actualmente activos en el equipo junto con su PID, sesión y consumo de memoria RAM. Útil para localizar un proceso antes de cerrarlo con taskkill.",
                     "command": "tasklist",
                     "args": [
                         {
                             "name": "Formato detallado (/v)",
                             "flag": "/v",
                             "type": "checkbox",
-                            "description": "Muestra informaci\u00f3n de tareas en formato detallado."
+                            "description": "Muestra información de tareas en formato detallado."
                         }
                     ]
                 },
                 {
                     "name": "Finalizar / Cerrar Proceso (taskkill)",
-                    "description": "Termina uno o m\u00e1s procesos en ejecuci\u00f3n usando su PID o nombre de ejecutable (ej. notepad.exe). Con /F fuerza el cierre inmediato de programas congelados. Precauci\u00f3n: puede perder trabajo no guardado.",
+                    "description": "Termina uno o más procesos en ejecución usando su PID o nombre de ejecutable (ej. notepad.exe). Con /F fuerza el cierre inmediato de programas congelados. Precaución: puede perder trabajo no guardado.",
                     "command": "taskkill",
                     "args": [
                         {
@@ -340,22 +340,22 @@
                             "name": "Forzar cierre (/F)",
                             "flag": "/F",
                             "type": "checkbox",
-                            "description": "Fuerza la terminaci\u00f3n del proceso (\u00fatil si el programa no responde)."
+                            "description": "Fuerza la terminación del proceso (útil si el programa no responde)."
                         }
                     ],
                     "warning": {
                         "level": "danger",
                         "title": "Terminar Proceso (taskkill)",
-                        "message": "Se finalizar\u00e1 el proceso indicado de forma inmediata. Si usas /F, podr\u00edas perder trabajo no guardado en esa aplicaci\u00f3n."
+                        "message": "Se finalizará el proceso indicado de forma inmediata. Si usas /F, podrías perder trabajo no guardado en esa aplicación."
                     }
                 },
                 {
                     "name": "Administrador de Apagado Programado",
-                    "description": "Programa el apagado, reinicio o cierre de sesi\u00f3n del equipo eligiendo un tiempo sugerido (desde inmediato hasta 10 horas), o cancela un apagado pendiente (shutdown /a). \u00datil para dejar tareas largas terminando sin supervisi\u00f3n.",
+                    "description": "Programa el apagado, reinicio o cierre de sesión del equipo eligiendo un tiempo sugerido (desde inmediato hasta 10 horas), o cancela un apagado pendiente (shutdown /a). Útil para dejar tareas largas terminando sin supervisión.",
                     "command": "shutdown",
                     "args": [
                         {
-                            "name": "Acci\u00f3n Principal",
+                            "name": "Acción Principal",
                             "type": "radio_group",
                             "options": [
                                 {
@@ -367,7 +367,7 @@
                                     "flag": "/r"
                                 },
                                 {
-                                    "name": "Cerrar Sesi\u00f3n",
+                                    "name": "Cerrar Sesión",
                                     "flag": "/l"
                                 },
                                 {
@@ -375,7 +375,7 @@
                                     "flag": "/a"
                                 }
                             ],
-                            "description": "Acci\u00f3n a realizar."
+                            "description": "Acción a realizar."
                         },
                         {
                             "name": "Tiempo de Espera",
@@ -459,30 +459,30 @@
                     ],
                     "warning": {
                         "level": "danger",
-                        "title": "Acci\u00f3n de Energ\u00eda del Equipo",
-                        "message": "Se ejecutar\u00e1 la acci\u00f3n de apagado, reinicio, cierre de sesi\u00f3n o cancelaci\u00f3n seleccionada sobre este equipo. Guarda tu trabajo antes de continuar."
+                        "title": "Acción de Energía del Equipo",
+                        "message": "Se ejecutará la acción de apagado, reinicio, cierre de sesión o cancelación seleccionada sobre este equipo. Guarda tu trabajo antes de continuar."
                     }
                 },
                 {
                     "name": "Visor de Eventos del Sistema (Errores/Avisos)",
-                    "description": "Muestra los \u00faltimos 20 errores cr\u00edticos y advertencias del registro de eventos del sistema (System).",
+                    "description": "Muestra los últimos 20 errores críticos y advertencias del registro de eventos del sistema (System).",
                     "command": "powershell -Command \"Get-EventLog -LogName System -EntryType Error,Warning -Newest 20 | Format-Table -AutoSize\"",
                     "args": []
                 },
                 {
-                    "name": "Reporte de Bater\u00eda (Laptops)",
-                    "description": "Genera un informe detallado de la salud, ciclos e historial de la bater\u00eda en C:\\GuiCmdAdvance\\reports\\battery-report.html.",
+                    "name": "Reporte de Batería (Laptops)",
+                    "description": "Genera un informe detallado de la salud, ciclos e historial de la batería en C:\\GuiCmdAdvance\\reports\\battery-report.html.",
                     "command": "powershell -Command \"& { try { $dir = 'C:\\GuiCmdAdvance\\reports'; if(!(Test-Path $dir)){ New-Item -ItemType Directory -Path $dir -Force | Out-Null }; $out = Join-Path $dir 'battery-report.html'; powercfg /batteryreport /output $out; if($LASTEXITCODE -ne 0 -or !(Test-Path $out)){ throw 'No se pudo generar el reporte de bateria (puede que el equipo no tenga bateria).' }; Write-Host ('Reporte generado en: ' + $out); Start-Process $out } catch { Write-Host ('Error: ' + $_.Exception.Message); exit 1 } }\"",
                     "args": []
                 }
             ]
         },
         {
-            "name": "Reparaci\u00f3n y Mantenimiento",
+            "name": "Reparación y Mantenimiento",
             "commands": [
                 {
                     "name": "Reparar Archivos de Sistema Windows (sfc)",
-                    "description": "Examina la integridad de los archivos protegidos del sistema operativo y reemplaza autom\u00e1ticamente los da\u00f1ados desde la cach\u00e9 local. \u00datil ante pantallas azules, errores de DLL o fallos tras actualizaciones. Requiere Administrador.",
+                    "description": "Examina la integridad de los archivos protegidos del sistema operativo y reemplaza automáticamente los dañados desde la caché local. Útil ante pantallas azules, errores de DLL o fallos tras actualizaciones. Requiere Administrador.",
                     "command": "sfc",
                     "args": [
                         {
@@ -501,7 +501,7 @@
                     "warning": {
                         "level": "caution",
                         "title": "Comprobador de Archivos de Sistema (SFC)",
-                        "message": "SFC examinar\u00e1 los archivos protegidos de Windows y, con /scannow, reemplazar\u00e1 archivos da\u00f1ados del sistema operativo."
+                        "message": "SFC examinará los archivos protegidos de Windows y, con /scannow, reemplazará archivos dañados del sistema operativo."
                     },
                     "combos": [
                         {
@@ -513,18 +513,18 @@
                         {
                             "command": "Reparar Windows Update",
                             "when": "after",
-                            "reason": "Si los fallos ven\u00edan de actualizaciones corruptas, restablece los servicios y cach\u00e9 de Windows Update.",
+                            "reason": "Si los fallos venían de actualizaciones corruptas, restablece los servicios y caché de Windows Update.",
                             "auto_command": "powershell -Command \"& { try { $ts = Get-Date -Format 'yyyyMMdd_HHmmss'; Write-Host 'Deteniendo servicios...'; net stop wuauserv; net stop cryptSvc; net stop bits; net stop msiserver; Write-Host 'Respaldando carpetas de cache...'; if(Test-Path 'C:\\Windows\\SoftwareDistribution'){ Rename-Item -Path 'C:\\Windows\\SoftwareDistribution' -NewName ('SoftwareDistribution.old_' + $ts) -ErrorAction Stop }; if(Test-Path 'C:\\Windows\\System32\\catroot2'){ Rename-Item -Path 'C:\\Windows\\System32\\catroot2' -NewName ('catroot2.old_' + $ts) -ErrorAction Stop }; Write-Host 'Iniciando servicios...'; net start wuauserv; net start cryptSvc; net start bits; net start msiserver; Write-Host 'Reparacion completada. Reinicia tu PC e intenta actualizar de nuevo.' } catch { Write-Host ('Error: ' + $_.Exception.Message); exit 1 } }\""
                         }
                     ]
                 },
                 {
                     "name": "Reparar Imagen del Sistema Windows (DISM)",
-                    "description": "Analiza y repara el almac\u00e9n de componentes e imagen de Windows (/CheckHealth, /ScanHealth, /RestoreHealth). Complemento recomendado antes o despu\u00e9s de ejecutar SFC si este no logra reparar archivos. Requiere Administrador.",
+                    "description": "Analiza y repara el almacén de componentes e imagen de Windows (/CheckHealth, /ScanHealth, /RestoreHealth). Complemento recomendado antes o después de ejecutar SFC si este no logra reparar archivos. Requiere Administrador.",
                     "command": "DISM /Online /Cleanup-Image",
                     "args": [
                         {
-                            "name": "Acci\u00f3n",
+                            "name": "Acción",
                             "type": "radio_group",
                             "options": [
                                 {
@@ -540,7 +540,7 @@
                                     "flag": "/CheckHealth"
                                 }
                             ],
-                            "description": "Selecciona el nivel de reparaci\u00f3n de la imagen."
+                            "description": "Selecciona el nivel de reparación de la imagen."
                         },
                         {
                             "name": "Archivo de origen (.wim/.esd)",
@@ -552,38 +552,38 @@
                             "name": "Evitar Windows Update (/LimitAccess)",
                             "flag": "/LimitAccess",
                             "type": "checkbox",
-                            "description": "Evita el uso de Windows Update como origen de reparaci\u00f3n."
+                            "description": "Evita el uso de Windows Update como origen de reparación."
                         }
                     ],
                     "warning": {
                         "level": "caution",
-                        "title": "Reparaci\u00f3n de Imagen de Windows (DISM)",
-                        "message": "DISM analizar\u00e1 y, con /RestoreHealth, modificar\u00e1/reparar\u00e1 componentes de la imagen del sistema operativo Windows."
+                        "title": "Reparación de Imagen de Windows (DISM)",
+                        "message": "DISM analizará y, con /RestoreHealth, modificará/reparará componentes de la imagen del sistema operativo Windows."
                     },
                     "combos": [
                         {
                             "command": "Reparar Archivos de Sistema Windows (sfc)",
                             "when": "after",
-                            "reason": "Paso oficial posterior a DISM: verifica y reemplaza archivos protegidos da\u00f1ados usando la imagen ya reparada.",
+                            "reason": "Paso oficial posterior a DISM: verifica y reemplaza archivos protegidos dañados usando la imagen ya reparada.",
                             "auto_command": "sfc /scannow"
                         },
                         {
                             "command": "Reparar Windows Update",
                             "when": "after",
-                            "reason": "Restablece la cach\u00e9 de Windows Update si DISM se ejecut\u00f3 por errores de actualizaci\u00f3n.",
+                            "reason": "Restablece la caché de Windows Update si DISM se ejecutó por errores de actualización.",
                             "auto_command": "powershell -Command \"& { try { $ts = Get-Date -Format 'yyyyMMdd_HHmmss'; Write-Host 'Deteniendo servicios...'; net stop wuauserv; net stop cryptSvc; net stop bits; net stop msiserver; Write-Host 'Respaldando carpetas de cache...'; if(Test-Path 'C:\\Windows\\SoftwareDistribution'){ Rename-Item -Path 'C:\\Windows\\SoftwareDistribution' -NewName ('SoftwareDistribution.old_' + $ts) -ErrorAction Stop }; if(Test-Path 'C:\\Windows\\System32\\catroot2'){ Rename-Item -Path 'C:\\Windows\\System32\\catroot2' -NewName ('catroot2.old_' + $ts) -ErrorAction Stop }; Write-Host 'Iniciando servicios...'; net start wuauserv; net start cryptSvc; net start bits; net start msiserver; Write-Host 'Reparacion completada. Reinicia tu PC e intenta actualizar de nuevo.' } catch { Write-Host ('Error: ' + $_.Exception.Message); exit 1 } }\""
                         }
                     ]
                 },
                 {
                     "name": "Reparar Windows Update",
-                    "description": "Detiene los servicios de actualizaci\u00f3n, renombra las carpetas corruptas y los vuelve a iniciar.",
+                    "description": "Detiene los servicios de actualización, renombra las carpetas corruptas y los vuelve a iniciar.",
                     "command": "powershell -Command \"& { try { $ts = Get-Date -Format 'yyyyMMdd_HHmmss'; Write-Host 'Deteniendo servicios...'; net stop wuauserv; net stop cryptSvc; net stop bits; net stop msiserver; Write-Host 'Respaldando carpetas de cache...'; if(Test-Path 'C:\\Windows\\SoftwareDistribution'){ Rename-Item -Path 'C:\\Windows\\SoftwareDistribution' -NewName ('SoftwareDistribution.old_' + $ts) -ErrorAction Stop }; if(Test-Path 'C:\\Windows\\System32\\catroot2'){ Rename-Item -Path 'C:\\Windows\\System32\\catroot2' -NewName ('catroot2.old_' + $ts) -ErrorAction Stop }; Write-Host 'Iniciando servicios...'; net start wuauserv; net start cryptSvc; net start bits; net start msiserver; Write-Host 'Reparacion completada. Reinicia tu PC e intenta actualizar de nuevo.' } catch { Write-Host ('Error: ' + $_.Exception.Message); exit 1 } }\"",
                     "args": [],
                     "warning": {
                         "level": "caution",
                         "title": "Restablecer Servicios de Windows Update",
-                        "message": "Se detendr\u00e1n los servicios de actualizaci\u00f3n de Windows, se respaldar\u00e1n las carpetas SoftwareDistribution y catroot2, y se reiniciar\u00e1n los servicios."
+                        "message": "Se detendrán los servicios de actualización de Windows, se respaldarán las carpetas SoftwareDistribution y catroot2, y se reiniciarán los servicios."
                     },
                     "combos": [
                         {
@@ -595,7 +595,7 @@
                         {
                             "command": "Reparar Imagen del Sistema Windows (DISM)",
                             "when": "after",
-                            "reason": "Verifica la salud de la imagen de Windows despu\u00e9s de restablecer Windows Update.",
+                            "reason": "Verifica la salud de la imagen de Windows después de restablecer Windows Update.",
                             "auto_command": "DISM /Online /Cleanup-Image /RestoreHealth"
                         }
                     ]
@@ -608,12 +608,12 @@
                     "warning": {
                         "level": "caution",
                         "title": "Reiniciar Explorador de Windows",
-                        "message": "Se cerrar\u00e1 y volver\u00e1 a iniciar explorer.exe. Todas las ventanas abiertas del Explorador de Archivos se cerrar\u00e1n y la barra de tareas parpadear\u00e1 brevemente."
+                        "message": "Se cerrará y volverá a iniciar explorer.exe. Todas las ventanas abiertas del Explorador de Archivos se cerrarán y la barra de tareas parpadeará brevemente."
                     }
                 },
                 {
                     "name": "Limpieza Selectiva de Temporales",
-                    "description": "Abre una herramienta avanzada para escanear y eliminar basura de Windows con selecci\u00f3n individual.",
+                    "description": "Abre una herramienta avanzada para escanear y eliminar basura de Windows con selección individual.",
                     "command": "__INTERNAL__ --run-temp-cleaner",
                     "args": [
                         {
@@ -638,19 +638,19 @@
                             "name": "Windows Update (Descargas)",
                             "type": "checkbox",
                             "flag": "--win-update",
-                            "description": "Limpia la cach\u00e9 de descargas de Windows Update."
+                            "description": "Limpia la caché de descargas de Windows Update."
                         }
                     ],
                     "warning": {
                         "level": "danger",
-                        "title": "Eliminaci\u00f3n de Archivos Temporales",
-                        "message": "Se eliminar\u00e1n permanentemente los archivos temporales, cach\u00e9 de Prefetch o descargas de Windows Update seleccionadas."
+                        "title": "Eliminación de Archivos Temporales",
+                        "message": "Se eliminarán permanentemente los archivos temporales, caché de Prefetch o descargas de Windows Update seleccionadas."
                     },
                     "combos": [
                         {
                             "command": "Optimizar / TRIM / Desfragmentar Discos",
                             "when": "after",
-                            "reason": "Tras liberar espacio en temporales/cach\u00e9, optimiza el SSD (TRIM) o desfragmenta el HDD."
+                            "reason": "Tras liberar espacio en temporales/caché, optimiza el SSD (TRIM) o desfragmenta el HDD."
                         }
                     ]
                 }
@@ -660,8 +660,8 @@
             "name": "Seguridad y Permisos",
             "commands": [
                 {
-                    "name": "Credenciales de Red (B\u00f3veda)",
-                    "description": "Lista las credenciales guardadas en Windows con una explicaci\u00f3n detallada.",
+                    "name": "Credenciales de Red (Bóveda)",
+                    "description": "Lista las credenciales guardadas en Windows con una explicación detallada.",
                     "command": "__INTERNAL__ --run-vault",
                     "args": []
                 },
@@ -671,7 +671,7 @@
                     "command": "__INTERNAL__ --run-sdelete",
                     "args": [
                         {
-                            "name": "Modo de Operaci\u00f3n",
+                            "name": "Modo de Operación",
                             "type": "radio_group",
                             "options": [
                                 {
@@ -683,43 +683,43 @@
                                     "flag": "--mode free-zero"
                                 },
                                 {
-                                    "name": "Limpiar Espacio Libre Seguro (-c, anti-recuperaci\u00f3n HDD)",
+                                    "name": "Limpiar Espacio Libre Seguro (-c, anti-recuperación HDD)",
                                     "flag": "--mode free-clean"
                                 }
                             ],
-                            "description": "Elige si deseas destruir un archivo/carpeta espec\u00edfico o sanitizar el espacio libre de una unidad sin borrar los archivos existentes."
+                            "description": "Elige si deseas destruir un archivo/carpeta específico o sanitizar el espacio libre de una unidad sin borrar los archivos existentes."
                         },
                         {
                             "name": "Archivo o Carpeta a Destruir (Modo Archivo)",
                             "flag": "--target",
                             "type": "file_entry",
-                            "description": "Ruta del archivo o carpeta a destruir permanentemente (solo se usa en modo Archivo/Carpeta; ra\u00edces y carpetas de Windows est\u00e1n bloqueadas por seguridad)."
+                            "description": "Ruta del archivo o carpeta a destruir permanentemente (solo se usa en modo Archivo/Carpeta; raíces y carpetas de Windows están bloqueadas por seguridad)."
                         },
                         {
                             "name": "Unidad para Espacio Libre (Modos -z / -c)",
                             "flag": "--drive",
                             "type": "drive_dropdown",
-                            "description": "Letra de unidad cuyo espacio libre ser\u00e1 sobrescrito (solo se usa en modos -z o -c; no borra archivos actuales)."
+                            "description": "Letra de unidad cuyo espacio libre será sobrescrito (solo se usa en modos -z o -c; no borra archivos actuales)."
                         },
                         {
-                            "name": "N\u00famero de Pasadas (-p)",
+                            "name": "Número de Pasadas (-p)",
                             "flag": "--passes",
                             "type": "dropdown",
                             "options": [
                                 {
-                                    "name": "1 pasada (Recomendado \u2014 r\u00e1pido y seguro para SSD/HDD)",
+                                    "name": "1 pasada (Recomendado — rápido y seguro para SSD/HDD)",
                                     "value": "1"
                                 },
                                 {
-                                    "name": "3 pasadas (Est\u00e1ndar DoD \u2014 solo recomendado en HDD)",
+                                    "name": "3 pasadas (Estándar DoD — solo recomendado en HDD)",
                                     "value": "3"
                                 },
                                 {
-                                    "name": "7 pasadas (M\u00e1xima seguridad \u2014 solo HDD, muy lento)",
+                                    "name": "7 pasadas (Máxima seguridad — solo HDD, muy lento)",
                                     "value": "7"
                                 }
                             ],
-                            "value": "1 pasada (Recomendado \u2014 r\u00e1pido y seguro para SSD/HDD)",
+                            "value": "1 pasada (Recomendado — rápido y seguro para SSD/HDD)",
                             "description": "Cantidad de sobrescrituras. Por defecto 1 pasada. En SSD evita 3 o 7 pasadas porque desgastan la memoria NAND sin garantizar borrado de bloques reasignados por wear leveling."
                         },
                         {
@@ -738,16 +738,16 @@
                     "warning": {
                         "level": "danger",
                         "title": "Borrado Seguro Irreversible (SDelete)",
-                        "message": "Los datos eliminados o el espacio libre sobrescrito con SDelete NO podr\u00e1n recuperarse con ninguna herramienta (ni WINFR ni PhotoRec). Si seleccionas un SSD, recuerda usar 1 sola pasada (-p 1) o TRIM/BitLocker para evitar desgaste innecesario de la unidad."
+                        "message": "Los datos eliminados o el espacio libre sobrescrito con SDelete NO podrán recuperarse con ninguna herramienta (ni WINFR ni PhotoRec). Si seleccionas un SSD, recuerda usar 1 sola pasada (-p 1) o TRIM/BitLocker para evitar desgaste innecesario de la unidad."
                     }
                 },
                 {
                     "name": "Gestor de Firewall",
-                    "description": "Habilita o deshabilita el Firewall de Windows en los perfiles Dominio, P\u00fablico y Privado. \u00datil temporalmente para diagnosticar bloqueos de red local. Requiere permisos de Administrador.",
+                    "description": "Habilita o deshabilita el Firewall de Windows en los perfiles Dominio, Público y Privado. Útil temporalmente para diagnosticar bloqueos de red local. Requiere permisos de Administrador.",
                     "command": "powershell -Command \"& {param($op) try { if($op -eq 'on'){ Set-NetFirewallProfile -Profile Domain,Public,Private -Enabled True -ErrorAction Stop; Write-Host 'Firewall Habilitado.' } elseif($op -eq 'off'){ Set-NetFirewallProfile -Profile Domain,Public,Private -Enabled False -ErrorAction Stop; Write-Host 'Firewall Deshabilitado.' } else { throw 'Selecciona una opcion valida (on/off).' } } catch { Write-Host ('Error: ' + $_.Exception.Message); exit 1 } }\"",
                     "args": [
                         {
-                            "name": "Acci\u00f3n",
+                            "name": "Acción",
                             "type": "radio_group",
                             "options": [
                                 {
@@ -765,7 +765,7 @@
                     "warning": {
                         "level": "caution",
                         "title": "Cambiar Estado del Firewall de Windows",
-                        "message": "Se habilitar\u00e1 o deshabilitar\u00e1 el Firewall de Windows en los perfiles Dominio, P\u00fablico y Privado. Deshabilitarlo reduce la protecci\u00f3n de red del equipo."
+                        "message": "Se habilitará o deshabilitará el Firewall de Windows en los perfiles Dominio, Público y Privado. Deshabilitarlo reduce la protección de red del equipo."
                     }
                 },
                 {
@@ -782,9 +782,9 @@
                     ],
                     "combos": [
                         {
-                            "command": "Tomar Posesi\u00f3n (takeown)",
+                            "command": "Tomar Posesión (takeown)",
                             "when": "after",
-                            "reason": "Si no tienes propiedad sobre el archivo/carpeta, toma posesi\u00f3n antes de cambiar ACLs.",
+                            "reason": "Si no tienes propiedad sobre el archivo/carpeta, toma posesión antes de cambiar ACLs.",
                             "auto_command": "takeown /f \"{path}\" /r /d y"
                         },
                         {
@@ -831,13 +831,13 @@
                     "warning": {
                         "level": "caution",
                         "title": "Modificar Permisos ACL (icacls)",
-                        "message": "Se modificar\u00e1n las listas de control de acceso (ACL) del archivo o carpeta seleccionada para otorgar permisos de Control Total."
+                        "message": "Se modificarán las listas de control de acceso (ACL) del archivo o carpeta seleccionada para otorgar permisos de Control Total."
                     },
                     "combos": [
                         {
-                            "command": "Tomar Posesi\u00f3n (takeown)",
+                            "command": "Tomar Posesión (takeown)",
                             "when": "before",
-                            "reason": "Protocolo seguro: si no eres propietario del recurso, icacls puede fallar con Acceso Denegado; toma posesi\u00f3n primero.",
+                            "reason": "Protocolo seguro: si no eres propietario del recurso, icacls puede fallar con Acceso Denegado; toma posesión primero.",
                             "auto_command": "takeown /f \"{path}\" /r /d y"
                         },
                         {
@@ -855,7 +855,7 @@
                     ]
                 },
                 {
-                    "name": "Tomar Posesi\u00f3n (takeown)",
+                    "name": "Tomar Posesión (takeown)",
                     "description": "Toma la propiedad de un archivo o carpeta (muy util si Windows no te deja borrar o editar algo).",
                     "command": "takeown",
                     "args": [
@@ -881,19 +881,19 @@
                     "warning": {
                         "level": "caution",
                         "title": "Cambiar Propietario (takeown)",
-                        "message": "Se transferir\u00e1 la propiedad del archivo o carpeta seleccionada al usuario o grupo Administradores."
+                        "message": "Se transferirá la propiedad del archivo o carpeta seleccionada al usuario o grupo Administradores."
                     },
                     "combos": [
                         {
                             "command": "Conceder Control Total (icacls)",
                             "when": "after",
-                            "reason": "Paso natural tras tomar posesi\u00f3n: concede Control Total sobre la carpeta o archivo.",
+                            "reason": "Paso natural tras tomar posesión: concede Control Total sobre la carpeta o archivo.",
                             "auto_command": "icacls \"{path}\" /grant Administrators:F /T"
                         },
                         {
                             "command": "Quitar Solo Lectura (attrib)",
                             "when": "after",
-                            "reason": "Remueve atributos de Solo Lectura/Sistema si a\u00fan impiden modificar o borrar.",
+                            "reason": "Remueve atributos de Solo Lectura/Sistema si aún impiden modificar o borrar.",
                             "auto_command": "attrib -r -h -s \"{path}\" /S /D"
                         }
                     ]
@@ -932,11 +932,11 @@
                     "warning": {
                         "level": "caution",
                         "title": "Modificar Atributos de Archivos (attrib)",
-                        "message": "Se remover\u00e1n los atributos de Solo Lectura, Oculto o Sistema en los archivos o carpetas indicados."
+                        "message": "Se removerán los atributos de Solo Lectura, Oculto o Sistema en los archivos o carpetas indicados."
                     },
                     "combos": [
                         {
-                            "command": "Tomar Posesi\u00f3n (takeown)",
+                            "command": "Tomar Posesión (takeown)",
                             "when": "after",
                             "reason": "Si Windows sigue denegando el cambio, toma propiedad de la ruta.",
                             "auto_command": "takeown /f \"{path}\" /r /d y"
@@ -950,7 +950,7 @@
                 },
                 {
                     "name": "Forzar Desbloqueo de Archivos",
-                    "description": "Verifica si un archivo est\u00e1 bloqueado en uso por otro proceso y, de estarlo, abre el Monitor de Recursos (resmon.exe) para localizar el identificador (handle) responsable y cerrarlo de forma controlada.",
+                    "description": "Verifica si un archivo está bloqueado en uso por otro proceso y, de estarlo, abre el Monitor de Recursos (resmon.exe) para localizar el identificador (handle) responsable y cerrarlo de forma controlada.",
                     "command": "powershell -Command \"& {param($path) if([string]::IsNullOrWhiteSpace($path)){ Write-Host 'Error: Ingresa una ruta de archivo.'; exit 1 } $file = Get-Item $path -ErrorAction SilentlyContinue; if(!$file){ Write-Host 'Error: Archivo no encontrado.'; exit 1 } try { $stream = [System.IO.File]::Open($path, 'Open', 'ReadWrite', 'None'); $stream.Close(); Write-Host 'El archivo NO esta bloqueado.' } catch { Write-Host 'EL ARCHIVO ESTA BLOQUEADO. Abriendo Monitor de Recursos para encontrar el proceso manejador (handle)...'; Start-Process resmon.exe; Write-Host 'Ve a la pestana CPU -> Handles Asociados, busca el nombre del archivo y finaliza el proceso.' } }\"",
                     "args": [
                         {
@@ -964,11 +964,11 @@
             ]
         },
         {
-            "name": "Archivos y Compresi\u00f3n",
+            "name": "Archivos y Compresión",
             "commands": [
                 {
                     "name": "Sanitizador de Nombres",
-                    "description": "Herramienta para reparar nombres de archivos y carpetas importados de Mac/Linux (con caracteres inv\u00e1lidos) que Windows marca como corruptos o con error.",
+                    "description": "Herramienta para reparar nombres de archivos y carpetas importados de Mac/Linux (con caracteres inválidos) que Windows marca como corruptos o con error.",
                     "command": "__INTERNAL__ --run-name-sanitizer",
                     "args": [
                         {
@@ -981,30 +981,30 @@
                             "name": "Incluir subcarpetas",
                             "flag": "--recursive",
                             "type": "checkbox",
-                            "description": "Si se marca, aplicar\u00e1 el sanitizado a todos los archivos y carpetas dentro de la ruta elegida (modo recursivo)."
+                            "description": "Si se marca, aplicará el sanitizado a todos los archivos y carpetas dentro de la ruta elegida (modo recursivo)."
                         }
                     ],
                     "warning": {
                         "level": "caution",
                         "title": "Renombrado Masivo de Archivos",
-                        "message": "Se renombrar\u00e1n archivos y carpetas con caracteres inv\u00e1lidos en la ruta seleccionada."
+                        "message": "Se renombrarán archivos y carpetas con caracteres inválidos en la ruta seleccionada."
                     },
                     "combos": [
                         {
                             "command": "Clonado/Copia Segura (Robocopy)",
                             "when": "after",
-                            "reason": "Copia la carpeta de forma segura una vez que los nombres ya son v\u00e1lidos para Windows."
+                            "reason": "Copia la carpeta de forma segura una vez que los nombres ya son válidos para Windows."
                         },
                         {
                             "command": "Comprimir Archivos (7-Zip)",
                             "when": "after",
-                            "reason": "Empaqueta la carpeta saneada sin errores por caracteres inv\u00e1lidos."
+                            "reason": "Empaqueta la carpeta saneada sin errores por caracteres inválidos."
                         }
                     ]
                 },
                 {
-                    "name": "B\u00fasqueda Avanzada de Texto",
-                    "description": "Abre un buscador ultra r\u00e1pido basado en findstr para localizar texto dentro de archivos con regex y filtros.",
+                    "name": "Búsqueda Avanzada de Texto",
+                    "description": "Abre un buscador ultra rápido basado en findstr para localizar texto dentro de archivos con regex y filtros.",
                     "command": "__INTERNAL__ --run-advanced-search",
                     "args": []
                 },
@@ -1023,16 +1023,16 @@
                             "name": "Guardar Como (Destino)",
                             "flag": "--dest",
                             "type": "save_file_entry",
-                            "description": "Ruta donde se guardar\u00e1 el archivo (Ej. archivo.zip o archivo.7z)."
+                            "description": "Ruta donde se guardará el archivo (Ej. archivo.zip o archivo.7z)."
                         },
                         {
-                            "name": "Contrase\u00f1a (Opcional)",
+                            "name": "Contraseña (Opcional)",
                             "flag": "--pwd",
                             "type": "password_double",
-                            "description": "Escribe una contrase\u00f1a para cifrar el archivo."
+                            "description": "Escribe una contraseña para cifrar el archivo."
                         },
                         {
-                            "name": "Nivel de Compresi\u00f3n",
+                            "name": "Nivel de Compresión",
                             "type": "radio_group",
                             "options": [
                                 {
@@ -1040,28 +1040,28 @@
                                     "flag": "--level -mx=5"
                                 },
                                 {
-                                    "name": "R\u00e1pida",
+                                    "name": "Rápida",
                                     "flag": "--level -mx=1"
                                 },
                                 {
-                                    "name": "M\u00e1xima (Ultra)",
+                                    "name": "Máxima (Ultra)",
                                     "flag": "--level -mx=9"
                                 },
                                 {
-                                    "name": "Sin compresi\u00f3n (Solo guardar)",
+                                    "name": "Sin compresión (Solo guardar)",
                                     "flag": "--level -mx=0"
                                 }
                             ],
-                            "description": "Selecciona el nivel de compresi\u00f3n."
+                            "description": "Selecciona el nivel de compresión."
                         },
                         {
                             "name": "Hilos de CPU (Hardware)",
                             "flag": "--threads",
                             "type": "threads_dropdown",
-                            "description": "Controla cu\u00e1ntos n\u00facleos del procesador usar para acelerar la compresi\u00f3n (0 = Autom\u00e1tico/Todos)."
+                            "description": "Controla cuántos núcleos del procesador usar para acelerar la compresión (0 = Automático/Todos)."
                         },
                         {
-                            "name": "Dividir Archivo por Vol\u00famenes",
+                            "name": "Dividir Archivo por Volúmenes",
                             "flag": "--split",
                             "type": "dropdown",
                             "options": [
@@ -1072,16 +1072,16 @@
                                 "500m (500 Megabytes)",
                                 "1g (1 Gigabyte)",
                                 "2g (2 Gigabytes)",
-                                "4g (4 Gigabytes - L\u00edmite FAT32)"
+                                "4g (4 Gigabytes - Límite FAT32)"
                             ],
-                            "description": "Si deseas dividir el archivo resultante en varias partes m\u00e1s peque\u00f1as."
+                            "description": "Si deseas dividir el archivo resultante en varias partes más pequeñas."
                         }
                     ],
                     "combos": [
                         {
                             "command": "Analizar Integridad de Archivo",
                             "when": "after",
-                            "reason": "Comprueba que el archivo comprimido reci\u00e9n generado no tiene corrupci\u00f3n antes de respaldarlo."
+                            "reason": "Comprueba que el archivo comprimido recién generado no tiene corrupción antes de respaldarlo."
                         }
                     ]
                 },
@@ -1100,25 +1100,25 @@
                             "name": "Carpeta Destino",
                             "flag": "--dest",
                             "type": "directory_entry",
-                            "description": "Ruta donde se extraer\u00e1n los archivos."
+                            "description": "Ruta donde se extraerán los archivos."
                         },
                         {
-                            "name": "Contrase\u00f1a (Si la tiene)",
+                            "name": "Contraseña (Si la tiene)",
                             "flag": "--pwd",
                             "type": "password_single",
-                            "description": "Escribe la contrase\u00f1a para desbloquear el archivo."
+                            "description": "Escribe la contraseña para desbloquear el archivo."
                         },
                         {
                             "name": "Hilos de CPU (Hardware)",
                             "flag": "--threads",
                             "type": "threads_dropdown",
-                            "description": "Controla cu\u00e1ntos n\u00facleos del procesador usar para acelerar la extracci\u00f3n (0 = Autom\u00e1tico)."
+                            "description": "Controla cuántos núcleos del procesador usar para acelerar la extracción (0 = Automático)."
                         }
                     ]
                 },
                 {
                     "name": "Analizar Integridad de Archivo",
-                    "description": "Comprueba si un archivo comprimido est\u00e1 corrupto sin necesidad de extraerlo.",
+                    "description": "Comprueba si un archivo comprimido está corrupto sin necesidad de extraerlo.",
                     "command": "__INTERNAL__ --run-7z --action analyze",
                     "args": [
                         {
@@ -1128,22 +1128,22 @@
                             "description": "Selecciona el archivo comprimido."
                         },
                         {
-                            "name": "Contrase\u00f1a (Si la tiene)",
+                            "name": "Contraseña (Si la tiene)",
                             "flag": "--pwd",
                             "type": "entry",
-                            "description": "Si el archivo est\u00e1 cifrado, se necesita la contrase\u00f1a para analizar los datos."
+                            "description": "Si el archivo está cifrado, se necesita la contraseña para analizar los datos."
                         },
                         {
                             "name": "Hilos de CPU (Hardware)",
                             "flag": "--threads",
                             "type": "threads_dropdown",
-                            "description": "Controla cu\u00e1ntos n\u00facleos del procesador usar para acelerar el an\u00e1lisis (0 = Autom\u00e1tico)."
+                            "description": "Controla cuántos núcleos del procesador usar para acelerar el análisis (0 = Automático)."
                         }
                     ]
                 },
                 {
                     "name": "Clonado/Copia Segura (Robocopy)",
-                    "description": "Copia carpetas de forma segura usando Robocopy. Ignora enlaces simb\u00f3licos (Junctions) y es resistente a fallos.",
+                    "description": "Copia carpetas de forma segura usando Robocopy. Ignora enlaces simbólicos (Junctions) y es resistente a fallos.",
                     "command": "robocopy",
                     "args": [
                         {
@@ -1156,7 +1156,7 @@
                             "name": "Carpeta Destino",
                             "flag": "",
                             "type": "directory_entry",
-                            "description": "Directorio donde se pegar\u00e1 el contenido."
+                            "description": "Directorio donde se pegará el contenido."
                         },
                         {
                             "name": "Modo de Copia",
@@ -1171,7 +1171,7 @@
                                     "flag": "/E"
                                 }
                             ],
-                            "description": "El modo Espejo borrar\u00e1 archivos en el destino que ya no existan en el origen."
+                            "description": "El modo Espejo borrará archivos en el destino que ya no existan en el origen."
                         },
                         {
                             "name": "Reintentos en Error",
@@ -1181,10 +1181,10 @@
                                 "/R:0 /W:0 (Sin reintentos)",
                                 "/R:10 /W:3 (Redes inestables)"
                             ],
-                            "description": "N\u00famero de reintentos y segundos de espera si un archivo est\u00e1 bloqueado o la red falla."
+                            "description": "Número de reintentos y segundos de espera si un archivo está bloqueado o la red falla."
                         },
                         {
-                            "name": "Excluir Enlaces Simb\u00f3licos",
+                            "name": "Excluir Enlaces Simbólicos",
                             "type": "checkbox",
                             "flag": "/XJ",
                             "description": "Ignora Junctions para evitar bucles infinitos (Recomendado activarlo)."
@@ -1192,20 +1192,20 @@
                     ],
                     "warning": {
                         "level": "danger",
-                        "title": "Copia / Sincronizaci\u00f3n de Carpetas (Robocopy)",
-                        "message": "Se copiar\u00e1n o sobrescribir\u00e1n archivos en la carpeta destino. Si activaste Modo Espejo (/MIR), se ELIMINAR\u00c1N en el destino los archivos que no existan en el origen."
+                        "title": "Copia / Sincronización de Carpetas (Robocopy)",
+                        "message": "Se copiarán o sobrescribirán archivos en la carpeta destino. Si activaste Modo Espejo (/MIR), se ELIMINARÁN en el destino los archivos que no existan en el origen."
                     },
                     "combos": [
                         {
                             "command": "Sanitizador de Nombres",
                             "when": "before",
-                            "reason": "Protocolo seguro: corrige caracteres inv\u00e1lidos (Mac/Linux) antes de clonar para evitar errores de copia."
+                            "reason": "Protocolo seguro: corrige caracteres inválidos (Mac/Linux) antes de clonar para evitar errores de copia."
                         }
                     ]
                 },
                 {
                     "name": "Copiar Archivos y Carpetas (xcopy)",
-                    "description": "Copia archivos y estructuras completas de directorios entre una ruta origen y destino (con opciones para subcarpetas, archivos ocultos y continuar ante errores). Para respaldos cr\u00edticos se recomienda Robocopy.",
+                    "description": "Copia archivos y estructuras completas de directorios entre una ruta origen y destino (con opciones para subcarpetas, archivos ocultos y continuar ante errores). Para respaldos críticos se recomienda Robocopy.",
                     "command": "xcopy",
                     "args": [
                         {
@@ -1229,15 +1229,15 @@
                                     "flag": ""
                                 },
                                 {
-                                    "name": "Copiar excluyendo vac\u00edos (/s)",
+                                    "name": "Copiar excluyendo vacíos (/s)",
                                     "flag": "/s"
                                 },
                                 {
-                                    "name": "Copiar incluyendo vac\u00edos (/e)",
+                                    "name": "Copiar incluyendo vacíos (/e)",
                                     "flag": "/e"
                                 }
                             ],
-                            "description": "Elige si deseas copiar subdirectorios y c\u00f3mo tratar los vac\u00edos."
+                            "description": "Elige si deseas copiar subdirectorios y cómo tratar los vacíos."
                         },
                         {
                             "name": "Archivos ocultos y de sistema (/h)",
@@ -1249,12 +1249,12 @@
                     "warning": {
                         "level": "caution",
                         "title": "Copia de Archivos (xcopy)",
-                        "message": "Se copiar\u00e1n archivos al directorio destino y podr\u00edan sobrescribirse archivos existentes con el mismo nombre."
+                        "message": "Se copiarán archivos al directorio destino y podrían sobrescribirse archivos existentes con el mismo nombre."
                     }
                 },
                 {
                     "name": "Listar Archivos y Carpetas (dir)",
-                    "description": "Muestra el listado de archivos y subcarpetas dentro de la ruta indicada (con opci\u00f3n de recorrido recursivo y formato compacto). \u00datil para inventariar carpetas o exportar listados.",
+                    "description": "Muestra el listado de archivos y subcarpetas dentro de la ruta indicada (con opción de recorrido recursivo y formato compacto). Útil para inventariar carpetas o exportar listados.",
                     "command": "dir",
                     "args": [
                         {
@@ -1272,8 +1272,8 @@
                     ]
                 },
                 {
-                    "name": "Ver \u00c1rbol de Directorios (tree)",
-                    "description": "Representa visualmente en formato de \u00e1rbol jer\u00e1rquico todas las subcarpetas (y opcionalmente archivos) dentro de una ruta. Ideal para documentar estructuras de proyectos o respaldos.",
+                    "name": "Ver Árbol de Directorios (tree)",
+                    "description": "Representa visualmente en formato de árbol jerárquico todas las subcarpetas (y opcionalmente archivos) dentro de una ruta. Ideal para documentar estructuras de proyectos o respaldos.",
                     "command": "tree",
                     "args": [
                         {
@@ -1292,11 +1292,11 @@
                 },
                 {
                     "name": "Gestor de Atributos de Archivos (Ocultar/Sistema)",
-                    "description": "Agrega o quita atributos de Windows (Oculto, Sistema, Solo Lectura) sobre un archivo o carpeta mediante attrib. \u00datil para mostrar archivos ocultados por malware o proteger archivos espec\u00edficos.",
+                    "description": "Agrega o quita atributos de Windows (Oculto, Sistema, Solo Lectura) sobre un archivo o carpeta mediante attrib. Útil para mostrar archivos ocultados por malware o proteger archivos específicos.",
                     "command": "attrib",
                     "args": [
                         {
-                            "name": "Acci\u00f3n de Ocultar",
+                            "name": "Acción de Ocultar",
                             "type": "radio_group",
                             "options": [
                                 {
@@ -1323,7 +1323,7 @@
                                     "flag": "-s"
                                 }
                             ],
-                            "description": "Los archivos de sistema son a\u00fan m\u00e1s dif\u00edciles de ver."
+                            "description": "Los archivos de sistema son aún más difíciles de ver."
                         },
                         {
                             "name": "Ruta del Archivo/Carpeta",
@@ -1335,13 +1335,13 @@
                     "warning": {
                         "level": "caution",
                         "title": "Modificar Atributos de Archivo/Carpeta",
-                        "message": "Se cambiar\u00e1n los atributos de visibilidad/protecci\u00f3n (Oculto, Sistema, Solo Lectura) del archivo o carpeta seleccionada."
+                        "message": "Se cambiarán los atributos de visibilidad/protección (Oculto, Sistema, Solo Lectura) del archivo o carpeta seleccionada."
                     }
                 }
             ]
         },
         {
-            "name": "Almacenamiento: Formateo y Gesti\u00f3n",
+            "name": "Almacenamiento: Formateo y Gestión",
             "commands": [
                 {
                     "name": "Formatear Disco (Avanzado estilo Rufus)",
@@ -1352,10 +1352,10 @@
                             "name": "Disco a formatear",
                             "flag": "-num",
                             "type": "disk_dropdown",
-                            "description": "Selecciona el disco f\u00edsico (se borrar\u00e1n todas sus particiones)."
+                            "description": "Selecciona el disco físico (se borrarán todas sus particiones)."
                         },
                         {
-                            "name": "Esquema de Partici\u00f3n",
+                            "name": "Esquema de Partición",
                             "type": "radio_group",
                             "options": [
                                 {
@@ -1367,7 +1367,7 @@
                                     "flag": "-style MBR"
                                 }
                             ],
-                            "description": "Esquema de partici\u00f3n del disco (GPT es el est\u00e1ndar actual)."
+                            "description": "Esquema de partición del disco (GPT es el estándar actual)."
                         },
                         {
                             "name": "Sistema de Archivos",
@@ -1378,45 +1378,45 @@
                                     "flag": "-fs NTFS"
                                 },
                                 {
-                                    "name": "FAT32 (USB \u2264 32 GB / M\u00e1x. compatibilidad / Archivos \u2264 4 GB)",
+                                    "name": "FAT32 (USB ≤ 32 GB / Máx. compatibilidad / Archivos ≤ 4 GB)",
                                     "flag": "-fs FAT32"
                                 },
                                 {
-                                    "name": "exFAT (USB/SD > 32 GB / Multiplataforma / Sin l\u00edmite 4 GB)",
+                                    "name": "exFAT (USB/SD > 32 GB / Multiplataforma / Sin límite 4 GB)",
                                     "flag": "-fs exFAT"
                                 }
                             ],
-                            "description": "Formato del volumen seg\u00fan capacidad y uso:\n\u2022 NTFS: Recomendado para discos internos/externos y SSD > 32 GB en Windows (soporta archivos > 4 GB y permisos).\n\u2022 FAT32: Recomendado para memorias USB/SD de hasta 32 GB (m\u00e1xima compatibilidad con UEFI, consolas y equipos antiguos; l\u00edmite de 4 GB por archivo y 32 GB por partici\u00f3n en Windows).\n\u2022 exFAT: Recomendado para memorias USB y tarjetas SD > 32 GB (compatible con Windows, macOS y Linux, sin l\u00edmite de 4 GB por archivo)."
+                            "description": "Formato del volumen según capacidad y uso:\n• NTFS: Recomendado para discos internos/externos y SSD > 32 GB en Windows (soporta archivos > 4 GB y permisos).\n• FAT32: Recomendado para memorias USB/SD de hasta 32 GB (máxima compatibilidad con UEFI, consolas y equipos antiguos; límite de 4 GB por archivo y 32 GB por partición en Windows).\n• exFAT: Recomendado para memorias USB y tarjetas SD > 32 GB (compatible con Windows, macOS y Linux, sin límite de 4 GB por archivo)."
                         },
                         {
                             "name": "Etiqueta (Nombre)",
                             "flag": "-label",
                             "type": "entry",
-                            "description": "El nombre visible que tendr\u00e1 la unidad (sin espacios o usa guiones)."
+                            "description": "El nombre visible que tendrá la unidad (sin espacios o usa guiones)."
                         },
                         {
-                            "name": "Formato R\u00e1pido",
+                            "name": "Formato Rápido",
                             "flag": "-quick",
                             "type": "checkbox",
-                            "description": "Realiza un formateo r\u00e1pido en lugar de escribir ceros en todo el disco."
+                            "description": "Realiza un formateo rápido en lugar de escribir ceros en todo el disco."
                         }
                     ],
                     "warning": {
                         "level": "danger",
                         "title": "Formateo Completo de Disco",
-                        "message": "Se borrar\u00e1n TODAS las particiones y archivos del disco seleccionado de forma irreversible, se inicializar\u00e1 el esquema elegido y se formatear\u00e1 el volumen."
+                        "message": "Se borrarán TODAS las particiones y archivos del disco seleccionado de forma irreversible, se inicializará el esquema elegido y se formateará el volumen."
                     },
                     "combos": [
                         {
-                            "command": "Ver Discos L\u00f3gicos y Esquema GPT/MBR (Get-Disk)",
+                            "command": "Ver Discos Lógicos y Esquema GPT/MBR (Get-Disk)",
                             "when": "before",
-                            "reason": "Protocolo seguro: confirma el n\u00famero de disco y tama\u00f1o antes de formatear.",
+                            "reason": "Protocolo seguro: confirma el número de disco y tamaño antes de formatear.",
                             "auto_command": "powershell -Command \"Get-Disk | Format-Table -AutoSize\""
                         },
                         {
                             "command": "Explorar Disco (Abrir Carpeta)",
                             "when": "after",
-                            "reason": "Abre directamente la unidad reci\u00e9n formateada en el Explorador.",
+                            "reason": "Abre directamente la unidad recién formateada en el Explorador.",
                             "auto_command": "powershell -Command \"& {param($num) if($null -eq $num){ Write-Host 'Error: Selecciona un disco.'; exit 1 } $v = Get-Partition -DiskNumber $num -ErrorAction SilentlyContinue | Where-Object DriveLetter | Select-Object -First 1 -ExpandProperty DriveLetter; if($v){ explorer.exe ($v + ':\\'); Write-Host ('Explorador abierto en ' + $v + ':\\') } else { Write-Host 'Error: Este disco no tiene una letra asignada o particion visible.'; exit 1 } }\" -num {disk}"
                         },
                         {
@@ -1432,64 +1432,64 @@
                     "command": "powershell -Command \"& {param($num) if($null -eq $num){ Write-Host 'Error: Ingresa el numero de disco.'; exit 1 } $d = Get-Disk -Number $num -ErrorAction SilentlyContinue; if($null -eq $d){ Write-Host 'Error: Disco no encontrado.'; exit 1 } if($d.IsSystem -or $d.IsBoot){ Write-Host 'ADVERTENCIA EXTREMA: Esta unidad contiene el sistema operativo. Operacion CANCELADA por seguridad.'; exit 1 } try { if($d.IsOffline){ Set-Disk -Number $num -IsOffline $false -ErrorAction Stop } if($d.IsReadOnly){ Set-Disk -Number $num -IsReadOnly $false -ErrorAction Stop } Update-Disk -Number $num -ErrorAction SilentlyContinue; $d = Get-Disk -Number $num -ErrorAction Stop; if($d.PartitionStyle -ne 'RAW' -and $d.PartitionStyle -ne 'Unknown'){ Write-Host ('El disco ya esta inicializado (' + $d.PartitionStyle + ').'); exit 0 } Initialize-Disk -Number $num -PartitionStyle GPT -ErrorAction Stop; Write-Host 'Disco inicializado como GPT.' } catch { Write-Host ('Error al inicializar: ' + $_.Exception.Message); exit 1 } }\"",
                     "args": [
                         {
-                            "name": "N\u00famero de Disco",
+                            "name": "Número de Disco",
                             "flag": "-num",
                             "type": "disk_dropdown",
-                            "description": "Selecciona el n\u00famero de disco a inicializar."
+                            "description": "Selecciona el número de disco a inicializar."
                         }
                     ],
                     "warning": {
                         "level": "danger",
-                        "title": "Inicializaci\u00f3n de Disco",
-                        "message": "Se escribir\u00e1 una nueva tabla de particiones GPT en el disco seleccionado. Aseg\u00farate de haber elegido la unidad correcta."
+                        "title": "Inicialización de Disco",
+                        "message": "Se escribirá una nueva tabla de particiones GPT en el disco seleccionado. Asegúrate de haber elegido la unidad correcta."
                     },
                     "combos": [
                         {
-                            "command": "Crear Partici\u00f3n y Formatear NTFS (New-Partition)",
+                            "command": "Crear Partición y Formatear NTFS (New-Partition)",
                             "when": "after",
-                            "reason": "Crea la partici\u00f3n y formatea en NTFS para dejar el disco listo para usar."
+                            "reason": "Crea la partición y formatea en NTFS para dejar el disco listo para usar."
                         }
                     ]
                 },
                 {
-                    "name": "Crear Partici\u00f3n y Formatear NTFS (New-Partition)",
-                    "description": "Crea una partici\u00f3n primaria ocupando todo el espacio libre del disco seleccionado, asigna letra de unidad y formatea en NTFS (recomendado para discos > 32 GB y archivos > 4 GB en Windows). Auto-inicializa en GPT si est\u00e1 RAW.",
+                    "name": "Crear Partición y Formatear NTFS (New-Partition)",
+                    "description": "Crea una partición primaria ocupando todo el espacio libre del disco seleccionado, asigna letra de unidad y formatea en NTFS (recomendado para discos > 32 GB y archivos > 4 GB en Windows). Auto-inicializa en GPT si está RAW.",
                     "command": "powershell -Command \"& {param($num) if($null -eq $num){ Write-Host 'Error: Ingresa el numero de disco.'; exit 1 } $d = Get-Disk -Number $num -ErrorAction SilentlyContinue; if($null -eq $d){ Write-Host 'Error: Disco no encontrado.'; exit 1 } if($d.IsSystem -or $d.IsBoot){ Write-Host 'ADVERTENCIA EXTREMA: Esta unidad contiene el sistema operativo. Operacion CANCELADA por seguridad.'; exit 1 } try { if($d.IsOffline){ Set-Disk -Number $num -IsOffline $false -ErrorAction Stop } if($d.IsReadOnly){ Set-Disk -Number $num -IsReadOnly $false -ErrorAction Stop } Update-Disk -Number $num -ErrorAction SilentlyContinue; $d = Get-Disk -Number $num -ErrorAction Stop; if($d.PartitionStyle -eq 'RAW' -or $d.PartitionStyle -eq 'Unknown'){ Initialize-Disk -Number $num -PartitionStyle GPT -ErrorAction Stop; Start-Sleep -Milliseconds 500; Update-Disk -Number $num -ErrorAction SilentlyContinue } $part = New-Partition -DiskNumber $num -UseMaximumSize -AssignDriveLetter -ErrorAction Stop; $part | Format-Volume -FileSystem NTFS -Confirm:$false -Force -ErrorAction Stop | Out-Null; Write-Host ('Particion creada y formateada con exito en ' + $part.DriveLetter + ':.') } catch { Write-Host ('Error: ' + $_.Exception.Message); exit 1 } }\"",
                     "args": [
                         {
-                            "name": "N\u00famero de Disco",
+                            "name": "Número de Disco",
                             "flag": "-num",
                             "type": "disk_dropdown",
-                            "description": "Selecciona el n\u00famero de disco donde crear la partici\u00f3n."
+                            "description": "Selecciona el número de disco donde crear la partición."
                         }
                     ],
                     "warning": {
                         "level": "danger",
-                        "title": "Creaci\u00f3n de Partici\u00f3n y Formateo NTFS",
-                        "message": "Se crear\u00e1 una partici\u00f3n ocupando todo el espacio libre del disco seleccionado y se formatear\u00e1 como NTFS."
+                        "title": "Creación de Partición y Formateo NTFS",
+                        "message": "Se creará una partición ocupando todo el espacio libre del disco seleccionado y se formateará como NTFS."
                     },
                     "combos": [
                         {
-                            "command": "Listar Vol\u00famenes y Letras de Unidad (Get-Volume)",
+                            "command": "Listar Volúmenes y Letras de Unidad (Get-Volume)",
                             "when": "after",
-                            "reason": "Verifica la letra asignada, etiqueta y estado del volumen reci\u00e9n creado.",
+                            "reason": "Verifica la letra asignada, etiqueta y estado del volumen recién creado.",
                             "auto_command": "powershell -Command \"Get-Volume | Format-Table -AutoSize\""
                         },
                         {
                             "command": "Explorar Disco (Abrir Carpeta)",
                             "when": "after",
-                            "reason": "Abre la unidad reci\u00e9n formateada en el Explorador de Archivos.",
+                            "reason": "Abre la unidad recién formateada en el Explorador de Archivos.",
                             "auto_command": "powershell -Command \"& {param($num) if($null -eq $num){ Write-Host 'Error: Selecciona un disco.'; exit 1 } $v = Get-Partition -DiskNumber $num -ErrorAction SilentlyContinue | Where-Object DriveLetter | Select-Object -First 1 -ExpandProperty DriveLetter; if($v){ explorer.exe ($v + ':\\'); Write-Host ('Explorador abierto en ' + $v + ':\\') } else { Write-Host 'Error: Este disco no tiene una letra asignada o particion visible.'; exit 1 } }\" -num {disk}"
                         }
                     ]
                 },
                 {
                     "name": "Borrar Todas las Particiones del Disco (Clear-Disk)",
-                    "description": "Elimina absolutamente todas las particiones (incluidas OEM) y datos del disco seleccionado dej\u00e1ndolo limpio/RAW, con respaldo autom\u00e1tico en Diskpart si Clear-Disk falla. Bloqueado en discos de sistema/arranque.",
+                    "description": "Elimina absolutamente todas las particiones (incluidas OEM) y datos del disco seleccionado dejándolo limpio/RAW, con respaldo automático en Diskpart si Clear-Disk falla. Bloqueado en discos de sistema/arranque.",
                     "command": "powershell -Command \"& {param($num) if($null -eq $num){ Write-Host 'Error: Ingresa el numero de disco.'; exit 1 } $d = Get-Disk -Number $num -ErrorAction SilentlyContinue; if($null -eq $d){ Write-Host 'Error: Disco no encontrado.'; exit 1 } if($d.IsSystem -or $d.IsBoot){ Write-Host 'ADVERTENCIA EXTREMA: Esta unidad contiene el sistema operativo. Operacion CANCELADA por seguridad.'; exit 1 } try { if($d.IsOffline){ Set-Disk -Number $num -IsOffline $false -ErrorAction Stop } if($d.IsReadOnly){ Set-Disk -Number $num -IsReadOnly $false -ErrorAction Stop } Update-Disk -Number $num -ErrorAction SilentlyContinue; $d = Get-Disk -Number $num -ErrorAction Stop; if($d.PartitionStyle -eq 'RAW' -or $d.PartitionStyle -eq 'Unknown'){ Write-Host 'El disco ya esta limpio (sin inicializar / RAW).'; exit 0 } try { Clear-Disk -Number $num -RemoveData -RemoveOEM -Confirm:$false -ErrorAction Stop } catch { @('select disk ' + $num, 'clean', 'exit') | diskpart | Out-Null; if($LASTEXITCODE -ne 0){ throw 'Fallo al limpiar el disco con Clear-Disk y Diskpart.' } } Write-Host 'Disco limpiado completamente.' } catch { Write-Host ('Error al limpiar: ' + $_.Exception.Message); exit 1 } }\"",
                     "args": [
                         {
-                            "name": "N\u00famero de Disco",
+                            "name": "Número de Disco",
                             "flag": "-num",
                             "type": "disk_dropdown",
                             "description": "Selecciona el disco a borrar COMPLETAMENTE."
@@ -1498,19 +1498,19 @@
                     "warning": {
                         "level": "danger",
                         "title": "Borrado Total de Disco (Clear-Disk)",
-                        "message": "Se eliminar\u00e1n ABSOLUTAMENTE TODAS las particiones, datos y tablas del disco seleccionado de forma irreversible."
+                        "message": "Se eliminarán ABSOLUTAMENTE TODAS las particiones, datos y tablas del disco seleccionado de forma irreversible."
                     },
                     "combos": [
                         {
-                            "command": "Ver Discos L\u00f3gicos y Esquema GPT/MBR (Get-Disk)",
+                            "command": "Ver Discos Lógicos y Esquema GPT/MBR (Get-Disk)",
                             "when": "before",
-                            "reason": "Protocolo seguro: verifica el n\u00famero exacto del disco antes de borrar todas sus particiones.",
+                            "reason": "Protocolo seguro: verifica el número exacto del disco antes de borrar todas sus particiones.",
                             "auto_command": "powershell -Command \"Get-Disk | Format-Table -AutoSize\""
                         },
                         {
                             "command": "Inicializar Disco Nuevo en GPT (Initialize-Disk)",
                             "when": "after",
-                            "reason": "Inicializa en GPT el disco reci\u00e9n limpiado."
+                            "reason": "Inicializa en GPT el disco recién limpiado."
                         },
                         {
                             "command": "Formatear Disco (Avanzado estilo Rufus)",
@@ -1521,7 +1521,7 @@
                 },
                 {
                     "name": "Optimizar / TRIM / Desfragmentar Discos",
-                    "description": "Optimiza unidades SSD (TRIM) o desfragmenta discos duros mec\u00e1nicos.",
+                    "description": "Optimiza unidades SSD (TRIM) o desfragmenta discos duros mecánicos.",
                     "command": "powershell -Command \"& {param($letra) if([string]::IsNullOrWhiteSpace($letra)){ Write-Host 'Error: Selecciona una unidad.'; exit 1 } try { $l = $letra.Trim(':'); Write-Host ('Iniciando optimizacion en ' + $l + ':...'); Optimize-Volume -DriveLetter $l -ReTrim -Defrag -Verbose -ErrorAction Stop; Write-Host 'Optimizacion finalizada.' } catch { Write-Host ('Error: ' + $_.Exception.Message); exit 1 } }\"",
                     "args": [
                         {
@@ -1533,8 +1533,8 @@
                     ],
                     "warning": {
                         "level": "caution",
-                        "title": "Optimizaci\u00f3n de Unidad (TRIM / Desfragmentar)",
-                        "message": "Se ejecutar\u00e1 TRIM (en SSD) o desfragmentaci\u00f3n (en HDD) sobre la unidad seleccionada."
+                        "title": "Optimización de Unidad (TRIM / Desfragmentar)",
+                        "message": "Se ejecutará TRIM (en SSD) o desfragmentación (en HDD) sobre la unidad seleccionada."
                     }
                 },
                 {
@@ -1543,13 +1543,13 @@
                     "command": "__INTERNAL__ --run-disk-attributes",
                     "args": [
                         {
-                            "name": "Disco F\u00edsico (HDD / SSD / USB)",
+                            "name": "Disco Físico (HDD / SSD / USB)",
                             "flag": "--disk",
                             "type": "disk_dropdown",
-                            "description": "Selecciona el disco f\u00edsico o memoria USB a consultar o modificar."
+                            "description": "Selecciona el disco físico o memoria USB a consultar o modificar."
                         },
                         {
-                            "name": "Acci\u00f3n",
+                            "name": "Acción",
                             "type": "radio_group",
                             "options": [
                                 {
@@ -1568,7 +1568,7 @@
                             "description": "Elige si deseas consultar los atributos actuales o quitar/colocar un atributo."
                         },
                         {
-                            "name": "\u00c1mbito (Nivel)",
+                            "name": "Ámbito (Nivel)",
                             "type": "radio_group",
                             "options": [
                                 {
@@ -1576,15 +1576,15 @@
                                     "flag": "--scope disk"
                                 },
                                 {
-                                    "name": "Disco y sus Vol\u00famenes (Recomendado para Solo Lectura)",
+                                    "name": "Disco y sus Volúmenes (Recomendado para Solo Lectura)",
                                     "flag": "--scope both"
                                 },
                                 {
-                                    "name": "Solo Vol\u00famenes del disco (attributes volume)",
+                                    "name": "Solo Volúmenes del disco (attributes volume)",
                                     "flag": "--scope volume"
                                 }
                             ],
-                            "description": "Define si el cambio se aplica al disco f\u00edsico, a sus vol\u00famenes o a ambos."
+                            "description": "Define si el cambio se aplica al disco físico, a sus volúmenes o a ambos."
                         },
                         {
                             "name": "Atributo",
@@ -1599,23 +1599,23 @@
                                     "flag": "--attr hidden"
                                 },
                                 {
-                                    "name": "Sin letra autom\u00e1tica (nodefaultdriveletter - solo volumen)",
+                                    "name": "Sin letra automática (nodefaultdriveletter - solo volumen)",
                                     "flag": "--attr nodefaultdriveletter"
                                 }
                             ],
-                            "description": "Atributo a colocar o quitar (solo aplica cuando Acci\u00f3n es Quitar o Colocar)."
+                            "description": "Atributo a colocar o quitar (solo aplica cuando Acción es Quitar o Colocar)."
                         },
                         {
-                            "name": "Letra de Volumen Espec\u00edfica (Opcional)",
+                            "name": "Letra de Volumen Específica (Opcional)",
                             "flag": "--volume",
                             "type": "entry",
-                            "description": "Opcional: escribe una letra (ej. E) para modificar solo ese volumen. Si se deja vac\u00edo, aplica a todos los vol\u00famenes del disco."
+                            "description": "Opcional: escribe una letra (ej. E) para modificar solo ese volumen. Si se deja vacío, aplica a todos los volúmenes del disco."
                         }
                     ],
                     "warning": {
                         "level": "caution",
                         "title": "Modificar Atributos de Disco / Volumen (Diskpart)",
-                        "message": "Se aplicar\u00e1n o quitar\u00e1n atributos de disco o volumen (como Solo Lectura u Oculto) mediante Diskpart en la unidad seleccionada.",
+                        "message": "Se aplicarán o quitarán atributos de disco o volumen (como Solo Lectura u Oculto) mediante Diskpart en la unidad seleccionada.",
                         "skip_if_flag_in": [
                             "--action inspect"
                         ]
@@ -1629,7 +1629,7 @@
                         {
                             "command": "Asignar Letra (Montar)",
                             "when": "after",
-                            "reason": "Asigna letra de unidad si el volumen qued\u00f3 oculto sin letra."
+                            "reason": "Asigna letra de unidad si el volumen quedó oculto sin letra."
                         }
                     ]
                 },
@@ -1639,7 +1639,7 @@
                     "command": "powershell -Command \"& {param($num) if($null -eq $num){ Write-Host 'Error: Selecciona un disco.'; exit 1 } $v = Get-Partition -DiskNumber $num -ErrorAction SilentlyContinue | Where-Object DriveLetter | Select-Object -First 1 -ExpandProperty DriveLetter; if($v){ explorer.exe ($v + ':\\'); Write-Host ('Explorador abierto en ' + $v + ':\\') } else { Write-Host 'Error: Este disco no tiene una letra asignada o particion visible.'; exit 1 } }\"",
                     "args": [
                         {
-                            "name": "N\u00famero de Disco",
+                            "name": "Número de Disco",
                             "flag": "-num",
                             "type": "disk_dropdown",
                             "description": "Selecciona el disco a explorar."
@@ -1648,11 +1648,11 @@
                 },
                 {
                     "name": "Asignar Letra (Montar)",
-                    "description": "Busca la primera partici\u00f3n sin letra del disco y le asigna la siguiente letra disponible.",
+                    "description": "Busca la primera partición sin letra del disco y le asigna la siguiente letra disponible.",
                     "command": "powershell -Command \"& {param($num) if($null -eq $num){ Write-Host 'Error: Selecciona un disco.'; exit 1 } $p = Get-Partition -DiskNumber $num -ErrorAction SilentlyContinue | Where-Object { -not $_.DriveLetter -and $_.Type -ne 'Reserved' -and $_.Type -ne 'System' -and $_.Type -ne 'Recovery' } | Select-Object -First 1; if($p){ try { Add-PartitionAccessPath -InputObject $p -AssignDriveLetter -ErrorAction Stop; Write-Host 'Letra asignada con exito.' } catch { Write-Host ('Error: ' + $_.Exception.Message); exit 1 } } else { Write-Host 'Error: No se encontro una particion valida sin letra en este disco.'; exit 1 } }\"",
                     "args": [
                         {
-                            "name": "N\u00famero de Disco",
+                            "name": "Número de Disco",
                             "flag": "-num",
                             "type": "disk_dropdown",
                             "description": "Selecciona el disco al cual asignarle letra."
@@ -1660,17 +1660,17 @@
                     ],
                     "warning": {
                         "level": "caution",
-                        "title": "Montar Partici\u00f3n (Asignar Letra)",
-                        "message": "Se asignar\u00e1 una nueva letra de unidad a la primera partici\u00f3n v\u00e1lida sin letra del disco seleccionado."
+                        "title": "Montar Partición (Asignar Letra)",
+                        "message": "Se asignará una nueva letra de unidad a la primera partición válida sin letra del disco seleccionado."
                     }
                 },
                 {
                     "name": "Quitar Letra (Desmontar)",
-                    "description": "Remueve la letra de unidad del disco, haci\u00e9ndolo invisible al Explorador (los datos no se borran).",
+                    "description": "Remueve la letra de unidad del disco, haciéndolo invisible al Explorador (los datos no se borran).",
                     "command": "powershell -Command \"& {param($num) if($null -eq $num){ Write-Host 'Error: Selecciona un disco.'; exit 1 } $d = Get-Disk -Number $num -ErrorAction SilentlyContinue; if($null -eq $d){ Write-Host 'Error: Disco no encontrado.'; exit 1 } if($d.IsSystem -or $d.IsBoot){ Write-Host 'ADVERTENCIA: No se puede desmontar la unidad del sistema.'; exit 1 } $p = @(Get-Partition -DiskNumber $num -ErrorAction SilentlyContinue | Where-Object DriveLetter); if($p.Count -gt 0){ try { $p | ForEach-Object { Remove-PartitionAccessPath -InputObject $_ -AccessPath ($_.DriveLetter + ':\\') -ErrorAction Stop }; Write-Host 'Letra(s) removida(s) con exito.' } catch { Write-Host ('Error: ' + $_.Exception.Message); exit 1 } } else { Write-Host 'El disco no tiene letras asignadas.' } }\"",
                     "args": [
                         {
-                            "name": "N\u00famero de Disco",
+                            "name": "Número de Disco",
                             "flag": "-num",
                             "type": "disk_dropdown",
                             "description": "Selecciona el disco a desmontar."
@@ -1679,16 +1679,16 @@
                     "warning": {
                         "level": "danger",
                         "title": "Desmontar Unidad (Quitar Letra)",
-                        "message": "Se remover\u00e1 la letra de unidad del disco seleccionado, ocult\u00e1ndolo del Explorador de Windows (los datos no se borran, pero los programas dejar\u00e1n de verlo)."
+                        "message": "Se removerá la letra de unidad del disco seleccionado, ocultándolo del Explorador de Windows (los datos no se borran, pero los programas dejarán de verlo)."
                     }
                 },
                 {
                     "name": "Desconectar Disco (Offline)",
-                    "description": "Pone el disco f\u00edsico en estado Fuera de L\u00ednea (Offline) para Windows, dej\u00e1ndolo inaccesible para el sistema y aplicaciones sin borrar datos. Bloqueado en la unidad del sistema.",
+                    "description": "Pone el disco físico en estado Fuera de Línea (Offline) para Windows, dejándolo inaccesible para el sistema y aplicaciones sin borrar datos. Bloqueado en la unidad del sistema.",
                     "command": "powershell -Command \"& {param($num) if($null -eq $num){ Write-Host 'Error: Selecciona un disco.'; exit 1 } $d = Get-Disk -Number $num -ErrorAction SilentlyContinue; if($null -eq $d){ Write-Host 'Error: Disco no encontrado.'; exit 1 } if($d.IsSystem -or $d.IsBoot){ Write-Host 'ADVERTENCIA: No se puede desconectar el disco del sistema.'; exit 1 } try { Set-Disk -Number $num -IsOffline $true -ErrorAction Stop; Write-Host 'Disco puesto Fuera de Linea (Offline).' } catch { Write-Host ('Error: ' + $_.Exception.Message); exit 1 } }\"",
                     "args": [
                         {
-                            "name": "N\u00famero de Disco",
+                            "name": "Número de Disco",
                             "flag": "-num",
                             "type": "disk_online_dropdown",
                             "description": "Selecciona el disco a desconectar."
@@ -1697,16 +1697,16 @@
                     "warning": {
                         "level": "danger",
                         "title": "Desconectar Disco (Offline)",
-                        "message": "El disco seleccionado pasar\u00e1 a estado Fuera de L\u00ednea (Offline) y dejar\u00e1 de estar accesible para Windows y tus programas hasta que lo vuelvas a conectar."
+                        "message": "El disco seleccionado pasará a estado Fuera de Línea (Offline) y dejará de estar accesible para Windows y tus programas hasta que lo vuelvas a conectar."
                     }
                 },
                 {
                     "name": "Conectar Disco (Online)",
-                    "description": "Vuelve a poner en estado En L\u00ednea (Online) un disco que se encontraba desconectado (Offline) para hacerlo accesible nuevamente en Windows.",
+                    "description": "Vuelve a poner en estado En Línea (Online) un disco que se encontraba desconectado (Offline) para hacerlo accesible nuevamente en Windows.",
                     "command": "powershell -Command \"& {param($num) if($null -eq $num){ Write-Host 'Error: Selecciona un disco.'; exit 1 } try { Set-Disk -Number $num -IsOffline $false -ErrorAction Stop; Write-Host 'Disco puesto En Linea (Online).' } catch { Write-Host ('Error: ' + $_.Exception.Message); exit 1 } }\"",
                     "args": [
                         {
-                            "name": "N\u00famero de Disco",
+                            "name": "Número de Disco",
                             "flag": "-num",
                             "type": "disk_offline_dropdown",
                             "description": "Selecciona el disco a conectar."
@@ -1715,16 +1715,16 @@
                     "warning": {
                         "level": "caution",
                         "title": "Conectar Disco (Online)",
-                        "message": "El disco seleccionado pasar\u00e1 a estado En L\u00ednea (Online) y quedar\u00e1 accesible para Windows."
+                        "message": "El disco seleccionado pasará a estado En Línea (Online) y quedará accesible para Windows."
                     },
                     "combos": [
                         {
                             "command": "Asignar Letra (Montar)",
                             "when": "after",
-                            "reason": "Asigna una letra de unidad al disco reci\u00e9n puesto en l\u00ednea si no aparece en el Explorador."
+                            "reason": "Asigna una letra de unidad al disco recién puesto en línea si no aparece en el Explorador."
                         },
                         {
-                            "command": "Ver Discos L\u00f3gicos y Esquema GPT/MBR (Get-Disk)",
+                            "command": "Ver Discos Lógicos y Esquema GPT/MBR (Get-Disk)",
                             "when": "after",
                             "reason": "Verifica el estado Online y esquema de particiones del disco.",
                             "auto_command": "powershell -Command \"Get-Disk | Format-Table -AutoSize\""
@@ -1746,13 +1746,13 @@
                     "warning": {
                         "level": "caution",
                         "title": "Expulsar Unidad USB",
-                        "message": "Se desmontar\u00e1 y expulsar\u00e1 la unidad seleccionada. Aseg\u00farate de no tener archivos abiertos en ella."
+                        "message": "Se desmontará y expulsará la unidad seleccionada. Asegúrate de no tener archivos abiertos en ella."
                     }
                 }
             ]
         },
         {
-            "name": "Almacenamiento: Diagn\u00f3stico y Salud",
+            "name": "Almacenamiento: Diagnóstico y Salud",
             "commands": [
                 {
                     "name": "Auditor de Autenticidad de Unidades (USB / SSD / HDD)",
@@ -1766,29 +1766,29 @@
                             "description": "Enlista todas las unidades conectadas (Online y Offline) con su nombre, etiqueta y capacidad."
                         },
                         {
-                            "name": "Nivel de Auditor\u00eda",
+                            "name": "Nivel de Auditoría",
                             "type": "radio_group",
                             "options": [
                                 {
-                                    "name": "Solo Hardware e Identidad (VID/PID, Serie, Firmware \u2014 0 escritura)",
+                                    "name": "Solo Hardware e Identidad (VID/PID, Serie, Firmware — 0 escritura)",
                                     "flag": "--mode hardware"
                                 },
                                 {
-                                    "name": "Auditor\u00eda R\u00e1pida + Velocidad (64 MB en espacio libre)",
+                                    "name": "Auditoría Rápida + Velocidad (64 MB en espacio libre)",
                                     "flag": "--mode quick"
                                 },
                                 {
-                                    "name": "Prueba Exhaustiva de Capacidad Real (Estilo H2testw \u2014 todo el espacio libre)",
+                                    "name": "Prueba Exhaustiva de Capacidad Real (Estilo H2testw — todo el espacio libre)",
                                     "flag": "--mode full"
                                 }
                             ],
-                            "description": "El modo Hardware no escribe nada. Los modos R\u00e1pido y Exhaustivo prueban solo el espacio libre sin tocar tus archivos y limpian los datos temporales al finalizar."
+                            "description": "El modo Hardware no escribe nada. Los modos Rápido y Exhaustivo prueban solo el espacio libre sin tocar tus archivos y limpian los datos temporales al finalizar."
                         }
                     ],
                     "warning": {
                         "level": "caution",
                         "title": "Prueba de Escritura y Lectura en Unidad",
-                        "message": "Se escribir\u00e1n archivos temporales de prueba en el espacio libre de la unidad seleccionada para verificar su velocidad y capacidad real (se eliminan autom\u00e1ticamente al terminar).",
+                        "message": "Se escribirán archivos temporales de prueba en el espacio libre de la unidad seleccionada para verificar su velocidad y capacidad real (se eliminan automáticamente al terminar).",
                         "skip_if_flag_in": [
                             "--mode hardware"
                         ]
@@ -1802,28 +1802,28 @@
                         {
                             "command": "Estado de Salud SMART Avanzado",
                             "when": "after",
-                            "reason": "Complementa la auditor\u00eda revisando los atributos f\u00edsicos SMART.",
+                            "reason": "Complementa la auditoría revisando los atributos físicos SMART.",
                             "auto_command": "__INTERNAL__ --run-smart-info"
                         }
                     ]
                 },
                 {
-                    "name": "Esc\u00e1ner de Superficie y Sectores (HDD / SSD / USB)",
-                    "description": "Analiza la superficie f\u00edsica de un disco por bloques (sin cach\u00e9) para localizar sectores lentos o da\u00f1ados, mostrar un mapa visual 0%-100%, calcular la mayor zona sana contigua y (solo en HDD no-sistema) intentar reasignar sectores pendientes.",
+                    "name": "Escáner de Superficie y Sectores (HDD / SSD / USB)",
+                    "description": "Analiza la superficie física de un disco por bloques (sin caché) para localizar sectores lentos o dañados, mostrar un mapa visual 0%-100%, calcular la mayor zona sana contigua y (solo en HDD no-sistema) intentar reasignar sectores pendientes.",
                     "command": "__INTERNAL__ --run-surface-scan",
                     "args": [
                         {
-                            "name": "Disco F\u00edsico (HDD / SSD / USB)",
+                            "name": "Disco Físico (HDD / SSD / USB)",
                             "flag": "--disk",
                             "type": "disk_dropdown",
-                            "description": "Selecciona el disco f\u00edsico a escanear."
+                            "description": "Selecciona el disco físico a escanear."
                         },
                         {
                             "name": "Modo de Escaneo",
                             "type": "radio_group",
                             "options": [
                                 {
-                                    "name": "Muestreo R\u00e1pido (~250 zonas, 0 escritura, 1-2 min)",
+                                    "name": "Muestreo Rápido (~250 zonas, 0 escritura, 1-2 min)",
                                     "flag": "--mode quick"
                                 },
                                 {
@@ -1831,14 +1831,14 @@
                                     "flag": "--mode scan"
                                 },
                                 {
-                                    "name": "Reasignar Sectores Pendientes (Remap con ceros \u2014 Solo HDD)",
+                                    "name": "Reasignar Sectores Pendientes (Remap con ceros — Solo HDD)",
                                     "flag": "--mode remap"
                                 }
                             ],
-                            "description": "Quick y Scan son 100% solo lectura. Remap sobrescribe con ceros unicamente los bloques defectuosos en discos mec\u00e1nicos (HDD) no-sistema para forzar su reasignaci\u00f3n SMART."
+                            "description": "Quick y Scan son 100% solo lectura. Remap sobrescribe con ceros unicamente los bloques defectuosos en discos mecánicos (HDD) no-sistema para forzar su reasignación SMART."
                         },
                         {
-                            "name": "Tama\u00f1o de Bloque",
+                            "name": "Tamaño de Bloque",
                             "flag": "--block-mb",
                             "type": "dropdown",
                             "options": [
@@ -1847,22 +1847,22 @@
                                     "value": "4"
                                 },
                                 {
-                                    "name": "1 MB (Alta precisi\u00f3n)",
+                                    "name": "1 MB (Alta precisión)",
                                     "value": "1"
                                 },
                                 {
-                                    "name": "8 MB (M\u00e1s r\u00e1pido en discos grandes)",
+                                    "name": "8 MB (Más rápido en discos grandes)",
                                     "value": "8"
                                 }
                             ],
                             "value": "4 MB (Recomendado)",
-                            "description": "Tama\u00f1o de cada bloque de lectura directa."
+                            "description": "Tamaño de cada bloque de lectura directa."
                         }
                     ],
                     "warning": {
                         "level": "danger",
-                        "title": "Reasignaci\u00f3n de Sectores con Escritura (Remap)",
-                        "message": "El modo Remap escribir\u00e1 ceros sobre los bloques defectuosos para forzar al firmware del HDD a reasignarlos. Cualquier archivo ubicado en esos sectores ser\u00e1 destruido. Bloqueado en discos de sistema y SSD.",
+                        "title": "Reasignación de Sectores con Escritura (Remap)",
+                        "message": "El modo Remap escribirá ceros sobre los bloques defectuosos para forzar al firmware del HDD a reasignarlos. Cualquier archivo ubicado en esos sectores será destruido. Bloqueado en discos de sistema y SSD.",
                         "skip_if_flag_in": [
                             "--mode quick",
                             "--mode scan"
@@ -1872,25 +1872,25 @@
                         {
                             "command": "Estado de Salud SMART Avanzado",
                             "when": "after",
-                            "reason": "Contrasta los bloques lentos/da\u00f1ados encontrados con los contadores SMART del disco.",
+                            "reason": "Contrasta los bloques lentos/dañados encontrados con los contadores SMART del disco.",
                             "auto_command": "__INTERNAL__ --run-smart-info"
                         },
                         {
                             "command": "Reparar Sistema de Archivos y Sectores (chkdsk)",
                             "when": "after",
-                            "reason": "Marca los cl\u00fasteres defectuosos en NTFS para que Windows no vuelva a escribir en ellos."
+                            "reason": "Marca los clústeres defectuosos en NTFS para que Windows no vuelva a escribir en ellos."
                         }
                     ]
                 },
                 {
                     "name": "Estado de Salud SMART Avanzado",
-                    "description": "Abre un visor estilo CrystalDiskInfo para evaluar la salud f\u00edsica y temperatura de tus discos.",
+                    "description": "Abre un visor estilo CrystalDiskInfo para evaluar la salud física y temperatura de tus discos.",
                     "command": "__INTERNAL__ --run-smart-info",
                     "args": []
                 },
                 {
-                    "name": "Listar Discos F\u00edsicos y Salud (Get-PhysicalDisk)",
-                    "description": "Muestra todos los discos f\u00edsicos conectados (HDD, SSD, NVMe, USB) con su tipo de medio, bus, capacidad real, salud general y estado operativo. Operaci\u00f3n de solo lectura.",
+                    "name": "Listar Discos Físicos y Salud (Get-PhysicalDisk)",
+                    "description": "Muestra todos los discos físicos conectados (HDD, SSD, NVMe, USB) con su tipo de medio, bus, capacidad real, salud general y estado operativo. Operación de solo lectura.",
                     "command": "powershell -Command \"Get-PhysicalDisk | Format-Table -AutoSize\"",
                     "args": [],
                     "combos": [
@@ -1901,51 +1901,51 @@
                             "auto_command": "__INTERNAL__ --run-smart-info"
                         },
                         {
-                            "command": "Esc\u00e1ner de Superficie y Sectores (HDD / SSD / USB)",
+                            "command": "Escáner de Superficie y Sectores (HDD / SSD / USB)",
                             "when": "after",
                             "reason": "Localiza zonas lentas o sectores defectuosos mediante lectura directa."
                         }
                     ]
                 },
                 {
-                    "name": "Ver Discos L\u00f3gicos y Esquema GPT/MBR (Get-Disk)",
-                    "description": "Lista los discos reconocidos por Windows con su n\u00famero de disco, nombre, estilo de partici\u00f3n (GPT/MBR/RAW), tama\u00f1o y estado Online/Offline. Ideal para verificar el n\u00famero de disco antes de formatear.",
+                    "name": "Ver Discos Lógicos y Esquema GPT/MBR (Get-Disk)",
+                    "description": "Lista los discos reconocidos por Windows con su número de disco, nombre, estilo de partición (GPT/MBR/RAW), tamaño y estado Online/Offline. Ideal para verificar el número de disco antes de formatear.",
                     "command": "powershell -Command \"Get-Disk | Format-Table -AutoSize\"",
                     "args": [],
                     "combos": [
                         {
                             "command": "Estado de Salud SMART Avanzado",
                             "when": "after",
-                            "reason": "Revisa la salud f\u00edsica SMART de los discos listados.",
+                            "reason": "Revisa la salud física SMART de los discos listados.",
                             "auto_command": "__INTERNAL__ --run-smart-info"
                         },
                         {
-                            "command": "Esc\u00e1ner de Superficie y Sectores (HDD / SSD / USB)",
+                            "command": "Escáner de Superficie y Sectores (HDD / SSD / USB)",
                             "when": "after",
-                            "reason": "Escanea la superficie en busca de sectores da\u00f1ados antes de formatear o respaldar."
+                            "reason": "Escanea la superficie en busca de sectores dañados antes de formatear o respaldar."
                         }
                     ]
                 },
                 {
-                    "name": "Listar Vol\u00famenes y Letras de Unidad (Get-Volume)",
-                    "description": "Muestra todos los vol\u00famenes y particiones montadas con su letra de unidad, etiqueta, sistema de archivos (NTFS/FAT32/exFAT/RAW), espacio libre y estado de salud. Operaci\u00f3n de solo lectura.",
+                    "name": "Listar Volúmenes y Letras de Unidad (Get-Volume)",
+                    "description": "Muestra todos los volúmenes y particiones montadas con su letra de unidad, etiqueta, sistema de archivos (NTFS/FAT32/exFAT/RAW), espacio libre y estado de salud. Operación de solo lectura.",
                     "command": "powershell -Command \"Get-Volume | Format-Table -AutoSize\"",
                     "args": []
                 },
                 {
-                    "name": "Info Discos F\u00edsicos",
-                    "description": "Muestra informaci\u00f3n de hardware de las unidades de disco f\u00edsicas usando Get-CimInstance (reemplaza WMIC).",
+                    "name": "Info Discos Físicos",
+                    "description": "Muestra información de hardware de las unidades de disco físicas usando Get-CimInstance (reemplaza WMIC).",
                     "command": "powershell -Command \"Get-CimInstance Win32_DiskDrive | Select-Object Index, Model, Name, Size, Status | Format-Table -AutoSize\"",
                     "args": []
                 }
             ]
         },
         {
-            "name": "Recuperaci\u00f3n de Datos",
+            "name": "Recuperación de Datos",
             "commands": [
                 {
                     "name": "Reparar Sistema de Archivos y Sectores (chkdsk)",
-                    "description": "Analiza y repara errores l\u00f3gicos y sectores defectuosos en vol\u00famenes NTFS/FAT32/exFAT (incluye opciones /r, /b para re-evaluar cl\u00fasteres malos en NTFS y /scan en l\u00ednea). Detecta autom\u00e1ticamente si la unidad est\u00e1 en formato RAW.",
+                    "description": "Analiza y repara errores lógicos y sectores defectuosos en volúmenes NTFS/FAT32/exFAT (incluye opciones /r, /b para re-evaluar clústeres malos en NTFS y /scan en línea). Detecta automáticamente si la unidad está en formato RAW.",
                     "command": "powershell -Command \"& {param($letra, [switch]$reparar, [switch]$reevaluar, [switch]$online, [switch]$forzar) if([string]::IsNullOrWhiteSpace($letra)){ Write-Host 'Error: Selecciona una unidad.'; exit 1 } $l = $letra.Trim(':'); $d = $l + ':'; $vol = Get-Volume -DriveLetter $l -ErrorAction SilentlyContinue; if($vol -and ([string]::IsNullOrWhiteSpace($vol.FileSystem) -or $vol.FileSystem -eq 'RAW')){ Write-Host ('Error: La unidad ' + $d + ' esta en formato RAW. Realiza primero un Formato Rapido NTFS antes de ejecutar CHKDSK.'); exit 1 } $argList = $d; if($online){ $argList += ' /scan' } else { if($reevaluar){ $argList += ' /b' } elseif($reparar){ $argList += ' /r' } if($forzar){ $argList += ' /x' } } Write-Host ('Abriendo consola de CHKDSK (' + $argList + ')...'); Start-Process chkdsk -ArgumentList $argList -Wait; Write-Host 'Proceso finalizado.' }\"",
                     "args": [
                         {
@@ -1958,19 +1958,19 @@
                             "name": "Reparar Sectores (/r)",
                             "flag": "-reparar",
                             "type": "checkbox",
-                            "description": "Localiza sectores defectuosos y recupera la informaci\u00f3n legible (puede tardar horas)."
+                            "description": "Localiza sectores defectuosos y recupera la información legible (puede tardar horas)."
                         },
                         {
-                            "name": "Re-evaluar Cl\u00fasteres Malos NTFS (/b)",
+                            "name": "Re-evaluar Clústeres Malos NTFS (/b)",
                             "flag": "-reevaluar",
                             "type": "checkbox",
-                            "description": "Solo NTFS: borra la lista previa de cl\u00fasteres defectuosos y vuelve a analizar todos los sectores (implica /r)."
+                            "description": "Solo NTFS: borra la lista previa de clústeres defectuosos y vuelve a analizar todos los sectores (implica /r)."
                         },
                         {
-                            "name": "Escaneo en L\u00ednea sin Desmontar (/scan)",
+                            "name": "Escaneo en Línea sin Desmontar (/scan)",
                             "flag": "-online",
                             "type": "checkbox",
-                            "description": "Solo NTFS: ejecuta un an\u00e1lisis r\u00e1pido sin desmontar ni bloquear el acceso a la unidad."
+                            "description": "Solo NTFS: ejecuta un análisis rápido sin desmontar ni bloquear el acceso a la unidad."
                         },
                         {
                             "name": "Forzar Desmontaje (/x)",
@@ -1981,25 +1981,25 @@
                     ],
                     "warning": {
                         "level": "caution",
-                        "title": "Reparaci\u00f3n de Sistema de Archivos (CHKDSK)",
-                        "message": "CHKDSK analizar\u00e1 la unidad y, si activaste /r, /b o /x, podr\u00e1 desmontar temporalmente el volumen y marcar sectores defectuosos."
+                        "title": "Reparación de Sistema de Archivos (CHKDSK)",
+                        "message": "CHKDSK analizará la unidad y, si activaste /r, /b o /x, podrá desmontar temporalmente el volumen y marcar sectores defectuosos."
                     },
                     "combos": [
                         {
-                            "command": "Esc\u00e1ner de Superficie y Sectores (HDD / SSD / USB)",
+                            "command": "Escáner de Superficie y Sectores (HDD / SSD / USB)",
                             "when": "after",
-                            "reason": "Mapea exactamente en qu\u00e9 GB y porcentaje est\u00e1n los sectores defectuosos."
+                            "reason": "Mapea exactamente en qué GB y porcentaje están los sectores defectuosos."
                         },
                         {
-                            "command": "Recuperaci\u00f3n de Archivos (WINFR)",
+                            "command": "Recuperación de Archivos (WINFR)",
                             "when": "after",
-                            "reason": "Intenta rescatar archivos perdidos si el sistema de archivos ten\u00eda da\u00f1os graves."
+                            "reason": "Intenta rescatar archivos perdidos si el sistema de archivos tenía daños graves."
                         }
                     ]
                 },
                 {
-                    "name": "Recuperaci\u00f3n de Archivos (WINFR)",
-                    "description": "Herramienta oficial de Microsoft para recuperar archivos borrados o en discos formateados/RAW. Si no est\u00e1 instalada, te invitar\u00e1 a descargarla.",
+                    "name": "Recuperación de Archivos (WINFR)",
+                    "description": "Herramienta oficial de Microsoft para recuperar archivos borrados o en discos formateados/RAW. Si no está instalada, te invitará a descargarla.",
                     "command": "powershell -Command \"& {param($origen, $destino, $modo='/regular', $filtro) if([string]::IsNullOrWhiteSpace($origen)){ Write-Host 'Error: Selecciona la unidad de origen.'; exit 1 } $o = $origen.Trim(':') + ':'; if([string]::IsNullOrWhiteSpace($destino)){ Write-Host 'Error: Debes elegir una carpeta de destino.'; exit 1 } if(!(Get-Command winfr -ErrorAction SilentlyContinue)){ Write-Host 'WINFR no esta instalado. Abriendo Microsoft Store...'; Start-Process 'ms-windows-store://pdp/?ProductId=9N26S50LN705'; exit 1 } $argList = $o + ' \"' + $destino + '\" ' + $modo; if($filtro){ $argList += ' /n \"' + $filtro + '\"' } Write-Host 'Abriendo consola de WINFR para ver la barra de progreso y confirmar comandos (Presiona Y cuando lo pida)...'; Start-Process winfr -ArgumentList $argList -Wait; Write-Host 'Proceso finalizado.' }\"",
                     "args": [
                         {
@@ -2015,7 +2015,7 @@
                             "description": "IMPORTANTE: Elige una carpeta en OTRO disco distinto al de origen."
                         },
                         {
-                            "name": "Modo de B\u00fasqueda",
+                            "name": "Modo de Búsqueda",
                             "type": "radio_group",
                             "options": [
                                 {
@@ -2033,25 +2033,25 @@
                             "name": "Filtro (Opcional)",
                             "flag": "-filtro",
                             "type": "entry",
-                            "description": "Ejemplo: *.pdf o *.jpg para buscar solo esos archivos. D\u00e9jalo vac\u00edo para todo."
+                            "description": "Ejemplo: *.pdf o *.jpg para buscar solo esos archivos. Déjalo vacío para todo."
                         }
                     ]
                 },
                 {
-                    "name": "PhotoRec C\u00f3digo Abierto (Descargar y Abrir)",
-                    "description": "Descarga y ejecuta QPhotoRec (interfaz gr\u00e1fica) en C:\\GuiCmdAdvance\\tools\\testdisk_app, el est\u00e1ndar libre en recuperaci\u00f3n de discos RAW.",
+                    "name": "PhotoRec Código Abierto (Descargar y Abrir)",
+                    "description": "Descarga y ejecuta QPhotoRec (interfaz gráfica) en C:\\GuiCmdAdvance\\tools\\testdisk_app, el estándar libre en recuperación de discos RAW.",
                     "command": "powershell -Command \"& { try { $url='https://www.cgsecurity.org/testdisk-7.2.win.zip'; $base='C:\\GuiCmdAdvance\\tools'; if(!(Test-Path $base)){ New-Item -ItemType Directory -Path $base -Force | Out-Null }; $zip=Join-Path $base 'testdisk.zip'; $dest=Join-Path $base 'testdisk_app'; $exe=Join-Path $dest 'testdisk-7.2\\qphotorec_win.exe'; if(!(Test-Path $exe)){ Write-Host 'Descargando PhotoRec 7.2 (Aprox 26MB)...'; Invoke-WebRequest -Uri $url -OutFile $zip -ErrorAction Stop; Write-Host 'Extrayendo...'; Expand-Archive -Path $zip -DestinationPath $dest -Force -ErrorAction Stop; Remove-Item $zip -Force -ErrorAction SilentlyContinue } Write-Host 'Abriendo QPhotoRec...'; Start-Process -FilePath $exe -ErrorAction Stop } catch { Write-Host ('Error: ' + $_.Exception.Message); exit 1 } }\"",
                     "args": []
                 },
                 {
-                    "name": "PhotoRec C\u00f3digo Abierto (Desinstalar)",
+                    "name": "PhotoRec Código Abierto (Desinstalar)",
                     "description": "Elimina los archivos descargados de PhotoRec de C:\\GuiCmdAdvance\\tools\\testdisk_app (y residuos antiguos en Temp si existen).",
                     "command": "powershell -Command \"& { try { $removed = $false; foreach($p in @('C:\\GuiCmdAdvance\\tools\\testdisk_app', 'C:\\Windows\\Temp\\testdisk_app')){ if(Test-Path $p){ Remove-Item -Path $p -Recurse -Force -ErrorAction Stop; $removed = $true } }; if($removed){ Write-Host 'PhotoRec ha sido eliminado del sistema exitosamente.' } else { Write-Host 'PhotoRec no se encuentra en el sistema.' } } catch { Write-Host ('Error: ' + $_.Exception.Message); exit 1 } }\"",
                     "args": [],
                     "warning": {
                         "level": "caution",
                         "title": "Desinstalar PhotoRec",
-                        "message": "Se eliminar\u00e1 la carpeta descargada de PhotoRec (testdisk_app) de tu equipo."
+                        "message": "Se eliminará la carpeta descargada de PhotoRec (testdisk_app) de tu equipo."
                     }
                 }
             ]
@@ -2131,7 +2131,7 @@
                             "name": "Enviar Originales a la Papelera",
                             "flag": "--delete-original",
                             "type": "checkbox",
-                            "description": "Si se comprime con \u00e9xito, env\u00eda el archivo original a la Papelera de Reciclaje para poder recuperarlo. Los archivos con errores nunca se eliminan."
+                            "description": "Si se comprime con éxito, envía el archivo original a la Papelera de Reciclaje para poder recuperarlo. Los archivos con errores nunca se eliminan."
                         },
                         {
                             "name": "Motor de Aceleracion de Hardware",
@@ -2184,8 +2184,8 @@
                     ],
                     "warning": {
                         "level": "danger",
-                        "title": "Compresi\u00f3n de Archivos Multimedia",
-                        "message": "Se procesar\u00e1n y guardar\u00e1n archivos comprimidos. Si activaste la opci\u00f3n de eliminar originales, los archivos originales ser\u00e1n enviados a la Papelera de Reciclaje."
+                        "title": "Compresión de Archivos Multimedia",
+                        "message": "Se procesarán y guardarán archivos comprimidos. Si activaste la opción de eliminar originales, los archivos originales serán enviados a la Papelera de Reciclaje."
                     },
                     "combos": [
                         {
@@ -2209,34 +2209,87 @@
                             "name": "Archivos / Carpeta Origen",
                             "flag": "--input",
                             "type": "file_entry",
-                            "description": "Selecciona la carpeta o los archivos da\u00f1ados a reparar."
+                            "description": "Selecciona la carpeta o archivo dañado a reparar."
                         },
                         {
-                            "name": "Archivo de Referencia (Opcional)",
-                            "flag": "--reference",
+                            "name": "Tipo de Archivos a Reparar",
+                            "flag": "--media-type",
+                            "type": "dropdown",
+                            "value": "Videos e Imágenes (Todos)",
+                            "options": [
+                                {
+                                    "name": "Videos e Imágenes (Todos)",
+                                    "value": "all"
+                                },
+                                {
+                                    "name": "Solo Videos",
+                                    "value": "videos"
+                                },
+                                {
+                                    "name": "Solo Imágenes",
+                                    "value": "images"
+                                }
+                            ],
+                            "description": "Filtra si deseas reparar solo videos, solo imágenes o ambos tipos."
+                        },
+                        {
+                            "name": "Incluir subcarpetas",
+                            "flag": "--recursive",
+                            "type": "checkbox",
+                            "description": "Desmarcado por defecto: solo analiza la carpeta raíz. Si se marca (o si se ejecuta el combo con Analizador de Salud), procesará únicamente archivos corruptos encontrados incluso en subcarpetas."
+                        },
+                        {
+                            "name": "Video Sano de Referencia (Opcional)",
+                            "flag": "--ref-video",
                             "type": "file_entry",
-                            "description": "Selecciona un archivo 100% sano grabado con la misma c\u00e1mara/app para ayudar en la reparaci\u00f3n."
+                            "visible_when": {
+                                "arg": "Tipo de Archivos a Reparar",
+                                "values": [
+                                    "all",
+                                    "videos"
+                                ]
+                            },
+                            "description": "Opcional: selecciona un video 100% sano grabado con la misma cámara o dispositivo para asistir la reparación de videos corruptos."
+                        },
+                        {
+                            "name": "Imagen Sana de Referencia (Opcional)",
+                            "flag": "--ref-image",
+                            "type": "file_entry",
+                            "visible_when": {
+                                "arg": "Tipo de Archivos a Reparar",
+                                "values": [
+                                    "all",
+                                    "images"
+                                ]
+                            },
+                            "description": "Opcional: selecciona una imagen 100% sana del mismo dispositivo/cámara para asistir la reparación de fotos corruptas."
                         },
                         {
                             "name": "Carpeta de Destino",
                             "flag": "--output",
                             "type": "directory_entry",
-                            "description": "Opcional: D\u00f3nde guardar los archivos reparados (por defecto, en la misma carpeta)."
+                            "description": "Opcional: Dónde guardar los archivos reparados (por defecto, junto a cada archivo original)."
                         },
                         {
                             "name": "Sufijo de archivo",
                             "flag": "--suffix",
                             "type": "entry",
                             "value": "_reparado",
-                            "description": "Texto para a\u00f1adir al final del nombre reparado."
+                            "description": "Texto para añadir al final del nombre reparado."
                         }
                     ],
                     "warning": {
                         "level": "caution",
-                        "title": "Reparaci\u00f3n de Archivos Multimedia",
-                        "message": "Se procesar\u00e1n y generar\u00e1n versiones reparadas de las im\u00e1genes o videos seleccionados."
+                        "title": "Reparación de Archivos Multimedia",
+                        "message": "Se procesarán y generarán versiones reparadas de las imágenes o videos seleccionados."
                     },
                     "combos": [
+                        {
+                            "command": "Analizador de Salud Multimedia",
+                            "when": "before",
+                            "auto_command": "__INTERNAL__ --run-health-analyzer \"{path}\" {recursive_flag} --media-type {media_type}",
+                            "reason": "Detecta primero cuáles archivos están realmente corruptos para reparar EXCLUSIVAMENTE esos archivos (sin tocar los sanos)."
+                        },
                         {
                             "command": "Compresor de Multimedia",
                             "when": "after",
@@ -2245,13 +2298,14 @@
                         {
                             "command": "Analizador de Salud Multimedia",
                             "when": "after",
+                            "auto_command": "__INTERNAL__ --run-health-analyzer \"{path}\" {recursive_flag} --media-type {media_type}",
                             "reason": "Re-verifica que los archivos reparados quedaron completamente sanos."
                         }
                     ]
                 },
                 {
                     "name": "Analizador de Salud Multimedia",
-                    "description": "Escanea im\u00e1genes y videos en busca de archivos corruptos. Cuenta con protecci\u00f3n de CPU y m\u00faltiples modos de an\u00e1lisis.",
+                    "description": "Escanea imágenes y videos en busca de archivos corruptos. Cuenta con protección de CPU y múltiples modos de análisis.",
                     "command": "__INTERNAL__ --run-health-analyzer",
                     "args": [
                         {
@@ -2264,26 +2318,27 @@
                             "name": "Incluir subcarpetas",
                             "flag": "--recursive",
                             "type": "checkbox",
-                            "description": "Si se marca, escanear\u00e1 de manera recursiva todos los archivos en todas las subcarpetas."
+                            "description": "Si se marca, escaneará de manera recursiva todos los archivos en todas las subcarpetas."
                         },
                         {
                             "name": "Hilos de CPU (Hardware)",
                             "flag": "--threads",
                             "type": "threads_dropdown",
-                            "description": "Controla cu\u00e1ntos hilos usar para analizar videos. Limitarlos previene el congelamiento (0 = Auto)."
+                            "description": "Controla cuántos hilos usar para analizar videos. Limitarlos previene el congelamiento (0 = Auto)."
                         },
                         {
-                            "name": "Escaneo R\u00e1pido",
+                            "name": "Escaneo Rápido",
                             "flag": "--quick",
                             "type": "checkbox",
-                            "description": "Si se marca, solo analiza las cabeceras y los primeros frames (mucho m\u00e1s r\u00e1pido, pero menos exhaustivo)."
+                            "description": "Si se marca, solo analiza las cabeceras y los primeros frames (mucho más rápido, pero menos exhaustivo)."
                         }
                     ],
                     "combos": [
                         {
                             "command": "Reparador de Multimedia",
                             "when": "after",
-                            "reason": "Intenta rescatar las im\u00e1genes truncadas o videos corruptos detectados."
+                            "auto_command": "__INTERNAL__ --run-media-repair --input \"{path}\" --from-manifest --media-type {media_type}",
+                            "reason": "Repara EXCLUSIVAMENTE los archivos corruptos detectados en este análisis (sin procesar archivos sanos ni subcarpetas limpias)."
                         },
                         {
                             "command": "Buscador de Duplicados",
@@ -2294,20 +2349,20 @@
                 },
                 {
                     "name": "Buscador de Duplicados",
-                    "description": "Busca archivos multimedia duplicados o da\u00f1ados, con vista previa.",
+                    "description": "Busca archivos multimedia duplicados o dañados, con vista previa.",
                     "command": "__INTERNAL__ --run-duplicate-finder",
                     "args": [
                         {
                             "name": "Carpeta a escanear",
                             "flag": "",
                             "type": "directory_entry",
-                            "description": "Carpeta donde se buscar\u00e1n duplicados y archivos da\u00f1ados."
+                            "description": "Carpeta donde se buscarán duplicados y archivos dañados."
                         },
                         {
-                            "name": "Modo de B\u00fasqueda",
+                            "name": "Modo de Búsqueda",
                             "flag": "",
                             "type": "radio_group",
-                            "description": "Selecciona el m\u00e9todo para encontrar duplicados.",
+                            "description": "Selecciona el método para encontrar duplicados.",
                             "options": [
                                 {
                                     "name": "Ambos (Hash y Nombre)",
@@ -2356,8 +2411,8 @@
                     ],
                     "warning": {
                         "level": "caution",
-                        "title": "Escaneo y Gesti\u00f3n de Duplicados",
-                        "message": "Se abrir\u00e1 la herramienta de detecci\u00f3n de duplicados, desde la cual podr\u00e1s revisar y eliminar archivos duplicados."
+                        "title": "Escaneo y Gestión de Duplicados",
+                        "message": "Se abrirá la herramienta de detección de duplicados, desde la cual podrás revisar y eliminar archivos duplicados."
                     },
                     "combos": [
                         {
@@ -2374,24 +2429,24 @@
             "commands": [
                 {
                     "name": "Desplegar Microsoft Office (ODT)",
-                    "description": "Abre la herramienta gr\u00e1fica interna para descargar, configurar el XML e instalar Microsoft Office LTSC 2019/2021/2024.",
+                    "description": "Abre la herramienta gráfica interna para descargar, configurar el XML e instalar Microsoft Office LTSC 2019/2021/2024.",
                     "command": "__INTERNAL__ --run-office-deploy",
                     "args": [],
                     "warning": {
                         "level": "caution",
-                        "title": "Despliegue / Instalaci\u00f3n de Microsoft Office",
-                        "message": "Se abrir\u00e1 el asistente para descargar, configurar e instalar o modificar Microsoft Office en este equipo."
+                        "title": "Despliegue / Instalación de Microsoft Office",
+                        "message": "Se abrirá el asistente para descargar, configurar e instalar o modificar Microsoft Office en este equipo."
                     }
                 },
                 {
                     "name": "Descargar ISO Windows 11",
-                    "description": "Abre la p\u00e1gina oficial de Microsoft para descargar la imagen ISO o Media Creation Tool de Windows 11.",
+                    "description": "Abre la página oficial de Microsoft para descargar la imagen ISO o Media Creation Tool de Windows 11.",
                     "command": "powershell -Command \"Start-Process 'https://www.microsoft.com/es-es/software-download/windows11'; Write-Host 'Abriendo navegador...'\"",
                     "args": []
                 },
                 {
                     "name": "Descargar ISO Windows 10",
-                    "description": "Abre la p\u00e1gina oficial de Microsoft para descargar la imagen ISO o Media Creation Tool de Windows 10.",
+                    "description": "Abre la página oficial de Microsoft para descargar la imagen ISO o Media Creation Tool de Windows 10.",
                     "command": "powershell -Command \"Start-Process 'https://www.microsoft.com/es-es/software-download/windows10'; Write-Host 'Abriendo navegador...'\"",
                     "args": []
                 }
