@@ -410,8 +410,8 @@ class TestProjectIntegrity(unittest.TestCase):
     def test_code_hygiene_no_emojis_no_bare_except_and_no_window_subprocesses(self):
         import ast
 
-        # Iconos compactos aprobados explícitamente por el usuario (botones compactos y categoría Favoritos)
-        allowed_compact_icons = set("ℹ❔⭐🗑👁🙈\ufe0f")
+        # Cero emojis hardcodeados en código Python (reemplazados por íconos vectoriales estilo Bootstrap)
+        allowed_compact_icons = set()
         emoji_re = re.compile(r"[\U0001F000-\U0001FAFF\u2600-\u27BF\u2300-\u23FF\u2B50\u2139\u2754\u23FB\u23F8]")
 
         py_files = [
@@ -472,14 +472,12 @@ class TestProjectIntegrity(unittest.TestCase):
         self.assertEqual(App.get_eta_color(85), "#dc3545")
         self.assertEqual(App.get_eta_color(100), "#28a745")
 
-        # 3. Tema claro tiene jerarquía visual distinta entre ventana, paneles y consola
-        theme_path = os.path.join(PROJECT_ROOT, "resources", "custom_github_theme.json")
-        with open(theme_path, "r", encoding="utf-8") as f:
-            theme = json.load(f)
-        win_bg = theme["CTk"]["fg_color"][0].lower()
-        frame_bg = theme["CTkFrame"]["fg_color"][0].lower()
-        box_bg = theme["CTkTextbox"]["fg_color"][0].lower()
-        self.assertEqual(len({win_bg, frame_bg, box_bg}), 3, "Modo claro debe diferenciar ventana, paneles y consola")
+        # 3. Gestor de temas ttkbootstrap 2.x ofrece temas oscuros y claros sin dependencias de CustomTkinter
+        from functions import ui_theme
+        themes = ui_theme.get_available_themes()
+        self.assertGreaterEqual(len(themes), 30)
+        self.assertTrue(ui_theme.is_dark_theme("bootstrap-dark"))
+        self.assertFalse(ui_theme.is_dark_theme("bootstrap-light"))
 
 
 if __name__ == "__main__":

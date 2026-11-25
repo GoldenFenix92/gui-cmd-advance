@@ -1,48 +1,46 @@
-import json
-import re
-import customtkinter as ctk
-from functions import cmd_executor
-import os
-from tkinter import filedialog
-from tkinter import messagebox
-
-import sys
-import webbrowser
+import copy
+import ctypes
+import datetime
 import gc
+import json
+import os
+import re
 import subprocess
+import sys
+import threading
+import time
+import tkinter as tk
+import webbrowser
+import zipfile
+from tkinter import filedialog, messagebox
 
-try:
-    from CTkToolTip import CTkToolTip
-except ImportError:
-    CTkToolTip = None
+import psutil
+import ttkbootstrap as tb
+from ttkbootstrap.widgets.floodgauge import Floodgauge
+from ttkbootstrap.widgets.meter import Meter
+from ttkbootstrap.widgets.scrolled import ScrolledFrame, ScrolledText
+
+from functions import cmd_executor, ui_theme
+from functions.setup_manager import check_dependencies
+from functions.utils import center_window, get_resource_path, get_user_data_path
 
 try:
     from version import __version__
 except ImportError:
     __version__ = "1.0.0"
 
-from functions.setup_manager import check_dependencies
-from functions.utils import get_user_data_path, get_resource_path, center_window
+FAVORITES_CATEGORY_NAME = "Favoritos"
 
-try:
-    ctk.set_default_color_theme(get_resource_path("resources/custom_github_theme.json"))
-except Exception as e:
-    print(f"No se pudo cargar el tema, usando blue: {e}")
-    ctk.set_default_color_theme("blue")
 
-ctk.set_appearance_mode("Dark")
-
-class App(ctk.CTk):
+class App(tb.Window):
     def __init__(self):
-        super().__init__()
+        self.current_theme = ui_theme.get_saved_theme()
+        super().__init__(themename=self.current_theme)
 
         self.title("CMD GUI Advance")
-        center_window(self, 1400, 800)
-        
-        try:
-            self.iconbitmap(get_resource_path("resources/app_icon.ico"))
-        except Exception:
-            pass
+        center_window(self, 1420, 840)
+        self.minsize(1120, 700)
+        ui_theme.apply_window_chrome(self, self.current_theme)
 
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(0, weight=1)
@@ -50,224 +48,314 @@ class App(ctk.CTk):
 
         self.commands_config = self.load_config()
         self.is_running = False
+        self.current_args_vars = {}
+        self._last_was_cr = False
 
-        # ---------- FRAME IZQUIERDO: Panel de Control ----------
-        self.left_frame = ctk.CTkFrame(self)
-        self.left_frame.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
-        self.left_frame.grid_rowconfigure(6, weight=1)
-        self.left_frame.grid_rowconfigure(7, weight=0)
+        # Íconos vectoriales estilo Bootstrap (cero emojis hardcodeados)
+        self._icons = {
+            "info": ui_theme.get_bootstrap_icon("info", size=14, color="#FFFFFF", master=self),
+            "help": ui_theme.get_bootstrap_icon("help", size=14, color="#FFFFFF", master=self),
+            "star": ui_theme.get_bootstrap_icon("star_filled", size=15, color="#FFFFFF", master=self),
+            "trash": ui_theme.get_bootstrap_icon("trash", size=15, color="#FFFFFF", master=self),
+            "eye": ui_theme.get_bootstrap_icon("eye", size=14, color="#FFFFFF", master=self),
+            "eye_off": ui_theme.get_bootstrap_icon("eye_off", size=14, color="#FFFFFF", master=self),
+            "play": ui_theme.get_bootstrap_icon("play", size=14, color="#FFFFFF", master=self),
+            "stop": ui_theme.get_bootstrap_icon("stop", size=14, color="#FFFFFF", master=self),
+            "pause": ui_theme.get_bootstrap_icon("pause", size=14, color="#FFFFFF", master=self),
+            "table": ui_theme.get_bootstrap_icon("table", size=14, color="#FFFFFF", master=self),
+            "ai": ui_theme.get_bootstrap_icon("ai", size=14, color="#FFFFFF", master=self),
+        }
+
+        # ---------- PANEL IZQUIERDO: Control y Parámetros ----------
+        self.left_frame = tb.Frame(self, padding=(12, 10, 6, 10))
+        self.left_frame.grid(row=0, column=0, sticky="nsew")
+        self.left_frame.grid_rowconfigure(2, weight=1)
         self.left_frame.grid_columnconfigure(0, weight=1)
 
-        self.top_bar = ctk.CTkFrame(self.left_frame, fg_color="transparent")
-        self.top_bar.grid(row=0, column=0, padx=15, pady=15, sticky="ew")
+        # Barra superior: selector de 30 temas + herramientas rápidas
+        self.top_bar = tb.Frame(self.left_frame)
+        self.top_bar.grid(row=0, column=0, pady=(0, 8), sticky="ew")
 
-        self.theme_switch = ctk.CTkSwitch(self.top_bar, text="Oscuro", command=self.toggle_theme)
-        self.theme_switch.pack(side="left")
-        self.theme_switch.select()
+        tb.Label(self.top_bar, text="Tema:", font=("Segoe UI", 9, "bold")).pack(side="left", padx=(0, 4))
+        self.theme_var = tk.StringVar(value=self.current_theme)
+        self.theme_combo = tb.Combobox(
+            self.top_bar,
+            textvariable=self.theme_var,
+            values=ui_theme.get_available_themes(),
+            state="readonly",
+            width=16,
+        )
+        self.theme_combo.pack(side="left")
+        self.theme_combo.bind("<<ComboboxSelected>>", self.on_theme_change)
+        ui_theme.add_tooltip(self.theme_combo, "Cambiar tema visual en vivo (30 temas Bootstrap 2.x)")
 
-        self.credits_btn = ctk.CTkButton(self.top_bar, text="Créditos", width=80, height=25, fg_color="transparent", text_color=("black", "white"), command=self.show_credits)
+        self.credits_btn = tb.Button(self.top_bar, text="Créditos", bootstyle="secondary-outline", command=self.show_credits)
         self.credits_btn.pack(side="right")
 
-        self.plugins_btn = ctk.CTkButton(self.top_bar, text="Complementos", width=100, height=25, fg_color="#27AE60", hover_color="#2ECC71", command=self.show_plugins)
-        self.plugins_btn.pack(side="right", padx=(0, 10))
+        self.plugins_btn = tb.Button(self.top_bar, text="Complementos", bootstyle="success", command=self.show_plugins)
+        self.plugins_btn.pack(side="right", padx=(0, 6))
 
-        self.proc_btn = ctk.CTkButton(self.top_bar, text="Procesos", width=80, height=25, fg_color="#3498DB", hover_color="#2980B9", command=self.open_process_manager)
-        self.proc_btn.pack(side="right", padx=(0, 10))
-        if CTkToolTip: CTkToolTip(self.proc_btn, message="Gestor de Procesos y Servicios")
+        self.proc_btn = tb.Button(self.top_bar, text="Procesos", bootstyle="info", command=self.open_process_manager)
+        self.proc_btn.pack(side="right", padx=(0, 6))
+        ui_theme.add_tooltip(self.proc_btn, "Gestor de Procesos y Servicios")
 
-        self.ram_btn = ctk.CTkButton(self.top_bar, text="RAM", width=60, height=25, fg_color="#E67E22", hover_color="#D35400", command=self.optimize_ram)
+        self.ram_btn = tb.Button(self.top_bar, text="RAM", bootstyle="warning", command=self.optimize_ram)
+        self.ram_btn.pack(side="right", padx=(0, 6))
+        ui_theme.add_tooltip(self.ram_btn, "Liberar memoria inactiva (RAM)")
 
-        self.ram_btn.pack(side="right", padx=(0, 10))
-        if CTkToolTip: CTkToolTip(self.ram_btn, message="Liberar memoria inactiva (RAM)")
+        # Tarjeta: Selección de Comando
+        cmd_card = tb.Labelframe(self.left_frame, text="Selección de Comando", padding=10, bootstyle="primary")
+        cmd_card.grid(row=1, column=0, pady=(0, 8), sticky="ew")
+        cmd_card.grid_columnconfigure(0, weight=1)
 
-        self.search_var = ctk.StringVar()
+        self.search_var = tk.StringVar()
+        self.search_entry = ui_theme.PlaceholderEntry(cmd_card, textvariable=self.search_var, placeholder="Buscar comando...")
+        self.search_entry.grid(row=0, column=0, pady=(0, 8), sticky="ew")
         self.search_var.trace_add("write", self.on_search)
-        self.search_entry = ctk.CTkEntry(self.left_frame, textvariable=self.search_var, placeholder_text="Buscar comando...", border_width=0)
-        self.search_entry.grid(row=1, column=0, padx=15, pady=(15, 5), sticky="ew")
 
-        self.lbl_cat = ctk.CTkLabel(self.left_frame, text="Categoría:", font=("Arial", 12, "bold"))
-        self.lbl_cat.grid(row=2, column=0, padx=15, pady=(5, 0), sticky="w")
-
+        tb.Label(cmd_card, text="Categoría:", font=("Segoe UI", 9, "bold")).grid(row=1, column=0, sticky="w")
         categories = [cat.get("name", "Unknown") for cat in self.commands_config.get("categories", [])]
-        self.cat_var = ctk.StringVar(value=categories[0] if categories else "")
-        self.cat_menu = ctk.CTkOptionMenu(self.left_frame, values=categories, variable=self.cat_var, command=self.on_category_change)
-        self.cat_menu.grid(row=3, column=0, padx=15, pady=5, sticky="ew")
+        self.cat_var = tk.StringVar(value=categories[0] if categories else "")
+        self.cat_menu = tb.Combobox(cmd_card, values=categories, textvariable=self.cat_var, state="readonly")
+        self.cat_menu.grid(row=2, column=0, pady=(2, 8), sticky="ew")
+        self.cat_menu.bind("<<ComboboxSelected>>", lambda _e: self.on_category_change(self.cat_var.get()))
 
-        # Frame Comando (Label + Info + Help)
-        self.cmd_label_frame = ctk.CTkFrame(self.left_frame, fg_color="transparent")
-        self.cmd_label_frame.grid(row=4, column=0, padx=15, pady=(10, 0), sticky="ew")
-        
-        self.lbl_cmd = ctk.CTkLabel(self.cmd_label_frame, text="Comando:", font=("Arial", 12, "bold"))
-        self.lbl_cmd.pack(side="left")
+        cmd_label_frame = tb.Frame(cmd_card)
+        cmd_label_frame.grid(row=3, column=0, sticky="ew")
 
-        # Info button
-        self.cmd_info_btn = ctk.CTkButton(self.cmd_label_frame, text="ℹ", width=25, height=25, command=self.show_command_info)
-        self.cmd_info_btn.pack(side="right", padx=(5, 0))
-        if CTkToolTip: CTkToolTip(self.cmd_info_btn, message="Información detallada del comando")
+        tb.Label(cmd_label_frame, text="Comando:", font=("Segoe UI", 9, "bold")).pack(side="left")
 
-        # Help button
-        self.cmd_help_btn = ctk.CTkButton(self.cmd_label_frame, text="❔", width=25, height=25, command=self.run_help)
+        self.cmd_info_btn = tb.Button(
+            cmd_label_frame, image=self._icons["info"], bootstyle="info", command=self.show_command_info
+        )
+        self.cmd_info_btn.pack(side="right", padx=(4, 0))
+        ui_theme.add_tooltip(self.cmd_info_btn, "Información detallada del comando")
+
+        self.cmd_help_btn = tb.Button(
+            cmd_label_frame, image=self._icons["help"], bootstyle="secondary", command=self.run_help
+        )
         self.cmd_help_btn.pack(side="right")
-        if CTkToolTip: CTkToolTip(self.cmd_help_btn, message="Ejecutar la ayuda oficial del comando (/? o --help)")
+        ui_theme.add_tooltip(self.cmd_help_btn, "Ejecutar la ayuda oficial del comando (/? o --help)")
 
-        self.cmd_var = ctk.StringVar(value="")
-        self.cmd_menu = ctk.CTkOptionMenu(self.left_frame, variable=self.cmd_var, command=self.on_command_change)
-        self.cmd_menu.grid(row=5, column=0, padx=15, pady=5, sticky="ew")
+        self.cmd_var = tk.StringVar(value="")
+        self.cmd_menu = tb.Combobox(cmd_card, textvariable=self.cmd_var, state="readonly")
+        self.cmd_menu.grid(row=4, column=0, pady=(4, 0), sticky="ew")
+        self.cmd_menu.bind("<<ComboboxSelected>>", lambda _e: self.on_command_change(self.cmd_var.get()))
 
-        self.args_frame = ctk.CTkScrollableFrame(self.left_frame, fg_color="transparent", bg_color="transparent")
-        self.args_frame.grid(row=6, column=0, padx=10, pady=10, sticky="nsew")
-        
-        self.current_args_vars = {}
+        # Tarjeta: Parámetros y Argumentos
+        args_card = tb.Labelframe(self.left_frame, text="Parámetros y Opciones", padding=6, bootstyle="secondary")
+        args_card.grid(row=2, column=0, pady=(0, 8), sticky="nsew")
+        args_card.grid_rowconfigure(0, weight=1)
+        args_card.grid_columnconfigure(0, weight=1)
 
-        self.btn_frame = ctk.CTkFrame(self.left_frame, fg_color="transparent")
-        self.btn_frame.grid(row=7, column=0, padx=15, pady=15, sticky="ew")
+        self.args_frame = ScrolledFrame(args_card, auto_hide=True, padding=6)
+        self.args_frame.grid(row=0, column=0, sticky="nsew")
 
-        self.execute_btn = ctk.CTkButton(self.btn_frame, text="Ejecutar Comando", command=self.toggle_execution)
-        self.execute_btn.pack(side="left", fill="x", expand=True, padx=(0, 5))
-        if CTkToolTip: CTkToolTip(self.execute_btn, message="Ejecutar el comando en segundo plano (Ctrl+Enter)")
-        
-        self.pause_btn = ctk.CTkButton(self.btn_frame, text="Posponer", width=80, fg_color="#F39C12", hover_color="#D68910", command=self.pause_execution)
-        # self.pause_btn.pack(side="left", padx=(0, 5)) # Se oculta por defecto
-        
-        self.fav_btn = ctk.CTkButton(self.btn_frame, text="⭐", width=40, font=("Segoe UI Emoji", 15), anchor="center", command=self.save_favorite, fg_color="#F39C12", hover_color="#D68910")
+        # Botonera de ejecución
+        self.btn_frame = tb.Frame(self.left_frame)
+        self.btn_frame.grid(row=3, column=0, sticky="ew")
+
+        self.execute_btn = tb.Button(
+            self.btn_frame, text=" Ejecutar Comando", image=self._icons["play"], compound="left",
+            bootstyle="success", command=self.toggle_execution,
+        )
+        self.execute_btn.pack(side="left", fill="x", expand=True, padx=(0, 6))
+        ui_theme.add_tooltip(self.execute_btn, "Ejecutar el comando en segundo plano (Ctrl+Enter)")
+
+        self.pause_btn = tb.Button(
+            self.btn_frame, text=" Posponer", image=self._icons["pause"], compound="left",
+            bootstyle="warning", command=self.pause_execution,
+        )
+
+        self.fav_btn = tb.Button(
+            self.btn_frame, image=self._icons["star"], bootstyle="warning", command=self.save_favorite
+        )
         self.fav_btn.pack(side="right")
-        if CTkToolTip: CTkToolTip(self.fav_btn, message="Guardar o remover de Favoritos")
+        ui_theme.add_tooltip(self.fav_btn, "Guardar o remover de Favoritos")
 
-        # ---------- FRAME DERECHO: Consola y Exportar ----------
-        self.right_frame = ctk.CTkFrame(self)
-        self.right_frame.grid(row=0, column=1, padx=(0, 10), pady=10, sticky="nsew")
-        self.right_frame.grid_rowconfigure(1, weight=1)
+        # ---------- PANEL DERECHO: Consola, Progreso y Sensores ----------
+        self.right_frame = tb.Frame(self, padding=(6, 10, 12, 10))
+        self.right_frame.grid(row=0, column=1, sticky="nsew")
+        self.right_frame.grid_rowconfigure(0, weight=1)
         self.right_frame.grid_columnconfigure(0, weight=1)
-        self.right_frame.grid_columnconfigure(1, weight=0)
 
-        # Preview de comando en vivo
-        self.preview_var = ctk.StringVar(value="")
-        self.preview_entry = ctk.CTkEntry(self.right_frame, textvariable=self.preview_var, state="disabled", font=("Consolas", 14, "bold"), text_color=("#1f6aa5", "#3B8ED0"), border_width=0)
-        self.preview_entry.grid(row=0, column=0, columnspan=2, padx=10, pady=(10, 0), sticky="ew")
+        console_card = tb.Labelframe(self.right_frame, text="Consola y Ejecución en Vivo", padding=10, bootstyle="info")
+        console_card.grid(row=0, column=0, sticky="nsew")
+        console_card.grid_rowconfigure(1, weight=1)
+        console_card.grid_columnconfigure(0, weight=1)
 
-        # Consola
-        self.output_textbox = ctk.CTkTextbox(self.right_frame, font=("Consolas", 13), wrap="none", border_width=0)
-        self.output_textbox.grid(row=1, column=0, columnspan=2, padx=10, pady=10, sticky="nsew")
-        self.output_textbox.configure(state="disabled")
+        self.preview_var = tk.StringVar(value="")
+        self.preview_entry = tb.Entry(
+            console_card, textvariable=self.preview_var, state="readonly", font=("Consolas", 11, "bold"), bootstyle="info"
+        )
+        self.preview_entry.grid(row=0, column=0, pady=(0, 8), sticky="ew")
 
-        self.progress_frame = ctk.CTkFrame(self.right_frame, fg_color="transparent")
-        self.progress_frame.grid(row=2, column=0, columnspan=2, padx=10, pady=(0, 10), sticky="ew")
+        self.output_textbox = ScrolledText(console_card, font=("Consolas", 10), wrap="none", auto_hide=True)
+        self.output_textbox.grid(row=1, column=0, pady=(0, 8), sticky="nsew")
+        self.output_textbox.text.configure(state="disabled")
+
+        # Barra de progreso Floodgauge + contadores de avance y ETA
+        self.progress_frame = tb.Frame(console_card)
+        self.progress_frame.grid(row=2, column=0, pady=(0, 8), sticky="ew")
         self.progress_frame.grid_columnconfigure(0, weight=1)
-        
-        self.progressbar = ctk.CTkProgressBar(self.progress_frame)
+
+        self.progressbar = Floodgauge(self.progress_frame, maximum=100, value=0, mask="{}%", bootstyle="info")
         self.progressbar.grid(row=0, column=0, sticky="ew")
-        self.progressbar.set(0)
-        
-        self.lbl_progress = ctk.CTkLabel(self.progress_frame, text="Listo (0%)", font=("Consolas", 12, "bold"), anchor="e")
+
+        self.lbl_progress = tk.Label(self.progress_frame, text="Listo (0%)", font=("Consolas", 10, "bold"), anchor="e")
         self.lbl_progress.grid(row=0, column=1, padx=(10, 0), sticky="e")
 
-        self.lbl_eta = ctk.CTkLabel(self.progress_frame, text="ETA: --:--", font=("Consolas", 12, "bold"), anchor="e")
+        self.lbl_eta = tk.Label(self.progress_frame, text="ETA: --:--", font=("Consolas", 10, "bold"), anchor="e")
         self.lbl_eta.grid(row=0, column=2, padx=(10, 0), sticky="e")
 
-        # Export Buttons
-        self.btn_frame = ctk.CTkFrame(self.right_frame, fg_color="transparent")
-        self.btn_frame.grid(row=3, column=0, padx=10, pady=(0, 5), sticky="sw")
-        
-        self.export_btn = ctk.CTkButton(self.btn_frame, text="Exportar Actual", width=100, command=self.export_output)
-        self.export_btn.pack(side="left", padx=(0, 10))
+        # Acciones de salida y limpieza
+        actions_row = tb.Frame(console_card)
+        actions_row.grid(row=3, column=0, pady=(0, 6), sticky="ew")
 
-        self.table_btn = ctk.CTkButton(self.btn_frame, text="Ver como Tabla", width=100, fg_color="#2E86C1", hover_color="#21618C", command=self.show_table_view)
-        self.table_btn.pack(side="left", padx=(0, 10))
-        if CTkToolTip: CTkToolTip(self.table_btn, message="Ver resultados en una tabla interactiva (ideal para CSV)")
+        self.export_btn = tb.Button(actions_row, text="Exportar Actual", bootstyle="success", command=self.export_output)
+        self.export_btn.pack(side="left", padx=(0, 6))
 
-        self.interpreter_btn = ctk.CTkButton(self.btn_frame, text="Interpretar Resultados", width=150, command=self.run_interpreter, fg_color="#8E44AD", hover_color="#9B59B6")
+        self.table_btn = tb.Button(
+            actions_row, text=" Ver como Tabla", image=self._icons["table"], compound="left",
+            bootstyle="info", command=self.show_table_view,
+        )
+        self.table_btn.pack(side="left", padx=(0, 6))
+        ui_theme.add_tooltip(self.table_btn, "Ver resultados en una tabla interactiva (ideal para CSV)")
+
+        self.interpreter_btn = tb.Button(
+            actions_row, text=" Interpretar Resultados", image=self._icons["ai"], compound="left",
+            bootstyle="primary", command=self.run_interpreter,
+        )
         self.interpreter_btn.pack(side="left")
-        if CTkToolTip: CTkToolTip(self.interpreter_btn, message="Analiza el reporte con Inteligencia Artificial o de manera local")
-        
-        # Controles de energía debajo de la consola
-        self.power_frame = ctk.CTkFrame(self.right_frame, fg_color="transparent")
-        self.power_frame.grid(row=4, column=0, columnspan=2, padx=10, pady=(2, 4), sticky="ew")
+        ui_theme.add_tooltip(self.interpreter_btn, "Analiza el reporte con Inteligencia Artificial o de manera local")
 
-        self.keep_awake_var = ctk.BooleanVar(value=False)
-        self.keep_awake_cb = ctk.CTkCheckBox(
-            self.power_frame,
-            text="Evitar suspensión / hibernación",
-            variable=self.keep_awake_var,
+        self.clear_btn = tb.Button(actions_row, text="Limpiar", bootstyle="warning", command=self.clear_output)
+        self.clear_btn.pack(side="right")
+        ui_theme.add_tooltip(self.clear_btn, "Limpiar la consola manualmente (Ctrl+L)")
+
+        self.auto_clear_var = tk.BooleanVar(value=True)
+        self.auto_clear_cb = tb.Checkbutton(
+            actions_row, text="Auto-Limpiar", variable=self.auto_clear_var, bootstyle="round-toggle"
         )
-        self.keep_awake_cb.pack(side="left", padx=(0, 18))
-        if CTkToolTip:
-            CTkToolTip(
-                self.keep_awake_cb,
-                message="Evita que Windows suspenda o hiberne mientras se ejecuta un comando (la pantalla puede apagarse normalmente).",
-            )
+        self.auto_clear_cb.pack(side="right", padx=(0, 10))
+        ui_theme.add_tooltip(self.auto_clear_cb, "Limpiar la consola antes de ejecutar un nuevo comando")
 
-        self.shutdown_after_var = ctk.BooleanVar(value=False)
-        self.shutdown_after_cb = ctk.CTkCheckBox(
-            self.power_frame,
-            text="Apagar PC al finalizar",
-            variable=self.shutdown_after_var,
+        # Controles de energía y combos
+        self.power_frame = tb.Frame(console_card)
+        self.power_frame.grid(row=4, column=0, pady=(2, 0), sticky="ew")
+
+        self.keep_awake_var = tk.BooleanVar(value=False)
+        self.keep_awake_cb = tb.Checkbutton(
+            self.power_frame, text="Evitar suspensión / hibernación", variable=self.keep_awake_var, bootstyle="round-toggle"
         )
-        self.shutdown_after_cb.pack(side="left", padx=(0, 18))
-        if CTkToolTip:
-            CTkToolTip(
-                self.shutdown_after_cb,
-                message="Al terminar la ejecución, inicia una cuenta regresiva cancelable de 60s para apagar el equipo. Si ocurre un error, guarda un reporte HTML en el Escritorio antes de apagar.",
-            )
+        self.keep_awake_cb.pack(side="left", padx=(0, 16))
+        ui_theme.add_tooltip(
+            self.keep_awake_cb,
+            "Evita que Windows suspenda o hiberne mientras se ejecuta un comando (la pantalla puede apagarse normalmente).",
+        )
 
-        self.combo_suggestions_var = ctk.BooleanVar(value=True)
-        self.combo_suggestions_cb = ctk.CTkCheckBox(
-            self.power_frame,
-            text="Sugerencias de combos",
-            variable=self.combo_suggestions_var,
+        self.shutdown_after_var = tk.BooleanVar(value=False)
+        self.shutdown_after_cb = tb.Checkbutton(
+            self.power_frame, text="Apagar PC al finalizar", variable=self.shutdown_after_var, bootstyle="danger-round-toggle"
+        )
+        self.shutdown_after_cb.pack(side="left", padx=(0, 16))
+        ui_theme.add_tooltip(
+            self.shutdown_after_cb,
+            "Al terminar la ejecución, inicia una cuenta regresiva cancelable de 60s para apagar el equipo. Si ocurre un error, guarda un reporte HTML en el Escritorio.",
+        )
+
+        self.combo_suggestions_var = tk.BooleanVar(value=True)
+        self.combo_suggestions_cb = tb.Checkbutton(
+            self.power_frame, text="Sugerencias de combos", variable=self.combo_suggestions_var, bootstyle="info-round-toggle"
         )
         self.combo_suggestions_cb.pack(side="left")
-        if CTkToolTip:
-            CTkToolTip(
-                self.combo_suggestions_cb,
-                message="Muestra un modal con funciones recomendadas antes (Protocolo Seguro) o después del comando actual para encadenarlas automáticamente.",
-            )
+        ui_theme.add_tooltip(
+            self.combo_suggestions_cb,
+            "Muestra un modal con funciones recomendadas antes (Protocolo Seguro) o después del comando actual para encadenarlas automáticamente.",
+        )
 
-        # Dashboard (Status Bar)
-        self.status_bar = ctk.CTkFrame(self.right_frame, height=25, fg_color="transparent")
-        self.status_bar.grid(row=5, column=0, columnspan=2, sticky="ew")
-        
-        self.lbl_ram = ctk.CTkLabel(self.status_bar, text="RAM: --%", font=("Consolas", 12, "bold"))
-        self.lbl_ram.pack(side="right", padx=10)
-        
-        self.lbl_cpu = ctk.CTkLabel(self.status_bar, text="CPU: --%", font=("Consolas", 12, "bold"))
-        self.lbl_cpu.pack(side="right", padx=10)
-        
+        # ---------- DASHBOARD DINÁMICO DE SENSORES (Meters radiales en tiempo real) ----------
+        self.sensors_card = tb.Labelframe(self.right_frame, text="Sensores del Sistema en Tiempo Real", padding=(10, 6), bootstyle="secondary")
+        self.sensors_card.grid(row=1, column=0, pady=(8, 0), sticky="ew")
+
+        meters_wrap = tb.Frame(self.sensors_card)
+        meters_wrap.pack(side="left")
+
+        self.meter_cpu = Meter(
+            meters_wrap,
+            metersize=74,
+            amountused=0,
+            amounttotal=100,
+            metertype="semi",
+            subtext="CPU",
+            textright="%",
+            meterthickness=7,
+            stripethickness=2,
+            textfont=("Segoe UI", 10, "bold"),
+            subtextfont=("Segoe UI", 8, "bold"),
+            bootstyle="success",
+            interactive=False,
+        )
+        self.meter_cpu.pack(side="left", padx=(0, 14))
+
+        self.meter_ram = Meter(
+            meters_wrap,
+            metersize=74,
+            amountused=0,
+            amounttotal=100,
+            metertype="semi",
+            subtext="RAM",
+            textright="%",
+            meterthickness=7,
+            stripethickness=2,
+            textfont=("Segoe UI", 10, "bold"),
+            subtextfont=("Segoe UI", 8, "bold"),
+            bootstyle="success",
+            interactive=False,
+        )
+        self.meter_ram.pack(side="left", padx=(0, 14))
+
+        self.meter_disk = Meter(
+            meters_wrap,
+            metersize=74,
+            amountused=0,
+            amounttotal=100,
+            metertype="semi",
+            subtext="Disco C:",
+            textright="%",
+            meterthickness=7,
+            stripethickness=2,
+            textfont=("Segoe UI", 10, "bold"),
+            subtextfont=("Segoe UI", 8, "bold"),
+            bootstyle="info",
+            interactive=False,
+        )
+        self.meter_disk.pack(side="left", padx=(0, 14))
+
+        stats_info = tb.Frame(self.sensors_card)
+        stats_info.pack(side="right", fill="y", padx=(8, 4))
+
+        self.lbl_cpu = tb.Label(stats_info, text="CPU: --% | Hilos: --", font=("Consolas", 9, "bold"), anchor="e")
+        self.lbl_cpu.pack(anchor="e", pady=1)
+
+        self.lbl_ram = tb.Label(stats_info, text="RAM: -- / -- GB", font=("Consolas", 9, "bold"), anchor="e")
+        self.lbl_ram.pack(anchor="e", pady=1)
+
+        self.lbl_disk = tb.Label(stats_info, text="Disco C: -- GB libres", font=("Consolas", 9, "bold"), anchor="e")
+        self.lbl_disk.pack(anchor="e", pady=1)
+
         self.update_console_tags()
-
         self.update_status_dashboard()
         self.protocol("WM_DELETE_WINDOW", self._on_app_close)
 
-        self.clear_frame = ctk.CTkFrame(self.right_frame, fg_color="transparent")
-        self.clear_frame.grid(row=3, column=1, padx=10, pady=(0, 10), sticky="se")
-
-        self.auto_clear_var = ctk.BooleanVar(value=True)
-        self.auto_clear_cb = ctk.CTkCheckBox(self.clear_frame, text="Auto-Limpiar", variable=self.auto_clear_var, width=100)
-        self.auto_clear_cb.pack(side="left", padx=(0, 10))
-        if CTkToolTip: CTkToolTip(self.auto_clear_cb, message="Limpiar la consola antes de ejecutar un nuevo comando")
-
-        self.clear_btn = ctk.CTkButton(
-            self.clear_frame,
-            text="Limpiar",
-            width=100,
-            fg_color="#D97706",
-            hover_color="#B45309",
-            text_color="#FFFFFF",
-            command=self.clear_output,
-        )
-        self.clear_btn.pack(side="left")
-        if CTkToolTip: CTkToolTip(self.clear_btn, message="Limpiar la consola manualmente (Ctrl+L)")
-
-        # Keyboard shortcuts
-        self.bind("<Control-Return>", lambda e: self.toggle_execution())
-        self.bind("<Control-l>", lambda e: self.clear_output())
-        self.bind("<Control-L>", lambda e: self.clear_output())
+        # Atajos de teclado
+        self.bind("<Control-Return>", lambda _e: self.toggle_execution())
+        self.bind("<Control-l>", lambda _e: self.clear_output())
+        self.bind("<Control-L>", lambda _e: self.clear_output())
 
         self.on_category_change(self.cat_var.get())
-        
-        # Check multimedia dependencies
+
         self.after(500, lambda: check_dependencies(self))
-        
-        # Telemetry and Updates
         from functions.telemetry import check_for_crashes, check_for_updates
         self.after(1500, lambda: check_for_crashes(self))
         self.after(3000, lambda: check_for_updates(self))
@@ -280,49 +368,68 @@ class App(ctk.CTk):
         try:
             with open(get_resource_path("resources/commands_config.json"), "r", encoding="utf-8") as f:
                 config = json.load(f)
-        except Exception as e:
+        except Exception:
             pass
-            
+
         try:
             with open(get_user_data_path("favorites.json"), "r", encoding="utf-8") as f:
                 favs = json.load(f)
                 if favs:
                     config["categories"].insert(0, {
-                        "name": "⭐ Favoritos",
-                        "commands": favs
+                        "name": FAVORITES_CATEGORY_NAME,
+                        "commands": favs,
                     })
         except Exception:
             pass
-            
+
         return config
 
+    @staticmethod
+    def _sensor_bootstyle(val):
+        if val < 55:
+            return "success"
+        if val < 80:
+            return "warning"
+        return "danger"
+
     def update_status_dashboard(self):
-        import psutil
         try:
             cpu = psutil.cpu_percent(interval=None)
-            ram = psutil.virtual_memory().percent
-            
-            def get_color(val):
-                if val < 25: return "#28a745" # Verde
-                elif val < 50: return "#ffc107" # Amarillo
-                elif val < 75: return "#fd7e14" # Naranja
-                else: return "#dc3545" # Rojo
-                
-            self.lbl_cpu.configure(text=f"CPU: {cpu}%", text_color=get_color(cpu))
-            self.lbl_ram.configure(text=f"RAM: {ram}%", text_color=get_color(ram))
+            vm = psutil.virtual_memory()
+            ram = vm.percent
+            ram_used_gb = vm.used / (1024 ** 3)
+            ram_total_gb = vm.total / (1024 ** 3)
+            threads = os.cpu_count() or 0
+
+            sys_drive = os.environ.get("SystemDrive", "C:") + "\\"
+            du = psutil.disk_usage(sys_drive)
+            disk_pct = du.percent
+            disk_free_gb = du.free / (1024 ** 3)
+
+            cpu_style = self._sensor_bootstyle(cpu)
+            ram_style = self._sensor_bootstyle(ram)
+            disk_style = self._sensor_bootstyle(disk_pct)
+
+            self.meter_cpu.configure(amountused=int(round(cpu)), bootstyle=cpu_style)
+            self.meter_ram.configure(amountused=int(round(ram)), bootstyle=ram_style)
+            self.meter_disk.configure(amountused=int(round(disk_pct)), bootstyle=disk_style)
+
+            self.lbl_cpu.configure(text=f"CPU: {cpu:.0f}% | Hilos: {threads}", bootstyle=cpu_style)
+            self.lbl_ram.configure(text=f"RAM: {ram_used_gb:.1f} / {ram_total_gb:.1f} GB ({ram:.0f}%)", bootstyle=ram_style)
+            self.lbl_disk.configure(text=f"Disco C: {disk_free_gb:.1f} GB libres ({disk_pct:.0f}%)", bootstyle=disk_style)
         except Exception:
             self.lbl_cpu.configure(text="CPU: --%")
             self.lbl_ram.configure(text="RAM: --%")
+            self.lbl_disk.configure(text="Disco C: --")
         self.after(2000, self.update_status_dashboard)
 
     def get_windows_drives(self):
-        import subprocess
         drives = []
         try:
             output = subprocess.check_output(
                 ["powershell", "-Command", "Get-CimInstance Win32_LogicalDisk | Where-Object DriveType -eq 3 | ForEach-Object { $n = $_.VolumeName; if(-not $n){ $n = $_.Description }; $_.DeviceID + ' (' + $n + ')' }"],
-                creationflags=subprocess.CREATE_NO_WINDOW
-            ).decode('mbcs', errors='ignore').strip().split('\n')
+                creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+            ).decode("mbcs", errors="ignore").strip().split("\n")
             for line in output:
                 if line.strip():
                     drives.append(line.strip())
@@ -330,8 +437,7 @@ class App(ctk.CTk):
             pass
         if not drives:
             import string
-            from ctypes import windll
-            bitmask = windll.kernel32.GetLogicalDrives()
+            bitmask = ctypes.windll.kernel32.GetLogicalDrives()
             for letter in string.ascii_uppercase:
                 if bitmask & 1:
                     drives.append(f"{letter}:")
@@ -339,7 +445,6 @@ class App(ctk.CTk):
         return drives if drives else ["C:"]
 
     def get_physical_disks(self, filter_status=None):
-        import subprocess
         disks = []
         try:
             filter_mode = filter_status or "All"
@@ -379,8 +484,8 @@ class App(ctk.CTk):
             )
             output = subprocess.check_output(
                 ["powershell", "-NoProfile", "-Command", cmd],
-                creationflags=subprocess.CREATE_NO_WINDOW
-            ).decode('mbcs', errors='ignore').strip().split('\n')
+                creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+            ).decode("mbcs", errors="ignore").strip().split("\n")
             for line in output:
                 if line.strip():
                     disks.append(line.strip())
@@ -391,12 +496,11 @@ class App(ctk.CTk):
         return disks
 
     def get_wifi_profiles(self):
-        import subprocess
         profiles = []
         try:
             output = subprocess.check_output(
-                "netsh wlan show profiles", shell=True, creationflags=subprocess.CREATE_NO_WINDOW
-            ).decode('mbcs', errors='ignore').split('\n')
+                "netsh wlan show profiles", shell=True, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0)
+            ).decode("mbcs", errors="ignore").split("\n")
             for line in output:
                 if "Perfil de todos los usuarios" in line or "All User Profile" in line:
                     profile_name = line.split(":", 1)[1].strip()
@@ -407,13 +511,12 @@ class App(ctk.CTk):
         return profiles if profiles else ["(Ninguna red encontrada)"]
 
     def get_network_adapters(self):
-        import subprocess
         adapters = []
         try:
             output = subprocess.check_output(
                 ["powershell", "-Command", "Get-NetAdapter | Select-Object -ExpandProperty Name"],
-                creationflags=subprocess.CREATE_NO_WINDOW
-            ).decode('mbcs', errors='ignore').strip().split('\n')
+                creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+            ).decode("mbcs", errors="ignore").strip().split("\n")
             for line in output:
                 if line.strip():
                     adapters.append(line.strip())
@@ -422,34 +525,40 @@ class App(ctk.CTk):
         return adapters if adapters else ["(Ninguno)"]
 
     def get_cpu_threads_list(self):
-        import os
         try:
             threads = os.cpu_count() or 4
         except Exception:
             threads = 4
-            
         options = ["0 (Auto - Todos)"]
         for i in range(1, threads + 1):
             options.append(str(i))
-            
         return options
 
-    def toggle_theme(self):
-        if self.theme_switch.get() == 1:
-            ctk.set_appearance_mode("Dark")
-            self.theme_switch.configure(text="Modo Oscuro")
-        else:
-            ctk.set_appearance_mode("Light")
-            self.theme_switch.configure(text="Modo Claro")
+    def on_theme_change(self, _event=None):
+        selected = self.theme_var.get()
+        saved = ui_theme.set_saved_theme(selected)
+        self.current_theme = saved
+        try:
+            self.style.theme_use(saved)
+        except Exception:
+            pass
+        ui_theme.apply_dwm_titlebar(self, dark=ui_theme.is_dark_theme(saved))
         self.update_console_tags()
 
     def update_console_tags(self):
-        is_dark = ctk.get_appearance_mode().lower() == "dark"
-        self.output_textbox.tag_config("error", foreground="#FF4C4C" if is_dark else "#D32F2F")
-        self.output_textbox.tag_config("success", foreground="#4CFF4C" if is_dark else "#2E7D32")
-        self.output_textbox.tag_config("ip", foreground="#42A5F5" if is_dark else "#1565C0")
-        self.output_textbox.tag_config("path", foreground="#FFCA28" if is_dark else "#E65100")
-        self.output_textbox.tag_config("highlight", foreground="#FF4081" if is_dark else "#C2185B")
+        is_dark = ui_theme.is_dark_theme(self.current_theme)
+        tk_txt = self.output_textbox.text
+        tk_txt.tag_config("error", foreground="#FF5C5C" if is_dark else "#C62828")
+        tk_txt.tag_config("success", foreground="#4ADE80" if is_dark else "#2E7D32")
+        tk_txt.tag_config("ip", foreground="#60A5FA" if is_dark else "#1565C0")
+        tk_txt.tag_config("path", foreground="#FBBF24" if is_dark else "#D97706")
+        tk_txt.tag_config("highlight", foreground="#F472B6" if is_dark else "#C2185B")
+
+        bg = self.style.colors.bg
+        fg = self.style.colors.fg
+        for lbl in (getattr(self, "lbl_progress", None), getattr(self, "lbl_eta", None)):
+            if lbl is not None:
+                lbl.configure(bg=bg, fg=fg)
 
     def get_category_data(self, cat_name):
         for cat in self.commands_config.get("categories", []):
@@ -465,30 +574,18 @@ class App(ctk.CTk):
         return None
 
     def show_custom_info(self, title, message):
-        info_win = ctk.CTkToplevel(self)
+        info_win = tb.Toplevel(self)
         info_win.title(title)
-        center_window(info_win, 450, 250)
+        center_window(info_win, 480, 270)
         info_win.resizable(False, False)
-        
-        def set_icon():
-            try:
-                info_win.iconbitmap(get_resource_path("resources/app_icon.ico"))
-            except Exception:
-                pass
-        
-        info_win.after(200, set_icon)
-        
         info_win.transient(self)
         info_win.grab_set()
-        
-        lbl_title = ctk.CTkLabel(info_win, text=title, font=("Arial", 16, "bold"), text_color=("#1f6aa5", "#F39C12"))
-        lbl_title.pack(pady=(20, 10))
-        
-        lbl_msg = ctk.CTkLabel(info_win, text=message, font=("Arial", 13), justify="center", wraplength=400, text_color=("black", "white"))
-        lbl_msg.pack(pady=10, fill="both", expand=True, padx=20)
-        
-        close_btn = ctk.CTkButton(info_win, text="Entendido", command=info_win.destroy, fg_color=("#1f6aa5", "#24292F"), hover_color=("#144870", "#40464d"), text_color="white")
-        close_btn.pack(pady=(10, 20))
+        ui_theme.apply_window_chrome(info_win, self.current_theme)
+
+        tb.Label(info_win, text=title, font=("Segoe UI", 13, "bold"), bootstyle="info").pack(pady=(18, 10), padx=16)
+        tb.Label(info_win, text=message, font=("Segoe UI", 10), justify="center", wraplength=430).pack(pady=8, fill="both", expand=True, padx=20)
+        tb.Button(info_win, text="Entendido", command=info_win.destroy, bootstyle="primary", width=16).pack(pady=(8, 18))
+        ui_theme.bring_to_front(info_win)
 
     def show_command_info(self):
         cmd_data = self.get_command_data(self.cmd_var.get())
@@ -498,20 +595,22 @@ class App(ctk.CTk):
     def show_arg_info(self, arg_name, arg_desc):
         self.show_custom_info(f"Info: {arg_name}", arg_desc)
 
-    def on_search(self, *args):
-        query = self.search_var.get().lower()
+    def on_search(self, *_args):
+        if hasattr(self, "search_entry") and self.search_entry.is_placeholder_active():
+            return
+        query = self.search_entry.get_value().strip().lower() if hasattr(self, "search_entry") else self.search_var.get().strip().lower()
         if not query:
-            self.cat_menu.configure(state="normal")
+            self.cat_menu.configure(state="readonly")
             self.on_category_change(self.cat_var.get())
             return
-            
+
         self.cat_menu.configure(state="disabled")
         matched_commands = []
         for cat in self.commands_config.get("categories", []):
             for cmd in cat.get("commands", []):
                 if query in cmd.get("name", "").lower() or query in cmd.get("description", "").lower() or query in cmd.get("command", "").lower():
                     matched_commands.append(cmd.get("name"))
-                    
+
         if matched_commands:
             self.cmd_menu.configure(values=matched_commands)
             self.cmd_var.set(matched_commands[0])
@@ -538,11 +637,11 @@ class App(ctk.CTk):
             self.on_command_change("")
 
     def on_command_change(self, selected_command):
-        if self.cat_var.get() == "⭐ Favoritos":
-            self.fav_btn.configure(text="🗑️", font=("Segoe UI Emoji", 15), anchor="center", fg_color="#E74C3C", hover_color="#C0392B", command=self.remove_favorite)
+        if self.cat_var.get() == FAVORITES_CATEGORY_NAME:
+            self.fav_btn.configure(image=self._icons["trash"], bootstyle="danger", command=self.remove_favorite)
         else:
-            self.fav_btn.configure(text="⭐", font=("Segoe UI Emoji", 15), anchor="center", fg_color="#F39C12", hover_color="#D68910", command=self.save_favorite)
-            
+            self.fav_btn.configure(image=self._icons["star"], bootstyle="warning", command=self.save_favorite)
+
         for widget in self.args_frame.winfo_children():
             widget.destroy()
         self.current_args_vars.clear()
@@ -550,7 +649,7 @@ class App(ctk.CTk):
 
         cmd_data = self.get_command_data(selected_command)
         if cmd_data:
-            from functions.setup_manager import get_missing_commands, PLUGINS
+            from functions.setup_manager import PLUGINS, get_missing_commands
             missing = get_missing_commands()
             if cmd_data.get("command") in missing:
                 plugin_needed = None
@@ -558,59 +657,69 @@ class App(ctk.CTk):
                     if cmd_data.get("command") in p["cmds"]:
                         plugin_needed = pid
                         break
-                        
-                lbl = ctk.CTkLabel(self.args_frame, text=f"[AVISO] Falta {PLUGINS[plugin_needed]['name']}.", text_color="#E74C3C", font=("Arial", 14, "bold"))
-                lbl.pack(pady=20)
-                
+
+                tb.Label(
+                    self.args_frame,
+                    text=f"[AVISO] Falta {PLUGINS[plugin_needed]['name']}.",
+                    bootstyle="danger",
+                    font=("Segoe UI", 11, "bold"),
+                ).pack(pady=18)
+
                 def install_it():
                     from functions.setup_manager import PluginInstaller
                     def on_done(success):
                         if success:
                             self.on_command_change(selected_command)
                     PluginInstaller(self, plugin_needed, on_done)
-                
-                btn = ctk.CTkButton(self.args_frame, text="Instalar Complemento", fg_color="#F39C12", hover_color="#D68910", command=install_it)
-                btn.pack(pady=10)
+
+                tb.Button(self.args_frame, text="Instalar Complemento", bootstyle="warning", command=install_it).pack(pady=8)
                 self.execute_btn.configure(state="disabled")
                 return
             else:
                 self.execute_btn.configure(state="normal")
-                
+
             if cmd_data.get("name") == "Compresor de Multimedia":
                 self.update_hardware_options(cmd_data)
-                
-            args = cmd_data.get("args", [])
-            for arg in args:
+
+            for arg in cmd_data.get("args", []):
                 arg_name = arg.get("name")
                 arg_type = arg.get("type")
                 arg_flag = arg.get("flag", "")
                 arg_desc = arg.get("description", "")
-                
-                row_frame = ctk.CTkFrame(self.args_frame, fg_color="transparent")
-                row_frame.pack(fill="x", pady=10)
-                
-                var = ctk.StringVar(value=arg.get("value", ""))
-                var.trace_add("write", lambda *args: self.update_preview())
-                
+
+                row_frame = tb.Frame(self.args_frame)
+                row_frame.pack(fill="x", pady=6, padx=2)
+
+                var = tk.StringVar(value=arg.get("value", ""))
+                var.trace_add("write", lambda *_a: self.update_preview())
+
                 option_map = None
+                entry_widget = None
+
                 if arg_type == "checkbox":
-                    chk = ctk.CTkCheckBox(row_frame, text=arg_name, variable=var, onvalue=arg_flag, offvalue="")
-                    chk.pack(side="left", padx=(0, 10))
+                    chk = tb.Checkbutton(row_frame, text=arg_name, variable=var, onvalue=arg_flag, offvalue="", bootstyle="primary")
+                    chk.pack(side="left", padx=(0, 8))
+
                 elif arg_type in ["entry", "directory_entry", "file_entry", "save_file_entry"]:
-                    lbl = ctk.CTkLabel(row_frame, text=f"{arg_name}:", wraplength=180, justify="left")
-                    lbl.pack(side="left", padx=(0, 5))
-                    
+                    tb.Label(row_frame, text=f"{arg_name}:", wraplength=170, justify="left").pack(side="left", padx=(0, 6))
+
+                    btn_info = tb.Button(
+                        row_frame, image=self._icons["info"], bootstyle="info-outline",
+                        command=lambda n=arg_name, d=arg_desc: self.show_arg_info(n, d),
+                    )
+                    btn_info.pack(side="right", padx=(4, 0))
+
                     if arg_type in ["directory_entry", "file_entry", "save_file_entry"]:
                         def browse_folder(v=var):
-                            folder = filedialog.askdirectory()
+                            folder = filedialog.askdirectory(parent=self)
                             if folder:
                                 folder = folder.replace("/", "\\")
                                 if " " in folder and not folder.startswith('"'):
                                     folder = f'"{folder}"'
                                 v.set(folder)
-                                
+
                         def browse_file(v=var):
-                            file_path = filedialog.askopenfilename()
+                            file_path = filedialog.askopenfilename(parent=self)
                             if file_path:
                                 file_path = file_path.replace("/", "\\")
                                 if " " in file_path and not file_path.startswith('"'):
@@ -618,229 +727,229 @@ class App(ctk.CTk):
                                 v.set(file_path)
 
                         def browse_save_file(v=var):
-                            file_path = filedialog.asksaveasfilename(defaultextension="*.*", filetypes=[("Todos los archivos", "*.*")])
+                            file_path = filedialog.asksaveasfilename(parent=self, defaultextension="*.*", filetypes=[("Todos los archivos", "*.*")])
                             if file_path:
                                 file_path = file_path.replace("/", "\\")
                                 if " " in file_path and not file_path.startswith('"'):
                                     file_path = f'"{file_path}"'
                                 v.set(file_path)
-                                
-                        btn_frame_paths = ctk.CTkFrame(row_frame, fg_color="transparent")
-                        btn_frame_paths.pack(side="right", padx=(0, 10))
-                        
+
+                        btn_frame_paths = tb.Frame(row_frame)
+                        btn_frame_paths.pack(side="right", padx=(4, 0))
+
                         if arg_type == "save_file_entry":
-                            btn_browse_save = ctk.CTkButton(btn_frame_paths, text="Guardar Como...", width=60, command=browse_save_file)
-                            btn_browse_save.pack(side="left", padx=(0, 5))
+                            tb.Button(btn_frame_paths, text="Guardar...", bootstyle="secondary", command=browse_save_file).pack(side="left", padx=(0, 4))
                         elif arg_type == "file_entry":
-                            btn_browse_file = ctk.CTkButton(btn_frame_paths, text="Archivo", width=60, command=browse_file)
-                            btn_browse_file.pack(side="left", padx=(0, 5))
-                        
+                            tb.Button(btn_frame_paths, text="Archivo", bootstyle="secondary", command=browse_file).pack(side="left", padx=(0, 4))
                         if arg_type in ["directory_entry", "file_entry"]:
-                            btn_browse_folder = ctk.CTkButton(btn_frame_paths, text="Carpeta", width=60, command=browse_folder)
-                            btn_browse_folder.pack(side="left")
-                        
-                    ent = ctk.CTkEntry(row_frame, textvariable=var, placeholder_text="Escribir...", border_width=0)
-                    ent.pack(side="left", fill="x", expand=True, padx=(0, 10))
-                    
-                    # The browse buttons and entry were already handled above
-                        
+                            tb.Button(btn_frame_paths, text="Carpeta", bootstyle="secondary", command=browse_folder).pack(side="left")
+
+                    entry_widget = tb.Entry(row_frame, textvariable=var)
+                    entry_widget.pack(side="left", fill="x", expand=True, padx=(0, 4))
+
+                    self.current_args_vars[arg_name] = {
+                        "var": var, "type": arg_type, "flag": arg_flag, "option_map": option_map
+                    }
+                    continue
+
                 elif arg_type == "radio_group":
-                    lbl = ctk.CTkLabel(row_frame, text=f"{arg_name}:")
-                    lbl.pack(side="top", anchor="w", padx=(0, 5))
-                    
-                    rb_frame = ctk.CTkFrame(row_frame, fg_color="transparent")
-                    rb_frame.pack(side="top", fill="x", expand=True, padx=(10, 0))
-                    
-                    options = arg.get("options", [])
-                    for opt in options:
-                        opt_name = opt.get("name")
-                        opt_flag = opt.get("flag", "")
-                        rb = ctk.CTkRadioButton(rb_frame, text=opt_name, variable=var, value=opt_flag)
-                        rb.pack(side="top", anchor="w", pady=(0, 5))
-                        
+                    header_r = tb.Frame(row_frame)
+                    header_r.pack(fill="x")
+                    tb.Label(header_r, text=f"{arg_name}:", font=("Segoe UI", 9, "bold")).pack(side="left")
+                    tb.Button(
+                        header_r, image=self._icons["info"], bootstyle="info-outline",
+                        command=lambda n=arg_name, d=arg_desc: self.show_arg_info(n, d),
+                    ).pack(side="right")
+
+                    rb_frame = tb.Frame(row_frame)
+                    rb_frame.pack(fill="x", padx=(12, 0), pady=(4, 0))
+                    for opt in arg.get("options", []):
+                        tb.Radiobutton(
+                            rb_frame, text=opt.get("name"), variable=var, value=opt.get("flag", ""), bootstyle="info"
+                        ).pack(anchor="w", pady=2)
+
+                    self.current_args_vars[arg_name] = {
+                        "var": var, "type": arg_type, "flag": arg_flag, "option_map": option_map
+                    }
+                    continue
+
                 elif arg_type == "drive_dropdown":
-                    lbl = ctk.CTkLabel(row_frame, text=f"{arg_name}:")
-                    lbl.pack(side="left", padx=(0, 5))
+                    tb.Label(row_frame, text=f"{arg_name}:").pack(side="left", padx=(0, 6))
                     drives = self.get_windows_drives()
                     if drives:
                         var.set(drives[0])
-                    dropdown = ctk.CTkOptionMenu(row_frame, variable=var, values=drives)
-                    dropdown.pack(side="left", fill="x", expand=True, padx=(0, 10))
-                    
+                    tb.Combobox(row_frame, textvariable=var, values=drives, state="readonly").pack(side="left", fill="x", expand=True, padx=(0, 6))
+
                 elif arg_type in ["disk_dropdown", "disk_online_dropdown", "disk_offline_dropdown"]:
-                    lbl = ctk.CTkLabel(row_frame, text=f"{arg_name}:")
-                    lbl.pack(side="left", padx=(0, 5))
-                    
+                    tb.Label(row_frame, text=f"{arg_name}:").pack(side="left", padx=(0, 6))
                     if arg_type == "disk_online_dropdown":
                         pdisks = self.get_physical_disks(filter_status="Online")
                     elif arg_type == "disk_offline_dropdown":
                         pdisks = self.get_physical_disks(filter_status="Offline")
                     else:
                         pdisks = self.get_physical_disks()
-                        
                     if pdisks:
                         var.set(pdisks[0])
-                    dropdown = ctk.CTkOptionMenu(row_frame, variable=var, values=pdisks)
-                    dropdown.pack(side="left", fill="x", expand=True, padx=(0, 10))
-                    
+                    tb.Combobox(row_frame, textvariable=var, values=pdisks, state="readonly").pack(side="left", fill="x", expand=True, padx=(0, 6))
+
                 elif arg_type == "netadapter_dropdown":
-                    lbl = ctk.CTkLabel(row_frame, text=f"{arg_name}:")
-                    lbl.pack(side="left", padx=(0, 5))
+                    tb.Label(row_frame, text=f"{arg_name}:").pack(side="left", padx=(0, 6))
                     adapters = self.get_network_adapters()
                     if adapters:
                         var.set(adapters[0])
-                    dropdown = ctk.CTkOptionMenu(row_frame, variable=var, values=adapters)
-                    dropdown.pack(side="left", fill="x", expand=True, padx=(0, 10))
-                    
+                    tb.Combobox(row_frame, textvariable=var, values=adapters, state="readonly").pack(side="left", fill="x", expand=True, padx=(0, 6))
+
                 elif arg_type == "wifi_radio_group":
-                    lbl = ctk.CTkLabel(row_frame, text=f"{arg_name}:")
-                    lbl.pack(side="top", anchor="w", padx=(0, 5))
-                    
-                    rb_frame = ctk.CTkFrame(row_frame, fg_color="transparent")
-                    rb_frame.pack(side="top", fill="x", expand=True, padx=(10, 0))
-                    
+                    header_w = tb.Frame(row_frame)
+                    header_w.pack(fill="x")
+                    tb.Label(header_w, text=f"{arg_name}:", font=("Segoe UI", 9, "bold")).pack(side="left")
+                    tb.Button(
+                        header_w, image=self._icons["info"], bootstyle="info-outline",
+                        command=lambda n=arg_name, d=arg_desc: self.show_arg_info(n, d),
+                    ).pack(side="right")
+
+                    rb_frame = tb.Frame(row_frame)
+                    rb_frame.pack(fill="x", padx=(12, 0), pady=(4, 0))
                     profiles = self.get_wifi_profiles()
                     if profiles:
                         var.set(profiles[0])
                     for prof in profiles:
-                        rb = ctk.CTkRadioButton(rb_frame, text=prof, variable=var, value=prof)
-                        rb.pack(side="top", anchor="w", pady=(0, 5))
-                    
+                        tb.Radiobutton(rb_frame, text=prof, variable=var, value=prof, bootstyle="info").pack(anchor="w", pady=2)
+
+                    self.current_args_vars[arg_name] = {
+                        "var": var, "type": arg_type, "flag": arg_flag, "option_map": option_map
+                    }
+                    continue
+
                 elif arg_type == "dropdown":
-                    lbl = ctk.CTkLabel(row_frame, text=f"{arg_name}:")
-                    lbl.pack(side="left", padx=(0, 5))
+                    tb.Label(row_frame, text=f"{arg_name}:").pack(side="left", padx=(0, 6))
                     raw_opts = arg.get("options", [])
                     if raw_opts and isinstance(raw_opts[0], dict):
                         display_opts = [o.get("name", "") for o in raw_opts]
                         option_map = {o.get("name", ""): str(o.get("value", "")) for o in raw_opts}
                     else:
                         display_opts = raw_opts
-                    dropdown = ctk.CTkOptionMenu(row_frame, variable=var, values=display_opts)
-                    dropdown.pack(side="left", fill="x", expand=True, padx=(0, 10))
+                    tb.Combobox(row_frame, textvariable=var, values=display_opts, state="readonly").pack(side="left", fill="x", expand=True, padx=(0, 6))
                     if display_opts and (not var.get() or var.get() not in display_opts):
                         var.set(display_opts[0])
+
                 elif arg_type == "threads_dropdown":
-                    lbl = ctk.CTkLabel(row_frame, text=f"{arg_name}:")
-                    lbl.pack(side="left", padx=(0, 5))
+                    tb.Label(row_frame, text=f"{arg_name}:").pack(side="left", padx=(0, 6))
                     threads_options = self.get_cpu_threads_list()
                     if threads_options:
                         var.set(threads_options[0])
-                    dropdown = ctk.CTkOptionMenu(row_frame, variable=var, values=threads_options)
-                    dropdown.pack(side="left", fill="x", expand=True, padx=(0, 10))
-                    
+                    tb.Combobox(row_frame, textvariable=var, values=threads_options, state="readonly").pack(side="left", fill="x", expand=True, padx=(0, 6))
+
                 elif arg_type == "password_single":
-                    lbl = ctk.CTkLabel(row_frame, text=f"{arg_name}:")
-                    lbl.pack(side="left", padx=(0, 5))
-                    
-                    ent = ctk.CTkEntry(row_frame, textvariable=var, show="*", placeholder_text="Contraseña...", border_width=0)
-                    ent.pack(side="left", fill="x", expand=True, padx=(0, 5))
-                    
-                    btn_show_s = ctk.CTkButton(row_frame, text="👁️", width=30, fg_color="transparent", text_color=("black", "white"), hover_color=("#E5E5E5", "#333333"))
+                    tb.Label(row_frame, text=f"{arg_name}:").pack(side="left", padx=(0, 6))
+                    ent = tb.Entry(row_frame, textvariable=var, show="*")
+                    ent.pack(side="left", fill="x", expand=True, padx=(0, 4))
+
+                    btn_show_s = tb.Button(row_frame, image=self._icons["eye"], bootstyle="secondary")
                     def toggle_show_s(b=btn_show_s, e=ent):
                         if e.cget("show") == "*":
                             e.configure(show="")
-                            b.configure(text="🙈")
+                            b.configure(image=self._icons["eye_off"])
                         else:
                             e.configure(show="*")
-                            b.configure(text="👁️")
+                            b.configure(image=self._icons["eye"])
                     btn_show_s.configure(command=toggle_show_s)
-                    btn_show_s.pack(side="left", padx=(0, 10))
-                    
+                    btn_show_s.pack(side="left", padx=(0, 6))
+
                 elif arg_type == "password_double":
-                    lbl = ctk.CTkLabel(row_frame, text=f"{arg_name}:")
-                    lbl.pack(side="top", anchor="w", padx=(0, 5))
-                    
-                    pw_frame = ctk.CTkFrame(row_frame, fg_color="transparent")
-                    pw_frame.pack(side="top", fill="x", expand=True)
-                    
-                    var1 = ctk.StringVar()
-                    var2 = ctk.StringVar()
-                    var.set("") # var is the main one used for command
-                    
-                    ent1 = ctk.CTkEntry(pw_frame, textvariable=var1, show="*", placeholder_text="Contraseña...", border_width=0)
-                    ent1.pack(side="left", fill="x", expand=True, padx=(0, 5))
-                    
-                    ent2 = ctk.CTkEntry(pw_frame, textvariable=var2, show="*", placeholder_text="Confirmar Contraseña...", border_width=0)
-                    ent2.pack(side="left", fill="x", expand=True, padx=(5, 5))
-                    
-                    btn_show = ctk.CTkButton(pw_frame, text="👁️", width=30, fg_color="transparent", text_color=("black", "white"), hover_color=("#E5E5E5", "#333333"))
+                    header_p = tb.Frame(row_frame)
+                    header_p.pack(fill="x")
+                    tb.Label(header_p, text=f"{arg_name}:").pack(side="left")
+                    tb.Button(
+                        header_p, image=self._icons["info"], bootstyle="info-outline",
+                        command=lambda n=arg_name, d=arg_desc: self.show_arg_info(n, d),
+                    ).pack(side="right")
+
+                    pw_frame = tb.Frame(row_frame)
+                    pw_frame.pack(fill="x", pady=(4, 0))
+                    var1 = tk.StringVar()
+                    var2 = tk.StringVar()
+                    var.set("")
+
+                    ent1 = tb.Entry(pw_frame, textvariable=var1, show="*")
+                    ent1.pack(side="left", fill="x", expand=True, padx=(0, 4))
+                    ent2 = tb.Entry(pw_frame, textvariable=var2, show="*")
+                    ent2.pack(side="left", fill="x", expand=True, padx=(4, 4))
+
+                    btn_show = tb.Button(pw_frame, image=self._icons["eye"], bootstyle="secondary")
                     def toggle_show(b=btn_show, e1=ent1, e2=ent2):
                         if e1.cget("show") == "*":
                             e1.configure(show="")
                             e2.configure(show="")
-                            b.configure(text="🙈")
+                            b.configure(image=self._icons["eye_off"])
                         else:
                             e1.configure(show="*")
                             e2.configure(show="*")
-                            b.configure(text="👁️")
+                            b.configure(image=self._icons["eye"])
                     btn_show.configure(command=toggle_show)
                     btn_show.pack(side="left")
-                    
-                    def check_match(*args_cb, v=var, e2=ent2, v1_var=var1, v2_var=var2):
-                        v1 = v1_var.get()
-                        v2 = v2_var.get()
+
+                    def check_match(*_cb, v=var, e2=ent2, v1_var=var1, v2_var=var2):
+                        v1, v2 = v1_var.get(), v2_var.get()
                         if v1 != v2 or not v1:
-                            e2.configure(border_color="red", border_width=2)
+                            e2.configure(bootstyle="danger")
                             v.set("")
                         else:
-                            e2.configure(border_color="green", border_width=2)
+                            e2.configure(bootstyle="success")
                             v.set(v1)
                     var1.trace_add("write", check_match)
                     var2.trace_add("write", check_match)
-                
+
+                    self.current_args_vars[arg_name] = {
+                        "var": var, "type": arg_type, "flag": arg_flag, "option_map": option_map
+                    }
+                    continue
+
                 self.current_args_vars[arg_name] = {
                     "var": var,
                     "type": arg_type,
                     "flag": arg_flag,
                     "option_map": option_map,
                 }
-                
-                btn_info = ctk.CTkButton(
-                    row_frame, text="ℹ", width=25, height=25, fg_color="transparent",
-                    text_color=("black", "white"), command=lambda n=arg_name, d=arg_desc: self.show_arg_info(n, d)
-                )
-                btn_info.pack(side="right")
-        
+
+                tb.Button(
+                    row_frame, image=self._icons["info"], bootstyle="info-outline",
+                    command=lambda n=arg_name, d=arg_desc: self.show_arg_info(n, d),
+                ).pack(side="right")
+
         self.update_preview()
 
     def update_hardware_options(self, cmd_data):
-        import subprocess
-        
         has_nvenc = False
         has_amf = False
         has_qsv = False
-
         try:
             startupinfo = subprocess.STARTUPINFO()
             startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-            output = subprocess.check_output(['powershell', '-Command', 'Get-CimInstance Win32_VideoController | Select-Object -ExpandProperty Name'], text=True, startupinfo=startupinfo)
+            output = subprocess.check_output(
+                ["powershell", "-Command", "Get-CimInstance Win32_VideoController | Select-Object -ExpandProperty Name"],
+                text=True,
+                startupinfo=startupinfo,
+            )
             out_upper = output.upper()
-            if 'NVIDIA' in out_upper:
-                has_nvenc = True
-            if 'AMD' in out_upper or 'RADEON' in out_upper:
-                has_amf = True
-            if 'INTEL' in out_upper:
-                has_qsv = True
+            has_nvenc = "NVIDIA" in out_upper
+            has_amf = "AMD" in out_upper or "RADEON" in out_upper
+            has_qsv = "INTEL" in out_upper
         except Exception:
             pass
 
-        options = [
-            {'name': 'Auto-Detectar (Prioriza Dedicada)', 'flag': '--hw auto'}
-        ]
-        
+        options = [{"name": "Auto-Detectar (Prioriza Dedicada)", "flag": "--hw auto"}]
         if has_nvenc:
-            options.append({'name': 'NVIDIA (NVENC) - Dedicada', 'flag': '--hw nvenc'})
+            options.append({"name": "NVIDIA (NVENC) - Dedicada", "flag": "--hw nvenc"})
         if has_amf:
-            options.append({'name': 'AMD (AMF)', 'flag': '--hw amf'})
+            options.append({"name": "AMD (AMF)", "flag": "--hw amf"})
         if has_qsv:
-            options.append({'name': 'Intel (QSV) - Integrada', 'flag': '--hw qsv'})
-            
-        options.append({'name': 'Solo CPU (Lento pero seguro)', 'flag': '--hw cpu'})
+            options.append({"name": "Intel (QSV) - Integrada", "flag": "--hw qsv"})
+        options.append({"name": "Solo CPU (Lento pero seguro)", "flag": "--hw cpu"})
 
         for arg in cmd_data.get("args", []):
             if arg.get("name") == "Motor de Aceleracion de Hardware":
                 arg["options"] = options
-                # Pre-seleccionar Auto
                 arg["value"] = "--hw auto"
                 break
 
@@ -855,7 +964,7 @@ class App(ctk.CTk):
             return
 
         command_list = [cmd_data.get("command", "")]
-        for arg_name, arg_data in self.current_args_vars.items():
+        for _arg_name, arg_data in self.current_args_vars.items():
             val = arg_data["var"].get().strip()
             if val:
                 if arg_data["type"] in ["checkbox", "radio_group"]:
@@ -891,46 +1000,31 @@ class App(ctk.CTk):
         full_command_str = " ".join(command_list)
         self.preview_var.set(full_command_str)
 
-        # Validación para Compresor de Multimedia
         if selected_command == "Compresor de Multimedia":
-            args_map = {}
-            for arg_name, arg_data in self.current_args_vars.items():
-                args_map[arg_name] = arg_data["var"].get().strip()
-                
-            input_val = args_map.get("Seleccionar Carpeta (Lote)", "")
-            if not input_val:
-                input_val = args_map.get("Seleccionar Archivo (Individual)", "")
-                
-            out_val = args_map.get("Salida (Carpeta opcional)", "")
+            args_map = {k: d["var"].get().strip() for k, d in self.current_args_vars.items()}
+            input_val = (args_map.get("Seleccionar Carpeta (Lote)", "") or args_map.get("Seleccionar Archivo (Individual)", "")).strip("\"'")
+            out_val = args_map.get("Salida (Carpeta opcional)", "").strip("\"'")
             suffix = args_map.get("Sufijo de archivo", "")
-            
-            # Limpiar comillas
-            input_val = input_val.strip('"\'')
-            out_val = out_val.strip('"\'')
-            
-            # Si no hay ruta de salida definida, la salida es la misma carpeta que la de entrada
+
             if not out_val and input_val:
-                import os
-                if os.path.isfile(input_val):
-                    out_val = os.path.dirname(input_val)
-                else:
-                    out_val = input_val
-            
+                out_val = os.path.dirname(input_val) if os.path.isfile(input_val) else input_val
+
             if input_val and out_val and input_val.lower() == out_val.lower() and not suffix:
-                self.execute_btn.configure(state="disabled", text="Falta sufijo (Evitará sobrescribir originales)")
-            else:
-                if not self.is_running:
-                    self.execute_btn.configure(state="normal", text="Ejecutar Comando")
+                self.execute_btn.configure(state="disabled", text=" Falta sufijo (Evitará sobrescribir originales)")
+            elif not self.is_running:
+                self.execute_btn.configure(state="normal", text=" Ejecutar Comando")
 
     def pause_execution(self):
-        if not self.is_running: return
-        import os
-        appdata = os.environ.get('APPDATA', '')
+        if not self.is_running:
+            return
+        appdata = os.environ.get("APPDATA", "")
         flag_file = os.path.join(appdata, "cmd_gui_advance", "pause.flag")
         try:
-            with open(flag_file, "w") as f: f.write("1")
+            os.makedirs(os.path.dirname(flag_file), exist_ok=True)
+            with open(flag_file, "w", encoding="utf-8") as f:
+                f.write("1")
             self.append_output("\n[SISTEMA] Señal de pausa enviada. El proceso se detendrá al terminar su tarea actual...\n")
-            self.pause_btn.configure(state="disabled", text="Pausando...")
+            self.pause_btn.configure(state="disabled", text=" Pausando...")
         except Exception as e:
             self.append_output(f"\nError enviando señal de pausa: {e}\n")
 
@@ -939,12 +1033,10 @@ class App(ctk.CTk):
             return
         cmd_data = self.get_command_data(self.cmd_var.get())
         if cmd_data:
-            help_cmd = f"{cmd_data.get('command')} /?"
-            self.execute_external(help_cmd)
+            self.execute_external(f"{cmd_data.get('command')} /?")
 
     @staticmethod
     def get_active_warning(cmd_data, cmd_str):
-        """Devuelve el diccionario de advertencia si el comando requiere confirmación previa."""
         if not cmd_data:
             return None
         warning = cmd_data.get("warning")
@@ -958,61 +1050,44 @@ class App(ctk.CTk):
         return warning
 
     def show_execution_warning_dialog(self, warning, cmd_str):
-        """Muestra un diálogo modal de advertencia antes de ejecutar un comando modificador/destructivo."""
-        from functions.utils import apply_window_theme
-
         level = warning.get("level", "caution")
         title = warning.get("title", "Confirmación de Ejecución")
         message = warning.get("message", "Esta operación realizará cambios en el sistema o en tus archivos.")
         is_danger = level == "danger"
-
-        accent = "#D73A49" if is_danger else "#D29922"
-        accent_hover = "#B62324" if is_danger else "#B07C14"
+        style_key = "danger" if is_danger else "warning"
         badge_text = "ACCIÓN CRÍTICA" if is_danger else "CONFIRMACIÓN DE CAMBIO"
 
         result = {"proceed": False}
-
-        win = ctk.CTkToplevel(self)
+        win = tb.Toplevel(self)
         win.title(f"Advertencia — {title}")
-        win.geometry("540x360")
+        win.geometry("560x370")
         win.resizable(False, False)
         win.transient(self)
         win.grab_set()
+        ui_theme.apply_window_chrome(win, self.current_theme)
 
         win.update_idletasks()
-        x = int(self.winfo_x() + (self.winfo_width() / 2) - 270)
-        y = int(self.winfo_y() + (self.winfo_height() / 2) - 180)
+        x = int(self.winfo_x() + (self.winfo_width() / 2) - 280)
+        y = int(self.winfo_y() + (self.winfo_height() / 2) - 185)
         win.geometry(f"+{x}+{y}")
-        apply_window_theme(win)
 
-        header = ctk.CTkFrame(win, fg_color=accent, corner_radius=6)
-        header.pack(fill="x", padx=18, pady=(16, 10))
-        ctk.CTkLabel(
-            header,
-            text=f"{badge_text}  —  {title}",
-            font=("Segoe UI", 14, "bold"),
-            text_color="#FFFFFF",
-            wraplength=480,
-            justify="left",
-        ).pack(padx=12, pady=10, anchor="w")
+        header = tb.Frame(win, bootstyle=style_key, padding=10)
+        header.pack(fill="x", padx=16, pady=(14, 10))
+        tb.Label(
+            header, text=f"{badge_text}  —  {title}", font=("Segoe UI", 12, "bold"),
+            bootstyle=f"inverse-{style_key}", wraplength=500, justify="left",
+        ).pack(anchor="w")
 
-        ctk.CTkLabel(
-            win,
-            text=message,
-            font=("Segoe UI", 13),
-            wraplength=495,
-            justify="left",
-            anchor="w",
-        ).pack(fill="x", padx=20, pady=(4, 10))
+        tb.Label(win, text=message, font=("Segoe UI", 10), wraplength=510, justify="left", anchor="w").pack(fill="x", padx=18, pady=(4, 10))
 
         preview_text = cmd_str if len(cmd_str) <= 220 else cmd_str[:217] + "..."
-        preview_box = ctk.CTkTextbox(win, height=78, font=("Consolas", 11), wrap="word")
-        preview_box.pack(fill="x", padx=20, pady=(0, 12))
-        preview_box.insert("1.0", f"Comando a ejecutar:\n{preview_text}")
-        preview_box.configure(state="disabled")
+        preview_box = ScrolledText(win, height=4, font=("Consolas", 9), wrap="word", auto_hide=True)
+        preview_box.pack(fill="x", padx=18, pady=(0, 12))
+        preview_box.text.insert("1.0", f"Comando a ejecutar:\n{preview_text}")
+        preview_box.text.configure(state="disabled")
 
-        btn_row = ctk.CTkFrame(win, fg_color="transparent")
-        btn_row.pack(fill="x", padx=20, pady=(4, 16))
+        btn_row = tb.Frame(win)
+        btn_row.pack(fill="x", padx=18, pady=(4, 14))
 
         def on_cancel():
             result["proceed"] = False
@@ -1022,31 +1097,14 @@ class App(ctk.CTk):
             result["proceed"] = True
             win.destroy()
 
-        cancel_btn = ctk.CTkButton(
-            btn_row,
-            text="Cancelar",
-            width=140,
-            fg_color="transparent",
-            border_width=1,
-            text_color=("#24292F", "#C9D1D9"),
-            command=on_cancel,
-        )
+        cancel_btn = tb.Button(btn_row, text="Cancelar", bootstyle="secondary-outline", command=on_cancel, width=16)
         cancel_btn.pack(side="left")
 
-        proceed_btn = ctk.CTkButton(
-            btn_row,
-            text="Continuar y Ejecutar",
-            width=190,
-            fg_color=accent,
-            hover_color=accent_hover,
-            text_color="#FFFFFF",
-            font=("Segoe UI", 13, "bold"),
-            command=on_continue,
-        )
-        proceed_btn.pack(side="right")
+        tb.Button(btn_row, text="Continuar y Ejecutar", bootstyle=style_key, command=on_continue, width=22).pack(side="right")
 
-        win.bind("<Escape>", lambda e: on_cancel())
+        win.bind("<Escape>", lambda _e: on_cancel())
         win.protocol("WM_DELETE_WINDOW", on_cancel)
+        ui_theme.bring_to_front(win)
         cancel_btn.focus_set()
         self.wait_window(win)
         return result["proceed"]
@@ -1065,14 +1123,9 @@ class App(ctk.CTk):
         self.destroy()
 
     def _save_error_report_to_desktop(self, cmd_name, command_str):
-        """Genera y guarda automáticamente un reporte HTML en el Escritorio cuando ocurre un error antes de apagar."""
-        import datetime
-        import os
-        import re
         from functions import power_manager
-
         try:
-            content = self.output_textbox.get("1.0", "end-1c")
+            content = self.output_textbox.text.get("1.0", "end-1c")
             html_doc = self.get_html_template(
                 content=content,
                 title=f"{cmd_name} (Error antes de apagar)",
@@ -1091,39 +1144,31 @@ class App(ctk.CTk):
             return None
 
     def show_shutdown_countdown_dialog(self, seconds=60, had_error=False, report_path=None):
-        """Ventana de cuenta regresiva cancelable antes de apagar el PC al finalizar una tarea."""
         from functions import power_manager
-        from functions.utils import apply_window_theme
-
         state = {"remaining": int(seconds), "cancelled": False, "timer_id": None}
 
-        win = ctk.CTkToplevel(self)
+        win = tb.Toplevel(self)
         win.title("Apagado Automático Programado")
-        win.geometry("500x290")
+        win.geometry("520x300")
         win.resizable(False, False)
         win.transient(self)
         win.grab_set()
+        ui_theme.apply_window_chrome(win, self.current_theme)
 
         win.update_idletasks()
-        x = int(self.winfo_x() + (self.winfo_width() / 2) - 250)
-        y = int(self.winfo_y() + (self.winfo_height() / 2) - 145)
+        x = int(self.winfo_x() + (self.winfo_width() / 2) - 260)
+        y = int(self.winfo_y() + (self.winfo_height() / 2) - 150)
         win.geometry(f"+{x}+{y}")
-        apply_window_theme(win)
 
-        header_color = "#D29922" if had_error else "#1F6AA5"
+        style_key = "warning" if had_error else "info"
         header_txt = "Tarea finalizada con error — Apagado en curso" if had_error else "Tarea finalizada — Apagado automático"
-        header = ctk.CTkFrame(win, fg_color=header_color, corner_radius=6)
-        header.pack(fill="x", padx=18, pady=(16, 10))
-        ctk.CTkLabel(header, text=header_txt, font=("Segoe UI", 14, "bold"), text_color="#FFFFFF").pack(padx=12, pady=10, anchor="w")
+        header = tb.Frame(win, bootstyle=style_key, padding=10)
+        header.pack(fill="x", padx=16, pady=(14, 10))
+        tb.Label(header, text=header_txt, font=("Segoe UI", 12, "bold"), bootstyle=f"inverse-{style_key}").pack(anchor="w")
 
-        countdown_lbl = ctk.CTkLabel(
-            win,
-            text=f"El equipo se apagará en {state['remaining']} segundos.",
-            font=("Segoe UI", 16, "bold"),
-        )
+        countdown_lbl = tb.Label(win, text=f"El equipo se apagará en {state['remaining']} segundos.", font=("Segoe UI", 14, "bold"))
         countdown_lbl.pack(pady=(8, 6))
 
-        extra_msg = ""
         if had_error and report_path:
             extra_msg = f"Se guardó automáticamente el reporte HTML de errores en tu Escritorio:\n{report_path}"
         elif had_error:
@@ -1131,10 +1176,10 @@ class App(ctk.CTk):
         else:
             extra_msg = "Puedes cancelar el apagado en cualquier momento antes de que termine el conteo."
 
-        ctk.CTkLabel(win, text=extra_msg, font=("Segoe UI", 12), wraplength=460, justify="center").pack(padx=18, pady=(0, 14))
+        tb.Label(win, text=extra_msg, font=("Segoe UI", 10), wraplength=470, justify="center").pack(padx=18, pady=(0, 14))
 
-        btn_row = ctk.CTkFrame(win, fg_color="transparent")
-        btn_row.pack(fill="x", padx=20, pady=(4, 16))
+        btn_row = tb.Frame(win)
+        btn_row.pack(fill="x", padx=18, pady=(4, 14))
 
         def cancel_shutdown():
             state["cancelled"] = True
@@ -1156,28 +1201,10 @@ class App(ctk.CTk):
             win.destroy()
             power_manager.execute_shutdown_now()
 
-        cancel_btn = ctk.CTkButton(
-            btn_row,
-            text="Cancelar Apagado",
-            width=190,
-            fg_color="#D73A49",
-            hover_color="#B62324",
-            text_color="#FFFFFF",
-            font=("Segoe UI", 13, "bold"),
-            command=cancel_shutdown,
-        )
+        cancel_btn = tb.Button(btn_row, text="Cancelar Apagado", bootstyle="danger", command=cancel_shutdown, width=20)
         cancel_btn.pack(side="left")
 
-        now_btn = ctk.CTkButton(
-            btn_row,
-            text="Apagar Ahora",
-            width=150,
-            fg_color="#2E86C1",
-            hover_color="#21618C",
-            text_color="#FFFFFF",
-            command=shutdown_now,
-        )
-        now_btn.pack(side="right")
+        tb.Button(btn_row, text="Apagar Ahora", bootstyle="info", command=shutdown_now, width=16).pack(side="right")
 
         def tick():
             if state["cancelled"]:
@@ -1190,15 +1217,15 @@ class App(ctk.CTk):
             countdown_lbl.configure(text=f"El equipo se apagará en {state['remaining']} segundos.")
             state["timer_id"] = win.after(1000, tick)
 
-        win.bind("<Escape>", lambda e: cancel_shutdown())
+        win.bind("<Escape>", lambda _e: cancel_shutdown())
         win.protocol("WM_DELETE_WINDOW", cancel_shutdown)
+        ui_theme.bring_to_front(win)
         cancel_btn.focus_set()
         state["timer_id"] = win.after(1000, tick)
 
     def navigate_to_command(self, target_cmd_name):
-        """Navega automáticamente a la categoría y comando indicado."""
-        if hasattr(self, "search_var") and self.search_var.get():
-            self.search_var.set("")
+        if hasattr(self, "search_entry") and self.search_entry.get_value():
+            self.search_entry.set_value("")
         for cat in self.commands_config.get("categories", []):
             cname = cat.get("name", "")
             for cmd in cat.get("commands", []):
@@ -1211,44 +1238,33 @@ class App(ctk.CTk):
         return False
 
     def show_combo_suggestions_dialog(self, main_cmd_name, before_list, after_list):
-        """Muestra un modal con sugerencias de combo (Protocolo Seguro ANTES y Continuación DESPUÉS)
-        y checkbox para autoejecutar la cola completa en un solo clic.
-
-        Retorna None si el usuario cancela, o (selected_before, selected_after, auto_execute).
-        """
-        from functions.utils import apply_window_theme
-
         result = {"action": None, "before": [], "after": [], "auto_execute": True}
         before_vars = []
         after_vars = []
-        auto_exec_var = ctk.BooleanVar(value=True)
+        auto_exec_var = tk.BooleanVar(value=True)
 
-        win = ctk.CTkToplevel(self)
+        win = tb.Toplevel(self)
         win.title(f"Sugerencias de Combo — {main_cmd_name}")
-        win.geometry("640x510")
+        win.geometry("660x530")
         win.resizable(False, False)
         win.transient(self)
         win.grab_set()
+        ui_theme.apply_window_chrome(win, self.current_theme)
 
         win.update_idletasks()
-        x = int(self.winfo_x() + (self.winfo_width() / 2) - 320)
-        y = int(self.winfo_y() + (self.winfo_height() / 2) - 255)
+        x = int(self.winfo_x() + (self.winfo_width() / 2) - 330)
+        y = int(self.winfo_y() + (self.winfo_height() / 2) - 265)
         win.geometry(f"+{x}+{y}")
-        apply_window_theme(win)
 
-        header = ctk.CTkFrame(win, fg_color="#1F6AA5", corner_radius=6)
-        header.pack(fill="x", padx=18, pady=(16, 10))
-        ctk.CTkLabel(
-            header,
-            text=f"Combos Recomendados para: {main_cmd_name}",
-            font=("Segoe UI", 14, "bold"),
-            text_color="#FFFFFF",
-            wraplength=580,
-            justify="left",
-        ).pack(padx=12, pady=10, anchor="w")
+        header = tb.Frame(win, bootstyle="primary", padding=10)
+        header.pack(fill="x", padx=16, pady=(14, 8))
+        tb.Label(
+            header, text=f"Combos Recomendados para: {main_cmd_name}",
+            font=("Segoe UI", 12, "bold"), bootstyle="inverse-primary", wraplength=600,
+        ).pack(anchor="w")
 
-        scroll = ctk.CTkScrollableFrame(win, fg_color="transparent")
-        scroll.pack(fill="both", expand=True, padx=16, pady=(0, 8))
+        scroll = ScrolledFrame(win, auto_hide=True, padding=6)
+        scroll.pack(fill="both", expand=True, padx=14, pady=(0, 8))
 
         confirm_btn_ref = {"btn": None}
 
@@ -1263,71 +1279,41 @@ class App(ctk.CTk):
             else:
                 btn.configure(text="Aceptar y Continuar")
 
-        def add_section(title_txt, accent_color, items, target_vars):
-            ctk.CTkLabel(
-                scroll,
-                text=title_txt,
-                font=("Segoe UI", 13, "bold"),
-                text_color=accent_color,
-                anchor="w",
-            ).pack(fill="x", pady=(6, 4))
+        def add_section(title_txt, style_key, items, target_vars):
+            sec = tb.Labelframe(scroll, text=title_txt, padding=8, bootstyle=style_key)
+            sec.pack(fill="x", pady=6, padx=2)
             for item in items:
-                var = ctk.BooleanVar(value=False)
+                var = tk.BooleanVar(value=False)
                 var.trace_add("write", refresh_confirm_label)
                 target_vars.append((var, item))
                 mode_tag = "[Automático en cola]" if item["mode"] == "auto" else "[Abrir para configurar]"
-                row = ctk.CTkFrame(scroll, corner_radius=6)
-                row.pack(fill="x", pady=4)
-                cb = ctk.CTkCheckBox(
-                    row,
-                    text=f"{item['command']}  {mode_tag}",
-                    variable=var,
-                    font=("Segoe UI", 12, "bold"),
-                )
-                cb.pack(anchor="w", padx=10, pady=(8, 2))
+                cb = tb.Checkbutton(sec, text=f"{item['command']}  {mode_tag}", variable=var, bootstyle=style_key)
+                cb.pack(anchor="w", pady=(4, 1))
                 if item.get("reason"):
-                    ctk.CTkLabel(
-                        row,
-                        text=item["reason"],
-                        font=("Segoe UI", 11),
-                        wraplength=550,
-                        justify="left",
-                        anchor="w",
-                    ).pack(fill="x", padx=34, pady=(0, 8))
+                    tb.Label(sec, text=item["reason"], font=("Segoe UI", 9), wraplength=560, bootstyle="secondary").pack(anchor="w", padx=(24, 4), pady=(0, 4))
 
         if before_list:
-            add_section(
-                "PROTOCOLO SEGURO — Ejecutar ANTES de tu comando (tu comando esperará al terminar):",
-                ("#B45309", "#F39C12"),
-                before_list,
-                before_vars,
-            )
+            add_section("PROTOCOLO SEGURO — Ejecutar ANTES de tu comando", "warning", before_list, before_vars)
         if after_list:
-            add_section(
-                "CONTINUACIÓN — Ejecutar o abrir DESPUÉS de tu comando:",
-                ("#1F883D", "#2EA043"),
-                after_list,
-                after_vars,
-            )
+            add_section("CONTINUACIÓN — Ejecutar o abrir DESPUÉS de tu comando", "success", after_list, after_vars)
 
-        opt_bar = ctk.CTkFrame(win, corner_radius=6)
-        opt_bar.pack(fill="x", padx=18, pady=(2, 10))
-        auto_cb = ctk.CTkCheckBox(
+        opt_bar = tb.Frame(win, padding=(16, 4))
+        opt_bar.pack(fill="x")
+        auto_cb = tb.Checkbutton(
             opt_bar,
             text="Autoejecutar cola completa en un solo clic (servicio continuo sin pausas)",
             variable=auto_exec_var,
-            font=("Segoe UI", 12, "bold"),
+            bootstyle="success-round-toggle",
         )
-        auto_cb.pack(anchor="w", padx=10, pady=8)
+        auto_cb.pack(anchor="w")
         auto_exec_var.trace_add("write", refresh_confirm_label)
-        if CTkToolTip:
-            CTkToolTip(
-                auto_cb,
-                message="Activo: ejecuta de corrido todos los pasos automáticos seleccionados. Desactivado: abre el siguiente paso al terminar para que lo revises antes de ejecutar.",
-            )
+        ui_theme.add_tooltip(
+            auto_cb,
+            "Activo: ejecuta de corrido todos los pasos automáticos seleccionados. Desactivado: abre el siguiente paso al terminar para revisarlo.",
+        )
 
-        btn_row = ctk.CTkFrame(win, fg_color="transparent")
-        btn_row.pack(fill="x", padx=18, pady=(2, 14))
+        btn_row = tb.Frame(win)
+        btn_row.pack(fill="x", padx=16, pady=(8, 14))
 
         def on_cancel():
             result["action"] = None
@@ -1347,41 +1333,16 @@ class App(ctk.CTk):
             result["auto_execute"] = bool(auto_exec_var.get())
             win.destroy()
 
-        ctk.CTkButton(
-            btn_row,
-            text="Cancelar",
-            width=110,
-            fg_color="transparent",
-            border_width=1,
-            text_color=("#24292F", "#C9D1D9"),
-            command=on_cancel,
-        ).pack(side="left")
+        tb.Button(btn_row, text="Cancelar", bootstyle="secondary-outline", command=on_cancel, width=12).pack(side="left")
+        tb.Button(btn_row, text="Solo mi comando", bootstyle="secondary", command=on_only_main, width=16).pack(side="right", padx=(8, 0))
 
-        ctk.CTkButton(
-            btn_row,
-            text="Solo mi comando",
-            width=145,
-            fg_color="#64748B",
-            hover_color="#475569",
-            text_color="#FFFFFF",
-            command=on_only_main,
-        ).pack(side="right", padx=(8, 0))
-
-        confirm_btn = ctk.CTkButton(
-            btn_row,
-            text="Aceptar y Continuar",
-            width=215,
-            fg_color="#1F883D",
-            hover_color="#1A7F37",
-            text_color="#FFFFFF",
-            font=("Segoe UI", 13, "bold"),
-            command=on_confirm,
-        )
+        confirm_btn = tb.Button(btn_row, text="Aceptar y Continuar", bootstyle="success", command=on_confirm, width=24)
         confirm_btn.pack(side="right")
         confirm_btn_ref["btn"] = confirm_btn
 
-        win.bind("<Escape>", lambda e: on_cancel())
+        win.bind("<Escape>", lambda _e: on_cancel())
         win.protocol("WM_DELETE_WINDOW", on_cancel)
+        ui_theme.bring_to_front(win)
         self.wait_window(win)
         if result["action"] != "run":
             return None
@@ -1411,12 +1372,7 @@ class App(ctk.CTk):
                         return
                     sel_before, sel_after, auto_exec = choice
                     queue = combo_engine.build_execution_queue(
-                        cmd_name,
-                        cmd_str,
-                        sel_before,
-                        sel_after,
-                        auto_execute=auto_exec,
-                        context=ctx,
+                        cmd_name, cmd_str, sel_before, sel_after, auto_execute=auto_exec, context=ctx
                     )
                     nav_before = [s for s in queue if s["role"] == "before" and s["mode"] == "navigate"]
                     if nav_before:
@@ -1444,20 +1400,16 @@ class App(ctk.CTk):
 
     def check_drives_and_run(self):
         cmd_str = self.preview_var.get()
-        if not cmd_str: return
-        
-        # Extraer posibles letras de unidad (ej. C:\, E:\ o --drive E:)
-        import re, threading, subprocess
-        drives = set(re.findall(r'([A-Za-z]):[\\/]', cmd_str))
-        drives.update(re.findall(r'--drive\s+([A-Za-z]):?', cmd_str, flags=re.IGNORECASE))
-        
-        # Si no hay unidades evidentes, ejecutamos normal
+        if not cmd_str:
+            return
+        drives = set(re.findall(r"([A-Za-z]):[\\/]", cmd_str))
+        drives.update(re.findall(r"--drive\s+([A-Za-z]):?", cmd_str, flags=re.IGNORECASE))
         if not drives:
             self.run_command()
             return
-            
-        self.execute_btn.configure(text="Analizando disco...", state="disabled")
-        
+
+        self.execute_btn.configure(text=" Analizando disco...", state="disabled")
+
         def _check():
             warnings = []
             try:
@@ -1468,113 +1420,106 @@ class App(ctk.CTk):
                         Write-Output "$($vol.MediaType)|$($vol.IsReadOnly)|$($vol.HealthStatus)"
                     }}
                     """
-                    out = subprocess.check_output(["powershell", "-NoProfile", "-Command", script], creationflags=subprocess.CREATE_NO_WINDOW, text=True).strip()
+                    out = subprocess.check_output(
+                        ["powershell", "-NoProfile", "-Command", script],
+                        creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+                        text=True,
+                    ).strip()
                     if out:
-                        parts = out.split('|')
+                        parts = out.split("|")
                         if len(parts) >= 3:
                             media_type, is_ro, health = parts[0], parts[1], parts[2]
-                            
-                            if is_ro.lower() == 'true':
-                                warnings.append(f"• El disco {d}: está bloqueado en modo Solo Lectura (Hardware). Cualquier comando de escritura o borrado fallará. Si es un SSD, es probable que haya fallado permanentemente.")
-                            if health.lower() not in ['healthy', 'unknown', '']:
+                            if is_ro.lower() == "true":
+                                warnings.append(f"• El disco {d}: está bloqueado en modo Solo Lectura (Hardware). Cualquier comando de escritura o borrado fallará.")
+                            if health.lower() not in ["healthy", "unknown", ""]:
                                 warnings.append(f"• El estado de salud del disco {d}: es '{health}'. Proceder con precaución.")
-                            
-                            if media_type.lower() == 'ssd':
+                            if media_type.lower() == "ssd":
                                 cmd_lower = cmd_str.lower()
                                 if "chkdsk" in cmd_lower and "/r" in cmd_lower:
-                                    warnings.append(f"• Vas a ejecutar CHKDSK /R en un SSD ({d}:). Esto causa desgaste y escrituras masivas innecesarias. En SSDs, los sectores se reasignan automáticamente por firmware.")
+                                    warnings.append(f"• Vas a ejecutar CHKDSK /R en un SSD ({d}:). Esto causa desgaste innecesario en SSDs.")
                                 if "clear-disk" in cmd_lower:
                                     warnings.append(f"• CUIDADO: Clear-Disk borrará TODA la información y particiones del SSD ({d}:) de forma irrecuperable.")
                                 if "--run-sdelete" in cmd_lower:
                                     warnings.append(
-                                        f"• ADVERTENCIA SSD ({d}:): Vas a ejecutar SDelete sobre un SSD. Debido al wear leveling (nivelación de desgaste), "
-                                        "sobrescribir espacio o usar múltiples pasadas desgasta los ciclos de vida (TBW) sin garantizar el borrado de bloques reasignados.\n"
-                                        "  Modo seguro recomendado en SSD: utiliza 1 sola pasada (-p 1), ejecuta Optimizar/TRIM o utiliza cifrado BitLocker."
+                                        f"• ADVERTENCIA SSD ({d}:): Vas a ejecutar SDelete sobre un SSD. Debido al wear leveling, "
+                                        "múltiples pasadas desgastan los ciclos de vida (TBW). Modo seguro recomendado: 1 pasada (-p 1), Optimizar/TRIM o BitLocker."
                                     )
-            except Exception as e:
+            except Exception:
                 pass
-                
             self.after(0, self._on_check_done, warnings)
-            
+
         threading.Thread(target=_check, daemon=True).start()
 
     def _on_check_done(self, warnings):
-        self.execute_btn.configure(text="Ejecutar Comando", state="normal")
+        self.execute_btn.configure(text=" Ejecutar Comando", state="normal")
         if warnings:
-            from tkinter import messagebox
             msg = "Resultados del Análisis de Unidad:\n\n" + "\n\n".join(warnings) + "\n\n¿Estás completamente seguro de continuar con la ejecución?"
-            if not messagebox.askyesno("Advertencia de Hardware", msg):
+            if not messagebox.askyesno("Advertencia de Hardware", msg, parent=self):
                 return
         self.run_command()
 
     def remove_favorite(self):
         cmd_name = self.cmd_var.get()
-        favs = []
         try:
-            if os.path.exists(get_user_data_path("favorites.json")):
-                with open(get_user_data_path("favorites.json"), "r", encoding="utf-8") as f:
-                    favs = json.load(f)
+            fav_path = get_user_data_path("favorites.json")
+            if not os.path.exists(fav_path):
+                return
+            with open(fav_path, "r", encoding="utf-8") as f:
+                favs = json.load(f)
         except Exception:
             return
-            
+
         new_favs = [f for f in favs if f.get("name") != cmd_name]
-        
         with open(get_user_data_path("favorites.json"), "w", encoding="utf-8") as f:
             json.dump(new_favs, f, indent=4)
-            
-        self.output_textbox.configure(state="normal")
-        self.output_textbox.insert("end", f"\n[!] Comando '{cmd_name}' eliminado de Favoritos.\n(Reinicia la app para actualizar la lista)\n", "error")
-        self.output_textbox.see("end")
-        self.output_textbox.configure(state="disabled")
+
+        self.output_textbox.text.configure(state="normal")
+        self.output_textbox.text.insert("end", f"\n[!] Comando '{cmd_name}' eliminado de Favoritos.\n(Reinicia la app para actualizar la lista)\n", "error")
+        self.output_textbox.text.see("end")
+        self.output_textbox.text.configure(state="disabled")
 
     def save_favorite(self):
         cmd_data = self.get_command_data(self.cmd_var.get())
-        if not cmd_data: return
-        
-        import copy
+        if not cmd_data:
+            return
         fav_cmd = copy.deepcopy(cmd_data)
-        
         for arg in fav_cmd.get("args", []):
             arg_name = arg.get("name")
             if arg_name in self.current_args_vars:
                 arg["value"] = self.current_args_vars[arg_name]["var"].get()
-                
+
         favs = []
         try:
-            if os.path.exists(get_user_data_path("favorites.json")):
-                with open(get_user_data_path("favorites.json"), "r", encoding="utf-8") as f:
+            fav_path = get_user_data_path("favorites.json")
+            if os.path.exists(fav_path):
+                with open(fav_path, "r", encoding="utf-8") as f:
                     favs = json.load(f)
         except Exception:
             pass
-            
+
         base_name = f"{fav_cmd['name']} (Fav)"
         fav_name = base_name
         counter = 1
-        
-        # Check for exact duplicates or generate a unique name
         while any(f.get("name") == fav_name for f in favs):
             existing = next((f for f in favs if f.get("name") == fav_name), None)
-            if existing:
-                # Compare args
-                if existing.get("args") == fav_cmd.get("args"):
-                    self.output_textbox.configure(state="normal")
-                    self.output_textbox.insert("end", "\n[!] Este comando con los mismos parámetros ya existe en Favoritos.\n", "error")
-                    self.output_textbox.see("end")
-                    self.output_textbox.configure(state="disabled")
-                    return
+            if existing and existing.get("args") == fav_cmd.get("args"):
+                self.output_textbox.text.configure(state="normal")
+                self.output_textbox.text.insert("end", "\n[!] Este comando con los mismos parámetros ya existe en Favoritos.\n", "error")
+                self.output_textbox.text.see("end")
+                self.output_textbox.text.configure(state="disabled")
+                return
             counter += 1
             fav_name = f"{base_name} {counter}"
-            
+
         fav_cmd["name"] = fav_name
-            
         favs.append(fav_cmd)
         with open(get_user_data_path("favorites.json"), "w", encoding="utf-8") as f:
             json.dump(favs, f, indent=4)
-            
-        self.output_textbox.configure(state="normal")
-        self.output_textbox.insert("end", f"\n[OK] Comando '{fav_name}' guardado en Favoritos.\n(Reinicia la app para verlo en la lista)\n", "success")
-        self.output_textbox.see("end")
-        self.output_textbox.configure(state="disabled")
+
+        self.output_textbox.text.configure(state="normal")
+        self.output_textbox.text.insert("end", f"\n[OK] Comando '{fav_name}' guardado en Favoritos.\n(Reinicia la app para verlo en la lista)\n", "success")
+        self.output_textbox.text.see("end")
+        self.output_textbox.text.configure(state="disabled")
 
     def run_command(self):
         if not self.preview_var.get():
@@ -1583,26 +1528,20 @@ class App(ctk.CTk):
 
     @staticmethod
     def extract_progress_from_text(text):
-        """Extrae porcentaje (0-100) desde salida de consola (enteros, decimales o fracciones [i/total])."""
         if not text:
             return None
         lower = text.lower()
-        # Ignorar porcentajes de reportes de resumen que no representan progreso
         if any(k in lower for k in ("espacio ahorrado", "incremento de peso", "ram:", "cpu:")):
             return None
-
-        # 1. Porcentaje explícito: 45%, 12.5%, 12,5%
-        m_pct = re.search(r'(?<!\d)(\d{1,3}(?:[.,]\d+)?)\s*%', text)
+        m_pct = re.search(r"(?<!\d)(\d{1,3}(?:[.,]\d+)?)\s*%", text)
         if m_pct:
             try:
-                val = float(m_pct.group(1).replace(',', '.'))
+                val = float(m_pct.group(1).replace(",", "."))
                 if 0.0 <= val <= 100.0:
                     return val
             except ValueError:
                 pass
-
-        # 2. Fracción de avance tipo [15/200] o (15/200)
-        m_frac = re.search(r'[\[\(](\d+)\s*/\s*(\d+)[\]\)]', text)
+        m_frac = re.search(r"[\[\(](\d+)\s*/\s*(\d+)[\]\)]", text)
         if m_frac:
             try:
                 cur, tot = int(m_frac.group(1)), int(m_frac.group(2))
@@ -1610,12 +1549,10 @@ class App(ctk.CTk):
                     return (cur / tot) * 100.0
             except ValueError:
                 pass
-
         return None
 
     @staticmethod
     def parse_storage_job_json(raw_json):
-        """Parsea la salida JSON de Get-StorageJob y retorna (nombre, porcentaje) del trabajo activo."""
         if not raw_json or not raw_json.strip():
             return None
         try:
@@ -1643,7 +1580,6 @@ class App(ctk.CTk):
 
     @staticmethod
     def estimate_remaining_seconds(elapsed_sec, pct):
-        """Estima segundos restantes según tiempo transcurrido y porcentaje completado."""
         try:
             p = float(pct)
             e = float(elapsed_sec)
@@ -1657,32 +1593,39 @@ class App(ctk.CTk):
 
     @staticmethod
     def get_progress_color(pct):
-        """Escala de avance (0% -> 100%): Rojo -> Naranja -> Amarillo/Ámbar -> Verde."""
         p = max(0.0, min(100.0, float(pct)))
         if p < 25.0:
-            return "#dc3545"  # Rojo
+            return "#dc3545"
         if p < 50.0:
-            return "#fd7e14"  # Naranja
+            return "#fd7e14"
         if p < 75.0:
-            return ("#B45309", "#ffc107")  # Ámbar en claro / Amarillo en oscuro
-        return "#28a745"  # Verde
+            return "#ffc107" if ui_theme.is_dark_theme() else "#B45309"
+        return "#28a745"
 
     @staticmethod
     def get_eta_color(pct):
-        """Escala inversa para el ETA: Verde al inicio -> Amarillo -> Naranja -> Rojo cerca del final (Verde al completar)."""
         p = max(0.0, min(100.0, float(pct)))
         if p >= 100.0:
-            return "#28a745"  # Completado (00:00)
+            return "#28a745"
         if p < 25.0:
-            return "#28a745"  # Verde
+            return "#28a745"
         if p < 50.0:
-            return ("#B45309", "#ffc107")  # Amarillo/Ámbar
+            return "#ffc107" if ui_theme.is_dark_theme() else "#B45309"
         if p < 75.0:
-            return "#fd7e14"  # Naranja
-        return "#dc3545"  # Rojo
+            return "#fd7e14"
+        return "#dc3545"
+
+    @staticmethod
+    def _progress_bootstyle(pct):
+        if pct < 25.0:
+            return "danger"
+        if pct < 60.0:
+            return "warning"
+        if pct < 90.0:
+            return "info"
+        return "success"
 
     def _get_elapsed_seconds(self):
-        import time
         return max(0.0, time.time() - getattr(self, "_cmd_start_time", time.time()))
 
     def _format_elapsed(self):
@@ -1691,22 +1634,16 @@ class App(ctk.CTk):
     def _refresh_progress_labels(self, pct, detail=None):
         elapsed_sec = self._get_elapsed_seconds()
         elapsed_str = self.format_duration(elapsed_sec)
-        if hasattr(self, 'lbl_progress'):
+        if hasattr(self, "lbl_progress"):
             prefix = f"{detail}: " if detail else ""
-            self.lbl_progress.configure(
-                text=f"{prefix}{pct:.0f}% ({elapsed_str})",
-                text_color=self.get_progress_color(pct),
-            )
-        if hasattr(self, 'lbl_eta'):
+            self.lbl_progress.configure(text=f"{prefix}{pct:.0f}% ({elapsed_str})", fg=self.get_progress_color(pct))
+        if hasattr(self, "lbl_eta"):
             rem = self.estimate_remaining_seconds(elapsed_sec, pct)
             eta_str = self.format_duration(rem) if rem is not None else "--:--"
-            self.lbl_eta.configure(
-                text=f"ETA: {eta_str}",
-                text_color=self.get_eta_color(pct),
-            )
+            self.lbl_eta.configure(text=f"ETA: {eta_str}", fg=self.get_eta_color(pct))
 
     def _set_determinate_progress(self, pct, detail=None):
-        if not hasattr(self, 'progressbar'):
+        if not hasattr(self, "progressbar"):
             return
         pct_clamped = max(0.0, min(100.0, float(pct)))
         if not getattr(self, "_has_determinate_progress", False):
@@ -1718,7 +1655,7 @@ class App(ctk.CTk):
                 pass
         self._last_progress_pct = pct_clamped
         self._last_progress_detail = detail
-        self.progressbar.set(pct_clamped / 100.0)
+        self.progressbar.configure(value=int(round(pct_clamped)), bootstyle=self._progress_bootstyle(pct_clamped))
         self._refresh_progress_labels(pct_clamped, detail=detail)
 
     def _tick_progress_timer(self):
@@ -1730,19 +1667,16 @@ class App(ctk.CTk):
             self._refresh_progress_labels(pct, detail=detail)
         else:
             elapsed = self._format_elapsed()
-            if hasattr(self, 'lbl_progress'):
-                self.lbl_progress.configure(text=f"Ejecutando... ({elapsed})", text_color="#dc3545")
-            if hasattr(self, 'lbl_eta'):
-                self.lbl_eta.configure(text="ETA: --:--", text_color="#28a745")
+            if hasattr(self, "lbl_progress"):
+                self.lbl_progress.configure(text=f"Ejecutando... ({elapsed})", fg="#dc3545")
+            if hasattr(self, "lbl_eta"):
+                self.lbl_eta.configure(text="ETA: --:--", fg="#28a745")
         self._progress_timer_id = self.after(1000, self._tick_progress_timer)
 
     def _start_storage_job_monitor(self, command_str):
-        """Monitorea Get-StorageJob en segundo plano para comandos de formateo/disco de PowerShell."""
         storage_keywords = ("Format-Volume", "Clear-Disk", "Optimize-Volume", "Initialize-Disk", "New-Partition")
         if not any(k.lower() in command_str.lower() for k in storage_keywords):
             return
-
-        import threading, time
 
         def _poll():
             ps_cmd = (
@@ -1775,8 +1709,7 @@ class App(ctk.CTk):
         threading.Thread(target=_poll, daemon=True).start()
 
     def execute_external(self, command_str):
-        import time
-        if hasattr(self, 'auto_clear_var') and self.auto_clear_var.get():
+        if hasattr(self, "auto_clear_var") and self.auto_clear_var.get():
             self.clear_output()
 
         current_cmd_name = self.cmd_var.get()
@@ -1797,17 +1730,19 @@ class App(ctk.CTk):
             from functions import power_manager
             if power_manager.prevent_sleep(keep_display=False):
                 self.append_output("[ENERGÍA] Anti-suspensión/hibernación activo durante la ejecución (la pantalla podrá apagarse normalmente).\n")
-        self.execute_btn.configure(text="Detener ejecución", fg_color="red", hover_color="#8B0000")
+
+        self.execute_btn.configure(text=" Detener ejecución", image=self._icons["stop"], bootstyle="danger")
         self.cat_menu.configure(state="disabled")
         self.cmd_menu.configure(state="disabled")
-        self.pause_btn.pack(side="left", padx=(0, 5), before=self.fav_btn)
+        self.pause_btn.pack(side="left", padx=(0, 6), before=self.fav_btn)
 
-        # Limpiar archivo de pausa viejo si existe
-        appdata = os.environ.get('APPDATA', '')
+        appdata = os.environ.get("APPDATA", "")
         flag_file = os.path.join(appdata, "cmd_gui_advance", "pause.flag")
         if os.path.exists(flag_file):
-            try: os.remove(flag_file)
-            except Exception: pass
+            try:
+                os.remove(flag_file)
+            except Exception:
+                pass
 
         def finalize_all(last_rc, last_step_name, last_cmd_str, next_navigate_name=None):
             self.is_running = False
@@ -1828,36 +1763,31 @@ class App(ctk.CTk):
                 self._progress_timer_id = None
 
             elapsed = self._format_elapsed()
-            if hasattr(self, 'progressbar'):
+            if hasattr(self, "progressbar"):
                 try:
                     self.progressbar.stop()
                     self.progressbar.configure(mode="determinate")
                 except Exception:
                     pass
                 if last_rc == 0 and not self._queue_had_error:
-                    self.progressbar.set(1.0)
-                    if hasattr(self, 'lbl_progress'):
-                        self.lbl_progress.configure(text=f"100% Completado ({elapsed})", text_color="#28a745")
-                    if hasattr(self, 'lbl_eta'):
-                        self.lbl_eta.configure(text="ETA: 00:00", text_color="#28a745")
+                    self.progressbar.configure(value=100, bootstyle="success")
+                    self.lbl_progress.configure(text=f"100% Completado ({elapsed})", fg="#28a745")
+                    self.lbl_eta.configure(text="ETA: 00:00", fg="#28a745")
                 else:
                     last_pct = getattr(self, "_last_progress_pct", 0.0) if getattr(self, "_has_determinate_progress", False) else 0.0
-                    self.progressbar.set(last_pct / 100.0)
-                    if hasattr(self, 'lbl_progress'):
-                        self.lbl_progress.configure(text=f"Detenido / Error ({elapsed})", text_color="#dc3545")
-                    if hasattr(self, 'lbl_eta'):
-                        self.lbl_eta.configure(text="ETA: --:--", text_color="#dc3545")
+                    self.progressbar.configure(value=int(round(last_pct)), bootstyle="danger")
+                    self.lbl_progress.configure(text=f"Detenido / Error ({elapsed})", fg="#dc3545")
+                    self.lbl_eta.configure(text="ETA: --:--", fg="#dc3545")
 
-            self.execute_btn.configure(text="Ejecutar Comando", fg_color=["#1F883D", "#238636"], hover_color=["#1A7F37", "#2EA043"])
-            self.cat_menu.configure(state="normal")
-            self.cmd_menu.configure(state="normal")
+            self.execute_btn.configure(text=" Ejecutar Comando", image=self._icons["play"], bootstyle="success")
+            self.cat_menu.configure(state="readonly")
+            self.cmd_menu.configure(state="readonly")
+            self.pause_btn.configure(state="normal", text=" Posponer")
             self.pause_btn.pack_forget()
 
             if next_navigate_name and not getattr(self, "_stopped_by_user", False):
                 self.navigate_to_command(next_navigate_name)
-                self.append_output(
-                    f"\n[COMBO] Siguiente paso listo para configurar y ejecutar: '{next_navigate_name}'.\n"
-                )
+                self.append_output(f"\n[COMBO] Siguiente paso listo para configurar y ejecutar: '{next_navigate_name}'.\n")
 
             should_shutdown = bool(getattr(self, "shutdown_after_var", None) and self.shutdown_after_var.get())
             if should_shutdown and not getattr(self, "_stopped_by_user", False):
@@ -1887,17 +1817,15 @@ class App(ctk.CTk):
             self._last_progress_pct = 0.0
             self._last_progress_detail = None
 
-            if hasattr(self, 'progressbar'):
+            if hasattr(self, "progressbar"):
                 try:
-                    self.progressbar.configure(mode="indeterminate")
-                    self.progressbar.start()
+                    self.progressbar.configure(mode="indeterminate", bootstyle="info", value=0)
+                    self.progressbar.start(12)
                 except Exception:
-                    self.progressbar.set(0)
+                    pass
                 step_prefix = f"[{self._queue_step_idx}/{self._queue_total}] " if self._queue_total > 1 else ""
-                if hasattr(self, 'lbl_progress'):
-                    self.lbl_progress.configure(text=f"{step_prefix}Ejecutando... (00:00)", text_color="#dc3545")
-                if hasattr(self, 'lbl_eta'):
-                    self.lbl_eta.configure(text="ETA: --:--", text_color="#28a745")
+                self.lbl_progress.configure(text=f"{step_prefix}Ejecutando... (00:00)", fg="#dc3545")
+                self.lbl_eta.configure(text="ETA: --:--", fg="#28a745")
 
             if self._queue_total > 1:
                 role_label = "PROTOCOLO SEGURO" if step["role"] == "before" else ("PRINCIPAL" if step["role"] == "main" else "CONTINUACIÓN")
@@ -1942,67 +1870,64 @@ class App(ctk.CTk):
     def append_output(self, text):
         def _append():
             nonlocal text
-            self.output_textbox.configure(state="normal")
-            
-            if not hasattr(self, '_last_was_cr'):
-                self._last_was_cr = False
-                
-            # Limpiar lineas normales de Windows
-            if text.endswith('\r\n'):
-                text = text[:-2] + '\n'
-                
-            if self._last_was_cr:
-                if text == '\n':
-                    self._last_was_cr = False
-                    self.output_textbox.insert("end", "\n")
-                    self.output_textbox.see("end")
-                    self.output_textbox.configure(state="disabled")
-                    return
-                else:
-                    self.output_textbox.delete("end-1c linestart", "end-1c")
-                    self._last_was_cr = False
+            tk_txt = self.output_textbox.text
+            tk_txt.configure(state="normal")
 
-            if text.endswith('\r'):
+            if text.endswith("\r\n"):
+                text = text[:-2] + "\n"
+
+            if self._last_was_cr:
+                if text == "\n":
+                    self._last_was_cr = False
+                    tk_txt.insert("end", "\n")
+                    tk_txt.see("end")
+                    tk_txt.configure(state="disabled")
+                    return
+                tk_txt.delete("end-1c linestart", "end-1c")
+                self._last_was_cr = False
+
+            if text.endswith("\r"):
                 self._last_was_cr = True
                 text = text[:-1]
-                
+
             if text:
-                pattern = re.compile(r'(\b\d{1,3}(?:\.\d{1,3}){3}\b)|(\b(?:error|failed|denied|fallo|denegado|acceso denegado)\b)|(\b(?:success|exitoso|completado|100%|correcto)\b)|([A-Za-z]:\\[^\s]*)', re.IGNORECASE)
-                
+                pattern = re.compile(
+                    r"(\b\d{1,3}(?:\.\d{1,3}){3}\b)|(\b(?:error|failed|denied|fallo|denegado|acceso denegado)\b)|(\b(?:success|exitoso|completado|100%|correcto)\b)|([A-Za-z]:\\[^\s]*)",
+                    re.IGNORECASE,
+                )
                 last_end = 0
                 for match in pattern.finditer(text):
                     start, end = match.span()
                     if start > last_end:
-                        self.output_textbox.insert("end", text[last_end:start])
-                    
+                        tk_txt.insert("end", text[last_end:start])
                     matched_text = match.group(0)
-                    if match.group(1): # IP
-                        self.output_textbox.insert("end", matched_text, "ip")
-                    elif match.group(2): # Error
-                        self.output_textbox.insert("end", matched_text, "error")
-                    elif match.group(3): # Success
-                        self.output_textbox.insert("end", matched_text, "success")
-                    elif match.group(4): # Path
-                        self.output_textbox.insert("end", matched_text, "path")
-                        
+                    if match.group(1):
+                        tk_txt.insert("end", matched_text, "ip")
+                    elif match.group(2):
+                        tk_txt.insert("end", matched_text, "error")
+                    elif match.group(3):
+                        tk_txt.insert("end", matched_text, "success")
+                    elif match.group(4):
+                        tk_txt.insert("end", matched_text, "path")
                     last_end = end
-                
-                if last_end < len(text):
-                    self.output_textbox.insert("end", text[last_end:])
 
-                self.output_textbox.see("end")
-                
+                if last_end < len(text):
+                    tk_txt.insert("end", text[last_end:])
+                tk_txt.see("end")
+
                 pct = self.extract_progress_from_text(text)
-                if pct is not None and hasattr(self, 'progressbar'):
+                if pct is not None and hasattr(self, "progressbar"):
                     self._set_determinate_progress(pct)
-                        
-            self.output_textbox.configure(state="disabled")
+
+            tk_txt.configure(state="disabled")
+
         self.after(0, _append)
 
     def clear_output(self):
-        self.output_textbox.configure(state="normal")
-        self.output_textbox.delete("1.0", "end")
-        self.output_textbox.configure(state="disabled")
+        tk_txt = self.output_textbox.text
+        tk_txt.configure(state="normal")
+        tk_txt.delete("1.0", "end")
+        tk_txt.configure(state="disabled")
 
     def get_html_template(self, content, title="Reporte de Ejecución", command="Desconocido", category=""):
         from functions.report_generator import generate_html_report
@@ -2014,80 +1939,63 @@ class App(ctk.CTk):
         )
 
     def show_plugins(self):
-        from functions.utils import get_user_data_path, apply_window_theme
         from functions.setup_manager import PLUGINS, PluginInstaller, is_plugin_installed
-        import os
-        import subprocess
-        import sys
-        
-        win = ctk.CTkToplevel(self)
+
+        win = tb.Toplevel(self)
         win.title("Gestor de Complementos")
-        win.geometry("550x450")
+        win.geometry("600x480")
         win.transient(self)
         win.grab_set()
-        
+        ui_theme.apply_window_chrome(win, self.current_theme)
+
         win.update_idletasks()
-        x = int(self.winfo_x() + (self.winfo_width() / 2) - (550 / 2))
-        y = int(self.winfo_y() + (self.winfo_height() / 2) - (450 / 2))
+        x = int(self.winfo_x() + (self.winfo_width() / 2) - 300)
+        y = int(self.winfo_y() + (self.winfo_height() / 2) - 240)
         win.geometry(f"+{x}+{y}")
-        
-        apply_window_theme(win)
-        
-        lbl_title = ctk.CTkLabel(win, text="Complementos Disponibles", font=("Arial", 16, "bold"))
-        lbl_title.pack(pady=15)
 
+        tb.Label(win, text="Complementos Disponibles", font=("Segoe UI", 14, "bold"), bootstyle="primary").pack(pady=12)
 
-        
         self.backup_vars = {}
-        
-        frame = ctk.CTkScrollableFrame(win)
-        frame.pack(fill="both", expand=True, padx=20, pady=(0, 10))
-        
+        frame = ScrolledFrame(win, auto_hide=True, padding=6)
+        frame.pack(fill="both", expand=True, padx=16, pady=(0, 10))
+
         for pid, p in PLUGINS.items():
             path = get_user_data_path(os.path.join("tools", p["filename"]))
             is_installed = is_plugin_installed(p)
-            
-            row = ctk.CTkFrame(frame)
-            row.pack(fill="x", padx=10, pady=10)
-            
-            name_lbl = ctk.CTkLabel(row, text=f"{p['name']} ({p['size_str']})", font=("Arial", 14, "bold"))
-            name_lbl.pack(side="top", anchor="w", padx=10, pady=(10, 0))
-            
-            desc_lbl = ctk.CTkLabel(row, text=p['desc'], text_color="gray", wraplength=400, justify="left")
-            desc_lbl.pack(side="top", anchor="w", padx=10)
-            
-            status_text = "Instalado" if is_installed else "No Instalado"
-            status_lbl = ctk.CTkLabel(row, text=status_text)
-            status_lbl.pack(side="top", anchor="w", padx=10, pady=(5, 10))
-            
-            btn_frame = ctk.CTkFrame(row, fg_color="transparent")
-            btn_frame.pack(side="top", fill="x", padx=10, pady=(0, 10))
-            
+
+            row = tb.Labelframe(frame, text=f"{p['name']} ({p['size_str']})", padding=10, bootstyle="success" if is_installed else "secondary")
+            row.pack(fill="x", padx=4, pady=6)
+
+            tb.Label(row, text=p["desc"], bootstyle="secondary", wraplength=480, justify="left").pack(anchor="w")
+            tb.Label(
+                row,
+                text="Estado: Instalado" if is_installed else "Estado: No Instalado",
+                bootstyle="success" if is_installed else "warning",
+                font=("Segoe UI", 9, "bold"),
+            ).pack(anchor="w", pady=(4, 8))
+
+            btn_frame = tb.Frame(row)
+            btn_frame.pack(fill="x")
+
             def open_folder(fpath=path):
                 tools_dir = os.path.dirname(fpath)
                 os.makedirs(tools_dir, exist_ok=True)
-                subprocess.Popen(
-                    f'explorer "{tools_dir}"',
-                    creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
-                )
-                
+                subprocess.Popen(f'explorer "{tools_dir}"', creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+
             def delete_plugin(fpath=path):
                 try:
                     os.remove(fpath)
-                    from tkinter import messagebox
-                    messagebox.showinfo("Éxito", "Complemento eliminado. El programa se reiniciará.")
+                    messagebox.showinfo("Éxito", "Complemento eliminado. El programa se reiniciará.", parent=win)
                     win.destroy()
                     self.quit()
-                    import ctypes
-                    if getattr(sys, 'frozen', False):
+                    if getattr(sys, "frozen", False):
                         ctypes.windll.shell32.ShellExecuteW(None, "open", sys.executable, "", None, 1)
                     else:
                         ctypes.windll.shell32.ShellExecuteW(None, "open", sys.executable, f'"{os.path.abspath(sys.argv[0])}"', None, 1)
                     os._exit(0)
                 except Exception as e:
-                    from tkinter import messagebox
-                    messagebox.showerror("Error", f"No se pudo eliminar: {e}")
-                    
+                    messagebox.showerror("Error", f"No se pudo eliminar: {e}", parent=win)
+
             def install_plugin(plug_id=pid):
                 def on_done(success):
                     if success:
@@ -2095,133 +2003,112 @@ class App(ctk.CTk):
                         self.show_plugins()
                         self.on_category_change(self.cat_var.get())
                 PluginInstaller(win, plug_id, on_done)
-            
+
             if is_installed:
-                btn_open = ctk.CTkButton(btn_frame, text="Abrir Ubicación", width=120, command=open_folder)
-                btn_open.pack(side="left", padx=(0, 10))
-                
-                btn_del = ctk.CTkButton(btn_frame, text="Eliminar", width=80, fg_color="#E74C3C", hover_color="#C0392B", command=delete_plugin)
-                btn_del.pack(side="left")
-                
+                tb.Button(btn_frame, text="Abrir Ubicación", bootstyle="info-outline", command=open_folder).pack(side="left", padx=(0, 6))
+                tb.Button(btn_frame, text="Eliminar", bootstyle="danger", command=delete_plugin).pack(side="left", padx=(0, 6))
                 if pid == "ai_vault":
                     def open_ai_config():
                         from functions.interpreter_addon import ConfigAPIWindow
                         ConfigAPIWindow(self)
-                    btn_ai = ctk.CTkButton(btn_frame, text="Configurar Bóveda IA", width=120, fg_color="#8E44AD", hover_color="#9B59B6", command=open_ai_config)
-                    btn_ai.pack(side="left", padx=(10, 0))
+                    tb.Button(btn_frame, text="Configurar Bóveda IA", bootstyle="primary", command=open_ai_config).pack(side="left", padx=(0, 6))
 
-                self.backup_vars[pid] = ctk.IntVar(value=0)
-                chk_backup = ctk.CTkCheckBox(row, text="Respaldar", variable=self.backup_vars[pid])
-                chk_backup.pack(side="right", padx=10, pady=10)
+                self.backup_vars[pid] = tk.IntVar(value=0)
+                tb.Checkbutton(btn_frame, text="Respaldar", variable=self.backup_vars[pid], bootstyle="primary").pack(side="right")
             else:
-                btn_inst = ctk.CTkButton(btn_frame, text="Instalar", width=80, fg_color="#F39C12", hover_color="#D68910", command=install_plugin)
-                btn_inst.pack(side="left")
+                tb.Button(btn_frame, text="Instalar", bootstyle="warning", command=install_plugin).pack(side="left")
 
         def export_plugins():
             to_export = [pid for pid, var in self.backup_vars.items() if var.get() == 1]
             if not to_export:
-                from tkinter import messagebox
-                messagebox.showwarning("Aviso", "Selecciona al menos un complemento instalado para respaldar.")
+                messagebox.showwarning("Aviso", "Selecciona al menos un complemento instalado para respaldar.", parent=win)
                 return
-            from tkinter import filedialog
-            zip_path = filedialog.asksaveasfilename(defaultextension=".zip", filetypes=[("Archivos ZIP", "*.zip")], title="Respaldar Complementos")
+            zip_path = filedialog.asksaveasfilename(parent=win, defaultextension=".zip", filetypes=[("Archivos ZIP", "*.zip")], title="Respaldar Complementos")
             if zip_path:
-                import zipfile
                 try:
-                    with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+                    with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zipf:
                         for pid in to_export:
                             filename = PLUGINS[pid]["filename"]
                             filepath = get_user_data_path(os.path.join("tools", filename))
                             if os.path.exists(filepath):
                                 zipf.write(filepath, arcname=filename)
-                    from tkinter import messagebox
-                    messagebox.showinfo("Éxito", f"Complementos respaldados en:\n{zip_path}")
+                    messagebox.showinfo("Éxito", f"Complementos respaldados en:\n{zip_path}", parent=win)
                 except Exception as e:
-                    from tkinter import messagebox
-                    messagebox.showerror("Error", f"Fallo al respaldar: {e}")
+                    messagebox.showerror("Error", f"Fallo al respaldar: {e}", parent=win)
 
         def import_plugins():
-            from tkinter import filedialog
-            zip_path = filedialog.askopenfilename(filetypes=[("Archivos ZIP", "*.zip")], title="Importar Complementos")
+            zip_path = filedialog.askopenfilename(parent=win, filetypes=[("Archivos ZIP", "*.zip")], title="Importar Complementos")
             if zip_path:
-                import zipfile
                 try:
-                    with zipfile.ZipFile(zip_path, 'r') as zipf:
+                    with zipfile.ZipFile(zip_path, "r") as zipf:
                         tools_dir = get_user_data_path("tools")
                         os.makedirs(tools_dir, exist_ok=True)
                         for filename in zipf.namelist():
-                            if ".." in filename or filename.startswith("/"): continue
+                            if ".." in filename or filename.startswith("/"):
+                                continue
                             zipf.extract(filename, path=tools_dir)
-                    from tkinter import messagebox
-                    messagebox.showinfo("Éxito", "Complementos importados correctamente. El gestor se recargará.")
+                    messagebox.showinfo("Éxito", "Complementos importados correctamente. El gestor se recargará.", parent=win)
                     win.destroy()
                     self.show_plugins()
                 except Exception as e:
-                    from tkinter import messagebox
-                    messagebox.showerror("Error", f"Fallo al importar: {e}")
+                    messagebox.showerror("Error", f"Fallo al importar: {e}", parent=win)
 
-        btn_action_frame = ctk.CTkFrame(win, fg_color="transparent")
-        btn_action_frame.pack(fill="x", padx=20, pady=(0, 20))
-        
-        btn_export = ctk.CTkButton(btn_action_frame, text="Exportar ZIP", fg_color="#2E86C1", hover_color="#2874A6", command=export_plugins)
-        btn_export.pack(side="left", expand=True, padx=5)
-
-        btn_import = ctk.CTkButton(btn_action_frame, text="Importar ZIP", fg_color="#27AE60", hover_color="#229954", command=import_plugins)
-        btn_import.pack(side="right", expand=True, padx=5)
+        btn_action_frame = tb.Frame(win)
+        btn_action_frame.pack(fill="x", padx=16, pady=(0, 14))
+        tb.Button(btn_action_frame, text="Exportar ZIP", bootstyle="info", command=export_plugins).pack(side="left", expand=True, fill="x", padx=(0, 6))
+        tb.Button(btn_action_frame, text="Importar ZIP", bootstyle="success", command=import_plugins).pack(side="right", expand=True, fill="x", padx=(6, 0))
+        ui_theme.bring_to_front(win)
 
     def show_table_view(self):
-        content = self.output_textbox.get("1.0", "end-1c").strip()
+        content = self.output_textbox.text.get("1.0", "end-1c").strip()
         if not content:
-            messagebox.showinfo("Información", "No hay resultados para mostrar en la tabla.")
+            messagebox.showinfo("Información", "No hay resultados para mostrar en la tabla.", parent=self)
             return
-        # Intentar normalizar salidas de powershell
-        lines = content.split('\n')
-        # Filter purely decorative lines
-        clean_lines = [l for l in lines if not l.startswith('---')]
-        
+        lines = content.split("\n")
+        clean_lines = [l for l in lines if not l.startswith("---")]
         from functions.tabular_viewer import show_tabular_data
-        show_tabular_data(self, self.cmd_var.get(), '\n'.join(clean_lines))
+        show_tabular_data(self, self.cmd_var.get(), "\n".join(clean_lines))
 
     def export_output(self):
-        content = self.output_textbox.get("1.0", "end-1c")
-        if not content.strip(): return
-        
-        from tkinter import messagebox
-        import re
-        
-        # Preguntar si desea exportar completo o solo resumen
+        content = self.output_textbox.text.get("1.0", "end-1c")
+        if not content.strip():
+            return
+
         ans = messagebox.askyesnocancel(
-            "Tipo de Exportación", 
+            "Tipo de Exportación",
             "¿Deseas exportar TODO el historial de la consola?\n\n"
             "• SÍ: Exporta toda la salida (útil para ver procesos detalle a detalle).\n"
             "• NO: Exporta SOLO el resumen final (recomendado para no sobrecargar archivos HTML).\n"
-            "• CANCELAR: Aborta la exportación."
+            "• CANCELAR: Aborta la exportación.",
+            parent=self,
         )
-        
         if ans is None:
             return
-            
+
         if not ans:
-            # Extraer solo el resumen
-            lines = content.split('\n')
+            lines = content.split("\n")
             summary_start = 0
-            for i in range(len(lines)-1, -1, -1):
+            for i in range(len(lines) - 1, -1, -1):
                 if "ARCHIVOS COMPLETADOS" in lines[i] or "ARCHIVOS CON ERRORES" in lines[i] or "RESUMEN DE" in lines[i]:
-                    # Buscar la línea divisoria '===' justo arriba del resumen
-                    for j in range(i, max(-1, i-5), -1):
+                    for j in range(i, max(-1, i - 5), -1):
                         if "===" in lines[j]:
                             summary_start = j
                             break
                     else:
-                        summary_start = max(0, i-2)
+                        summary_start = max(0, i - 2)
                     break
-            
+
             if summary_start > 0:
                 content = "\n... (Salida larga de proceso omitida) ...\n\n" + "\n".join(lines[summary_start:])
             elif len(lines) > 300:
                 content = "\n... (Salida larga omitida, marcador de resumen no detectado) ...\n\n" + "\n".join(lines[-300:])
-        
-        file_path = filedialog.asksaveasfilename(defaultextension=".html", filetypes=[("HTML Interactivo", "*.html"), ("Text file", "*.txt")], title="Exportar Consola a Plantilla")
+
+        file_path = filedialog.asksaveasfilename(
+            parent=self,
+            defaultextension=".html",
+            filetypes=[("HTML Interactivo", "*.html"), ("Text file", "*.txt")],
+            title="Exportar Consola a Plantilla",
+        )
         if file_path:
             with open(file_path, "w", encoding="utf-8") as f:
                 if file_path.endswith(".html"):
@@ -2229,64 +2116,47 @@ class App(ctk.CTk):
                     f.write(self.get_html_template(content, title=cmd, command=self.preview_var.get() or cmd))
                 else:
                     f.write(content)
-            self.output_textbox.configure(state="normal")
-            self.output_textbox.insert("end", f"\n[!] Reporte Exportado con Plantilla a: {file_path}\n", "success")
-            self.output_textbox.see("end")
-            self.output_textbox.configure(state="disabled")
-
+            self.output_textbox.text.configure(state="normal")
+            self.output_textbox.text.insert("end", f"\n[!] Reporte Exportado con Plantilla a: {file_path}\n", "success")
+            self.output_textbox.text.see("end")
+            self.output_textbox.text.configure(state="disabled")
 
     def run_interpreter(self):
-        text_content = self.output_textbox.get("1.0", "end")
+        text_content = self.output_textbox.text.get("1.0", "end")
         from functions.interpreter_addon import InterpreterApp
         InterpreterApp(self, initial_text=text_content)
 
     def show_credits(self):
-        credits_win = ctk.CTkToplevel(self)
+        credits_win = tb.Toplevel(self)
         credits_win.title("Acerca de GUI CMD ADVANCE")
-        center_window(credits_win, 400, 450)
+        center_window(credits_win, 420, 420)
         credits_win.resizable(False, False)
-        
-        def set_credits_icon():
-            try:
-                credits_win.iconbitmap(get_resource_path("resources/app_icon.ico"))
-            except Exception:
-                pass
-                
-        credits_win.after(200, set_credits_icon)
-            
         credits_win.transient(self)
         credits_win.grab_set()
-        
-        # Icono o Título Principal
-        lbl_title = ctk.CTkLabel(credits_win, text="GUI CMD ADVANCE", font=("Arial", 20, "bold"), text_color="#F39C12")
-        lbl_title.pack(pady=(20, 5))
-        
-        lbl_version = ctk.CTkLabel(credits_win, text=f"Versión {__version__}", font=("Arial", 12))
-        lbl_version.pack(pady=(0, 15))
-        
-        # Descripción
-        desc = ("Herramienta gráfica avanzada para comandos de sistema.\n"
-                "Diseñada para simplificar y optimizar tareas de\n"
-                "mantenimiento, red y gestión de archivos en Windows.")
-        lbl_desc = ctk.CTkLabel(credits_win, text=desc, font=("Arial", 12), justify="center")
-        lbl_desc.pack(pady=10)
-        
-        # Autor y Copyright
-        lbl_author = ctk.CTkLabel(credits_win, text="Desarrollador: GOLDEN FENIX", font=("Arial", 12, "bold"))
-        lbl_author.pack(pady=(15, 5))
-        
-        lbl_copy = ctk.CTkLabel(credits_win, text="© 2026 GoldenFenix. Todos los derechos reservados.", font=("Arial", 10))
-        lbl_copy.pack(pady=5)
-        
-        # Link GitHub
-        def open_repo():
-            webbrowser.open("https://github.com/GoldenFenix92/gui-cmd-advance")
-            
-        link_btn = ctk.CTkButton(credits_win, text="Ver Repositorio en GitHub", fg_color="#24292F", hover_color="#40464d", command=open_repo)
-        link_btn.pack(pady=15)
-        
-        close_btn = ctk.CTkButton(credits_win, text="Cerrar", command=credits_win.destroy)
-        close_btn.pack(pady=(10, 20))
+        ui_theme.apply_window_chrome(credits_win, self.current_theme)
+
+        tb.Label(credits_win, text="GUI CMD ADVANCE", font=("Segoe UI", 18, "bold"), bootstyle="warning").pack(pady=(22, 4))
+        tb.Label(credits_win, text=f"Versión {__version__}", font=("Segoe UI", 10), bootstyle="secondary").pack(pady=(0, 14))
+
+        desc = (
+            "Herramienta gráfica avanzada para comandos de sistema.\n"
+            "Diseñada para simplificar y optimizar tareas de\n"
+            "mantenimiento, red y gestión de archivos en Windows."
+        )
+        tb.Label(credits_win, text=desc, font=("Segoe UI", 10), justify="center").pack(pady=10, padx=16)
+
+        tb.Label(credits_win, text="Desarrollador: GOLDEN FENIX", font=("Segoe UI", 11, "bold")).pack(pady=(12, 4))
+        tb.Label(credits_win, text="© 2026 GoldenFenix. Todos los derechos reservados.", font=("Segoe UI", 9), bootstyle="secondary").pack(pady=4)
+
+        tb.Button(
+            credits_win,
+            text="Ver Repositorio en GitHub",
+            bootstyle="info-outline",
+            command=lambda: webbrowser.open("https://github.com/GoldenFenix92/gui-cmd-advance"),
+        ).pack(pady=16)
+
+        tb.Button(credits_win, text="Cerrar", bootstyle="secondary", command=credits_win.destroy, width=14).pack(pady=(4, 16))
+        ui_theme.bring_to_front(credits_win)
 
     def open_process_manager(self):
         try:
@@ -2297,24 +2167,21 @@ class App(ctk.CTk):
                 env.pop("_MEIPASS2", None)
             else:
                 cmd = [sys.executable, os.path.abspath(sys.argv[0]), "--run-process-manager"]
-            subprocess.Popen(cmd, env=env, creationflags=subprocess.CREATE_NO_WINDOW)
+            subprocess.Popen(cmd, env=env, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
         except Exception as e:
-            messagebox.showerror("Error", f"No se pudo abrir el Gestor de Procesos:\n{e}")
+            messagebox.showerror("Error", f"No se pudo abrir el Gestor de Procesos:\n{e}", parent=self)
 
     def optimize_ram(self):
         vbs_path = None
         try:
-            import gc
             gc.collect()
-            
             vbs_path = get_user_data_path("liberar_ram.vbs")
             with open(vbs_path, "w", encoding="utf-8") as f:
-                f.write('FreeMem=Space(100000000)')
-                
-            subprocess.run(["cscript", "//nologo", vbs_path], creationflags=subprocess.CREATE_NO_WINDOW)
-            messagebox.showinfo("RAM Optimizada", "Memoria inactiva liberada y procesos de fondo limpios correctamente.")
+                f.write("FreeMem=Space(100000000)")
+            subprocess.run(["cscript", "//nologo", vbs_path], creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+            messagebox.showinfo("RAM Optimizada", "Memoria inactiva liberada y procesos de fondo limpios correctamente.", parent=self)
         except Exception as e:
-            messagebox.showerror("Error", f"Ocurrió un error al intentar optimizar la RAM:\n{e}")
+            messagebox.showerror("Error", f"Ocurrió un error al intentar optimizar la RAM:\n{e}", parent=self)
         finally:
             if vbs_path and os.path.exists(vbs_path):
                 try:

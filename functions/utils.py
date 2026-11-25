@@ -42,7 +42,7 @@ def safe_print(text="", end="\n", flush=True):
 
 
 def center_window(window, width, height):
-    """Centra una ventana Tkinter/CustomTkinter en la pantalla."""
+    """Centra una ventana Tkinter/ttkbootstrap en la pantalla."""
     screen_width = window.winfo_screenwidth()
     screen_height = window.winfo_screenheight()
     x = int((screen_width / 2) - (width / 2))
@@ -102,37 +102,9 @@ def send_to_recycle_bin(file_path):
         return False, str(e)
 
 def apply_window_theme(window):
-    def _apply():
-        try:
-            window.iconbitmap(get_resource_path('resources/app_icon.ico'))
-        except Exception: pass
-        import customtkinter as ctk
-        if ctk.get_appearance_mode().lower() == 'dark':
-            try:
-                import ctypes
-                window.update()
-                hwnd = ctypes.windll.user32.GetParent(window.winfo_id())
-                DWMWA_USE_IMMERSIVE_DARK_MODE = 20
-                value = ctypes.c_int(2)
-                ctypes.windll.dwmapi.DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, ctypes.byref(value), ctypes.sizeof(value))
-            except Exception: pass
-    window.after(200, _apply)
-
-# Monkey-patching para aplicar el icono y tema a TODAS las ventanas automáticamente
-import customtkinter as ctk
-
-if not hasattr(ctk, '_theme_patched'):
-    ctk._theme_patched = True
-    _original_ctk_init = ctk.CTk.__init__
-    _original_toplevel_init = ctk.CTkToplevel.__init__
-
-    def _patched_ctk_init(self, *args, **kwargs):
-        _original_ctk_init(self, *args, **kwargs)
-        apply_window_theme(self)
-
-    def _patched_toplevel_init(self, *args, **kwargs):
-        _original_toplevel_init(self, *args, **kwargs)
-        apply_window_theme(self)
-
-    ctk.CTk.__init__ = _patched_ctk_init
-    ctk.CTkToplevel.__init__ = _patched_toplevel_init
+    """Aplica ícono de la aplicación y barra de título Win32 acorde al tema activo de ttkbootstrap."""
+    try:
+        from functions import ui_theme
+        ui_theme.apply_window_chrome(window)
+    except Exception:
+        pass

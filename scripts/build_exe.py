@@ -42,7 +42,6 @@ HIDDEN_IMPORTS = [
     "PIL",
     "pymupdf",
     "psutil",
-    "CTkToolTip",
     "ttkbootstrap",
     "functions.advanced_search",
     "functions.ai_engine",
