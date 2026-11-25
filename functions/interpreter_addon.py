@@ -49,14 +49,19 @@ class InterpreterApp(ctk.CTkToplevel):
         self.title("Intérprete Asistido de Reportes (Premium)")
         center_window(self, 1120, 660)
         self._domain = domain
+        self.lift()
+        self.focus_force()
 
         def _set_icon_and_theme():
             try:
+                if not self.winfo_exists():
+                    return
                 self.iconbitmap(os.path.join(get_base_path(), "resources", "app_icon.ico"))
             except Exception:
                 pass
             if ctk.get_appearance_mode().lower() == "dark":
                 apply_dark_titlebar(self)
+            self.bring_to_front()
 
         self.after(200, _set_icon_and_theme)
 
@@ -139,6 +144,28 @@ class InterpreterApp(ctk.CTkToplevel):
             fg_color="#2E86C1", hover_color="#21618C", command=self.copy_interpretation,
         )
         self.btn_copy.pack(side="right")
+
+        self.after(10, self.bring_to_front)
+
+    def bring_to_front(self):
+        """Asegura que la ventana del Intérprete aparezca y mantenga el foco sobre la ventana principal."""
+        try:
+            if not self.winfo_exists():
+                return
+            self.deiconify()
+            self.lift()
+            self.attributes("-topmost", True)
+            self.focus_force()
+            self.after(150, self._release_topmost)
+        except Exception:
+            pass
+
+    def _release_topmost(self):
+        try:
+            if self.winfo_exists():
+                self.attributes("-topmost", False)
+        except Exception:
+            pass
 
     def copy_interpretation(self):
         content = self.txt_out.get("1.0", "end").strip()
