@@ -42,8 +42,8 @@ class App(tb.Window):
         ui_theme.apply_window_chrome(self, self.current_theme)
 
         self.grid_rowconfigure(0, weight=1)
-        self.grid_columnconfigure(0, weight=1)
-        self.grid_columnconfigure(1, weight=2)
+        self.grid_columnconfigure(0, weight=1, uniform="main_cols")
+        self.grid_columnconfigure(1, weight=2, uniform="main_cols")
 
         self.commands_config = self.load_config()
         self.is_running = False
@@ -71,24 +71,20 @@ class App(tb.Window):
         self.left_frame.grid_rowconfigure(2, weight=1)
         self.left_frame.grid_columnconfigure(0, weight=1)
 
-        # Barra superior: interruptor animado Oscuro/Claro (pulse-dark <-> pulse-light) + herramientas rápidas
+        # Barra superior: interruptor nativo instantáneo Oscuro/Claro (pulse-dark <-> pulse-light)
         self.top_bar = tb.Frame(self.left_frame)
         self.top_bar.grid(row=0, column=0, pady=(0, 10), sticky="ew")
 
-        self.theme_toggle = ui_theme.ThemeToggleSwitch(
+        self.dark_mode_var = tk.BooleanVar(value=ui_theme.is_dark_theme(self.current_theme))
+        self.theme_switch = tb.Checkbutton(
             self.top_bar,
-            is_dark=ui_theme.is_dark_theme(self.current_theme),
-            command=self.on_theme_toggle,
+            text="Modo Oscuro" if self.dark_mode_var.get() else "Modo Claro",
+            variable=self.dark_mode_var,
+            bootstyle="primary-round-toggle",
+            command=lambda: self.on_theme_toggle(self.dark_mode_var.get()),
         )
-        self.theme_toggle.pack(side="left", padx=(0, 6))
-        ui_theme.add_tooltip(self.theme_toggle, "Alternar entre Pulse Oscuro y Pulse Claro")
-
-        self.lbl_theme_mode = tb.Label(
-            self.top_bar,
-            text="Oscuro" if ui_theme.is_dark_theme(self.current_theme) else "Claro",
-            font=("Segoe UI", 9, "bold"),
-        )
-        self.lbl_theme_mode.pack(side="left", padx=(0, 8))
+        self.theme_switch.pack(side="left", padx=(0, 8))
+        ui_theme.add_tooltip(self.theme_switch, "Alternar al instante entre Pulse Oscuro y Pulse Claro")
 
         self.credits_btn = tb.Button(self.top_bar, text="Créditos", bootstyle="secondary-outline", command=self.show_credits)
         self.credits_btn.pack(side="right")
@@ -150,7 +146,7 @@ class App(tb.Window):
         args_card_wrap.body.grid_rowconfigure(0, weight=1)
         args_card_wrap.body.grid_columnconfigure(0, weight=1)
 
-        self.args_frame = ScrolledFrame(args_card_wrap.body, auto_hide=True, padding=4)
+        self.args_frame = ScrolledFrame(args_card_wrap.body, auto_hide=False, padding=4)
         self.args_frame.grid(row=0, column=0, sticky="nsew")
 
         # Botonera de ejecución
@@ -193,7 +189,7 @@ class App(tb.Window):
         )
         self.preview_entry.grid(row=0, column=0, pady=(0, 8), sticky="ew")
 
-        self.output_textbox = ScrolledText(console_card, font=("Consolas", 10), wrap="none", auto_hide=True)
+        self.output_textbox = ScrolledText(console_card, font=("Consolas", 10), wrap="none", auto_hide=False)
         self.output_textbox.grid(row=1, column=0, pady=(0, 8), sticky="nsew")
         self.output_textbox.text.configure(state="disabled")
 
@@ -411,13 +407,25 @@ class App(tb.Window):
             disk_pct = du.percent
             disk_free_gb = du.free / (1024 ** 3)
 
+            cpu_int = int(round(cpu))
+            ram_int = int(round(ram))
+            disk_int = int(round(disk_pct))
             cpu_style = self._sensor_bootstyle(cpu)
             ram_style = self._sensor_bootstyle(ram)
             disk_style = self._sensor_bootstyle(disk_pct)
 
-            self.meter_cpu.configure(amountused=int(round(cpu)), bootstyle=cpu_style)
-            self.meter_ram.configure(amountused=int(round(ram)), bootstyle=ram_style)
-            self.meter_disk.configure(amountused=int(round(disk_pct)), bootstyle=disk_style)
+            prev = getattr(self, "_last_sensor_vals", {})
+            if prev.get("cpu") != (cpu_int, cpu_style):
+                self.meter_cpu.configure(amountused=cpu_int, bootstyle=cpu_style)
+            if prev.get("ram") != (ram_int, ram_style):
+                self.meter_ram.configure(amountused=ram_int, bootstyle=ram_style)
+            if prev.get("disk") != (disk_int, disk_style):
+                self.meter_disk.configure(amountused=disk_int, bootstyle=disk_style)
+            self._last_sensor_vals = {
+                "cpu": (cpu_int, cpu_style),
+                "ram": (ram_int, ram_style),
+                "disk": (disk_int, disk_style),
+            }
 
             self.lbl_cpu.configure(text=f"CPU: {cpu:.0f}% | Hilos: {threads}", bootstyle=cpu_style)
             self.lbl_ram.configure(text=f"RAM: {ram_used_gb:.1f} / {ram_total_gb:.1f} GB ({ram:.0f}%)", bootstyle=ram_style)
@@ -541,6 +549,8 @@ class App(tb.Window):
 
     def on_theme_toggle(self, is_dark):
         target = ui_theme.DEFAULT_DARK_THEME if is_dark else ui_theme.DEFAULT_LIGHT_THEME
+        if target == self.current_theme:
+            return
         saved = ui_theme.set_saved_theme(target)
         self.current_theme = saved
         try:
@@ -548,14 +558,14 @@ class App(tb.Window):
         except Exception:
             pass
         ui_theme.apply_rounded_styles(self.style, saved)
-        ui_theme.apply_dwm_titlebar(self, dark=is_dark)
-        if hasattr(self, "lbl_theme_mode"):
-            self.lbl_theme_mode.configure(text="Oscuro" if is_dark else "Claro")
-        if hasattr(self, "theme_toggle"):
-            self.theme_toggle.apply_bg(saved)
+        if hasattr(self, "dark_mode_var"):
+            self.dark_mode_var.set(bool(is_dark))
+        if hasattr(self, "theme_switch"):
+            self.theme_switch.configure(text="Modo Oscuro" if is_dark else "Modo Claro")
         if hasattr(self, "progressbar"):
             self.progressbar.apply_palette(saved)
         self.update_console_tags()
+        self.after_idle(lambda d=is_dark: ui_theme.apply_dwm_titlebar(self, dark=d))
 
     def update_console_tags(self):
         is_dark = ui_theme.is_dark_theme(self.current_theme)
@@ -659,7 +669,6 @@ class App(tb.Window):
         for widget in self.args_frame.winfo_children():
             widget.destroy()
         self.current_args_vars.clear()
-        gc.collect()
 
         cmd_data = self.get_command_data(selected_command)
         if cmd_data:

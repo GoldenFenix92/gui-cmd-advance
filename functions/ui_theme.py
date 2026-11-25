@@ -56,7 +56,7 @@ ALL_THEMES = tuple(dict.fromkeys(DARK_THEMES + LIGHT_THEMES))
 PULSE_PALETTES = {
     "dark": {
         "bg": "#17141F",
-        "card_bg": "#211D2E",
+        "card_bg": "#17141F",
         "card_border": "#3A334E",
         "well_bg": "#120F1A",
         "well_border": "#352F47",
@@ -87,10 +87,10 @@ PULSE_PALETTES = {
         "warning_fg": "#17141F",
     },
     "light": {
-        "bg": "#F1EEF7",
+        "bg": "#FFFFFF",
         "card_bg": "#FFFFFF",
-        "card_border": "#DDD6EC",
-        "well_bg": "#FAF9FD",
+        "card_border": "#D8D1E8",
+        "well_bg": "#F8F7FC",
         "well_border": "#CFC6E2",
         "fg": "#2D2640",
         "muted": "#6B6380",
@@ -114,7 +114,7 @@ PULSE_PALETTES = {
         "danger_press": "#A62424",
         "disabled_bg": "#E5E0EE",
         "disabled_fg": "#9A93AD",
-        "trough": "#E2DCEB",
+        "trough": "#E6E1F0",
         "btn_fg": "#FFFFFF",
         "warning_fg": "#FFFFFF",
     },
@@ -552,7 +552,8 @@ class ThemeToggleSwitch(tk.Canvas):
 
     def set_dark(self, dark, notify=False):
         self._is_dark = bool(dark)
-        self._animate_to(1.0 if self._is_dark else 0.0)
+        self._pos = 1.0 if self._is_dark else 0.0
+        self._redraw()
         if notify and self._command:
             self._command(self._is_dark)
 
@@ -622,11 +623,10 @@ class ThemeToggleSwitch(tk.Canvas):
 
 
 def apply_dwm_titlebar(window, dark=True):
-    """Sincroniza la barra de título nativa de Windows 10/11 con el modo oscuro/claro."""
+    """Sincroniza la barra de título nativa de Windows 10/11 con el modo oscuro/claro sin forzar reflow."""
     if os.name != "nt":
         return
     try:
-        window.update_idletasks()
         hwnd = ctypes.windll.user32.GetParent(window.winfo_id())
         if not hwnd:
             hwnd = window.winfo_id()
