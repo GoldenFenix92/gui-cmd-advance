@@ -43,6 +43,7 @@ HIDDEN_IMPORTS = [
     "pymupdf",
     "psutil",
     "CTkToolTip",
+    "ttkbootstrap",
     "functions.advanced_search",
     "functions.ai_engine",
     "functions.cmd_executor",
@@ -67,6 +68,7 @@ HIDDEN_IMPORTS = [
     "functions.task_memory",
     "functions.telemetry",
     "functions.temp_cleaner",
+    "functions.ui_theme",
     "functions.usb_auditor",
     "functions.utils",
 ]
@@ -93,6 +95,7 @@ def build_pyinstaller_command(name, version_file, icon="resources/app_icon.ico")
         "--version-file", version_file,
         "--name", name,
         "--add-data", "resources;resources",
+        "--collect-all", "ttkbootstrap",
     ]
     for mod in HIDDEN_IMPORTS:
         cmd.extend(["--hidden-import", mod])

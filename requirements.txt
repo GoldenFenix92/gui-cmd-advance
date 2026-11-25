@@ -1,5 +1,6 @@
 customtkinter==5.2.2
 CTkToolTip
+ttkbootstrap>=2.2.5
 psutil
 pymupdf
 Pillow
