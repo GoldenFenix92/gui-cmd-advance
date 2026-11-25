@@ -23,10 +23,9 @@ from functions import cmd_executor, ui_theme
 from functions.setup_manager import check_dependencies
 from functions.utils import center_window, get_resource_path, get_user_data_path
 
-try:
-    from version import __version__
-except ImportError:
-    __version__ = "1.0.0"
+from functions.versioning import get_app_version
+
+__version__ = get_app_version()
 
 FAVORITES_CATEGORY_NAME = "Favoritos"
 

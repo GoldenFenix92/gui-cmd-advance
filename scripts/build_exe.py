@@ -1,8 +1,18 @@
 import os
-import sys
 import subprocess
+import sys
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
+
+from functions.versioning import (
+    format_git_tag,
+    is_prerelease,
+    is_valid_canonical_semver,
+    read_canonical_version,
+    to_windows_version_tuple,
+)
 
 VERSION_FILE_TEMPLATE = """# UTF-8
 #
@@ -31,7 +41,7 @@ VSVersionInfo(
         StringStruct('LegalCopyright', '{copyright}'),
         StringStruct('OriginalFilename', '{name}.exe'),
         StringStruct('ProductName', '{name}'),
-        StringStruct('ProductVersion', '{v1}.{v2}.{v3}.{v4}')])
+        StringStruct('ProductVersion', '{product_version}')])
       ]),
     VarFileInfo([VarStruct('Translation', [1033, 1200])])
   ]
@@ -70,6 +80,7 @@ HIDDEN_IMPORTS = [
     "functions.ui_theme",
     "functions.usb_auditor",
     "functions.utils",
+    "functions.versioning",
 ]
 
 
@@ -79,10 +90,42 @@ def get_git_commit_count():
             ["git", "rev-list", "--count", "HEAD"],
             cwd=PROJECT_ROOT,
             stderr=subprocess.STDOUT,
+            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
         ).decode("utf-8").strip()
         return int(output)
     except Exception:
         return 0
+
+
+def resolve_build_metadata(version_override=None, commit_count=None):
+    """Resuelve toda la metadata de compilación desde la fuente única de verdad (VERSION).
+
+    Garantiza coherencia automática entre versión SemVer, canal Beta/Estable,
+    nombre del ejecutable y tupla FileVersion de Windows (MAJOR.MINOR.PATCH.BUILD).
+    """
+    if version_override is not None:
+        canonical = str(version_override).strip()
+        if not is_valid_canonical_semver(canonical):
+            raise ValueError(f"Versión SemVer inválida: {canonical!r}")
+    else:
+        canonical = read_canonical_version(os.path.join(PROJECT_ROOT, "VERSION"))
+
+    build_num = get_git_commit_count() if commit_count is None else int(commit_count)
+    v1, v2, v3, v4 = to_windows_version_tuple(canonical, build_number=build_num)
+    prerelease = is_prerelease(canonical)
+
+    base_name = "Gui Cmd Advance"
+    exe_name = f"{base_name} Beta" if prerelease else base_name
+
+    return {
+        "version": canonical,
+        "git_tag": format_git_tag(canonical),
+        "build": v4,
+        "is_prerelease": prerelease,
+        "exe_name": exe_name,
+        "win_tuple": (v1, v2, v3, v4),
+        "file_version": f"{v1}.{v2}.{v3}.{v4}",
+    }
 
 
 def build_pyinstaller_command(name, version_file, icon="resources/app_icon.ico"):
@@ -109,33 +152,38 @@ def main():
     print("  COMPILACIÓN AUTOMÁTICA (.EXE) - GUI CMD ADVANCE")
     print("=" * 60)
 
-    ans = input("¿Es fase Beta? (S/n): ").strip().lower()
-    is_beta = ans != "n"
+    meta = resolve_build_metadata()
+    v1, v2, v3, v4 = meta["win_tuple"]
+    name = meta["exe_name"]
+    version_ui = meta["version"]
+    channel = "Pre-release (Beta)" if meta["is_prerelease"] else "Estable"
 
     company = "GOLDEN FENIX"
-    base_name = "Gui Cmd Advance"
-    name = f"{base_name} Beta" if is_beta else base_name
-
     description = "Herramienta gráfica avanzada para comandos de sistema"
     copyright_txt = "© 2026 GoldenFenix Todos los derechos reservados."
     icon = "resources/app_icon.ico"
 
-    commit_count = get_git_commit_count()
-    version_ui = f"1.0.{commit_count}" + (" Beta" if is_beta else "")
-    v1, v2, v3, v4 = 1, 0, commit_count, 0
-
-    print(f"[*] Versión detectada por Git: {version_ui}")
+    print(f"[*] Versión canónica (VERSION) : {version_ui}")
+    print(f"[*] Canal detectado            : {channel}")
+    print(f"[*] FileVersion Windows        : {meta['file_version']} (build Git #{meta['build']})")
+    print(f"[*] Tag Git recomendado        : {meta['git_tag']}")
+    print(f"[*] Ejecutable destino         : dist/{name}.exe")
 
     with open("version.py", "w", encoding="utf-8") as vf:
         vf.write(f'__version__ = "{version_ui}"\n')
-    print("[+] Archivo 'version.py' actualizado.")
+        vf.write(f"__build__ = {meta['build']}\n")
+    print("[+] Archivo 'version.py' sincronizado con VERSION.")
 
     version_content = VERSION_FILE_TEMPLATE.format(
-        v1=v1, v2=v2, v3=v3, v4=v4,
+        v1=v1,
+        v2=v2,
+        v3=v3,
+        v4=v4,
         company=company,
         name=name,
         description=description,
         copyright=copyright_txt,
+        product_version=version_ui,
     )
 
     version_file = "version_info.txt"
@@ -147,7 +195,11 @@ def main():
         import PyInstaller  # noqa: F401
     except ImportError:
         print("\nPyInstaller no está instalado. Instalándolo ahora...")
-        subprocess.run([sys.executable, "-m", "pip", "install", "pyinstaller"], check=True)
+        subprocess.run(
+            [sys.executable, "-m", "pip", "install", "pyinstaller"],
+            check=True,
+            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+        )
 
     print("\nGenerando el ejecutable principal...")
     cmd = build_pyinstaller_command(name=name, version_file=version_file, icon=icon)
@@ -158,6 +210,7 @@ def main():
     print("  COMPILACIÓN COMPLETADA")
     print("=" * 60)
     print(f"Tu programa compilado está en la carpeta 'dist/{name}.exe'")
+    print(f"Versión: {version_ui} (FileVersion {meta['file_version']} | Tag: {meta['git_tag']})")
 
 
 if __name__ == "__main__":

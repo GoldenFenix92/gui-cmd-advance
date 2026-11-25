@@ -14,10 +14,9 @@ from ttkbootstrap.widgets.scrolled import ScrolledText
 from tkinter import messagebox
 from functions.utils import get_user_data_path
 from functions import ui_theme
-try:
-    from version import __version__
-except ImportError:
-    __version__ = "0.0.0"
+from functions.versioning import get_app_version, is_newer_version
+
+__version__ = get_app_version()
 
 # ==============================================================
 # CONFIGURACIÓN DEL DESARROLLADOR
@@ -39,11 +38,11 @@ def check_for_updates(master_win):
             with urllib.request.urlopen(req, timeout=5) as response:
                 data = json.loads(response.read().decode())
                 
-            latest_tag = data.get("tag_name", "").replace("v", "").replace("-beta", "")
-            current = __version__
-            
-            # Comparación muy básica (solo por si es diferente)
-            if latest_tag and latest_tag != current:
+            latest_tag = data.get("tag_name", "").strip()
+            current = get_app_version()
+
+            # Comparación semántica real (SemVer): evita bucles en betas y downgrades
+            if latest_tag and is_newer_version(latest_tag, current):
                 assets = data.get("assets", [])
                 exe_url = None
                 for asset in assets:
