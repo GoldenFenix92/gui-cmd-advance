@@ -44,6 +44,7 @@ HIDDEN_IMPORTS = [
     "psutil",
     "CTkToolTip",
     "functions.advanced_search",
+    "functions.ai_engine",
     "functions.cmd_executor",
     "functions.combo_engine",
     "functions.compressor",

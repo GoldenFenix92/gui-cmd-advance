@@ -406,69 +406,49 @@ class ProcessManagerApp(ctk.CTk):
 
     def run_ai_analysis(self):
         try:
-            from functions.interpreter_addon import get_api_settings
-            settings = get_api_settings()
+            from functions import ai_engine
+            settings = ai_engine.load_ai_settings()
         except Exception:
             messagebox.showerror("Error", "No se pudo cargar la configuración de IA. Verifica el archivo ai_settings.json.")
             return
-            
-        train = settings.get("model_train", [])
-        if not train:
-            messagebox.showwarning("IA", "No hay modelos en el Tren de Modelos. Ve al panel de Interpretación de Comandos y configura tu API/Tren primero.")
-            return
-            
+
         proc_list = []
         try:
             for p in psutil.process_iter(['name', 'memory_info']):
-                try: proc_list.append((p.info['name'], p.info['memory_info'].rss / (1024*1024)))
-                except Exception: pass
-        except Exception: pass
-        
-        proc_list.sort(key=lambda x: x[1], reverse=True)
-        top_15 = [f"{n} ({m:.1f}MB)" for n, m in proc_list[:15]]
-        prompt = "Actúa como experto en Windows. Analiza esta lista de procesos que consumen más RAM y sugiere cuáles son inútiles (bloatware) y seguros de matar para optimizar: " + ", ".join(top_15)
-        
-        self.btn_ai.configure(text="Analizando...", state="disabled")
-        
-        def _fetch():
-            res = None
-            for item in train:
-                provider = item.get("provider")
-                model = item.get("model")
-                prov_data = settings.get("providers", {}).get(provider, {})
-                api_key = prov_data.get("api_key", "")
-                
                 try:
-                    if provider == "Google Gemini":
-                        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
-                        payload = json.dumps({"contents": [{"parts": [{"text": prompt}]}]}).encode('utf-8')
-                        req = urllib.request.Request(url, data=payload, headers={'Content-Type': 'application/json'}, method='POST')
-                        with urllib.request.urlopen(req, timeout=15) as r:
-                            resp = json.loads(r.read())
-                            res = f"[Analizado por {model}]:\\n\\n" + resp['candidates'][0]['content']['parts'][0]['text']
-                            break
-                    elif provider in ["OpenAI", "Groq"]:
-                        url = "https://api.openai.com/v1/chat/completions" if provider == "OpenAI" else "https://api.groq.com/openai/v1/chat/completions"
-                        payload = json.dumps({"model": model, "messages": [{"role": "user", "content": prompt}]}).encode('utf-8')
-                        req = urllib.request.Request(url, data=payload, headers={'Content-Type': 'application/json', 'Authorization': f'Bearer {api_key}'}, method='POST')
-                        with urllib.request.urlopen(req, timeout=15) as r:
-                            resp = json.loads(r.read())
-                            res = f"[Analizado por {model}]:\\n\\n" + resp['choices'][0]['message']['content']
-                            break
-                except Exception as e:
-                    safe_print("AI Error con", provider, e)
-                    continue
-            
+                    proc_list.append((p.info['name'], p.info['memory_info'].rss / (1024 * 1024)))
+                except Exception:
+                    pass
+        except Exception:
+            pass
+
+        proc_list.sort(key=lambda x: x[1], reverse=True)
+        top_15 = [f"{n} ({m:.1f} MB)" for n, m in proc_list[:15]]
+        raw_summary = "Top 15 procesos por consumo de RAM:\n" + "\n".join(f"- {item}" for item in top_15)
+        prompt = ai_engine.build_analysis_prompt(raw_summary, style="tecnico", domain="processes")
+
+        self.btn_ai.configure(text="Analizando...", state="disabled")
+
+        def _fetch():
+            result = ai_engine.run_model_train(settings, prompt, use_train=True, timeout=25)
+
             def _done():
                 self.btn_ai.configure(text="Analizador IA", state="normal")
-                if res:
-                    AIResultWindow(self, "Análisis Inteligente", res)
+                if result["ok"]:
+                    header = f"[Analizado por {result['provider']} - {result['model']}]\n\n"
+                    AIResultWindow(self, "Análisis Inteligente de Procesos", header + result["text"])
                     save_to_history("Análisis IA Realizado", "IA", "Optimización", "")
                     self.load_history_ui()
                 else:
-                    messagebox.showerror("Fallo IA", "Fallaron todos los modelos del tren. Verifica tus llaves API o conexión.")
+                    detail = "\n".join(result.get("errors") or [])[:400]
+                    messagebox.showerror(
+                        "Fallo IA",
+                        f"No se pudo completar el análisis con IA.\n\nDetalle:\n{detail}",
+                        parent=self,
+                    )
+
             self.after(0, _done)
-            
+
         threading.Thread(target=_fetch, daemon=True).start()
 
 def main():

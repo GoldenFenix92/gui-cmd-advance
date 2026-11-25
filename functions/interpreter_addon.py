@@ -1,20 +1,23 @@
-import customtkinter as ctk
+import ctypes
+import json
 import os
 import re
-import json
-import tkinter as tk
-from tkinter import filedialog, messagebox
-import threading
 import sys
-import urllib.request
-import urllib.error
-import ctypes
-from functions.utils import get_user_data_path, apply_window_theme
+import threading
+import tkinter as tk
+from tkinter import filedialog, messagebox, simpledialog
+
+import customtkinter as ctk
+
+from functions import ai_engine
+from functions.utils import apply_window_theme
+
 
 def get_base_path():
-    if getattr(sys, 'frozen', False):
+    if getattr(sys, "frozen", False):
         return sys._MEIPASS
     return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
 
 def center_window(window, width, height):
     window.update_idletasks()
@@ -24,103 +27,81 @@ def center_window(window, width, height):
     y = int((screen_height / 2) - (height / 2))
     window.geometry(f"{width}x{height}+{x}+{y}")
 
+
 def apply_dark_titlebar(window):
     try:
         window.update()
         hwnd = ctypes.windll.user32.GetParent(window.winfo_id())
-        DWMWA_USE_IMMERSIVE_DARK_MODE = 20
-        # 1 for dark mode, 2 for some win11 builds. We try 1 or 2.
         value = ctypes.c_int(2)
-        ctypes.windll.dwmapi.DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, ctypes.byref(value), ctypes.sizeof(value))
+        ctypes.windll.dwmapi.DwmSetWindowAttribute(hwnd, 20, ctypes.byref(value), ctypes.sizeof(value))
     except Exception:
         pass
+
 
 def get_api_settings():
-    old_settings_path = get_user_data_path("ai_settings.json")
-    tools_dir = get_user_data_path("tools")
-    os.makedirs(tools_dir, exist_ok=True)
-    settings_path = os.path.join(tools_dir, "ai_settings.json")
-    
-    # Migrate old settings if present
-    if os.path.exists(old_settings_path) and not os.path.exists(settings_path):
-        import shutil
-        try: shutil.move(old_settings_path, settings_path)
-        except Exception: pass
+    """Wrapper retrocompatible que delega en ai_engine.load_ai_settings()."""
+    return ai_engine.load_ai_settings()
 
-    default_settings = {
-        "providers": {
-            "Google Gemini": {"api_key": "", "model": "", "cached_models": []},
-            "OpenAI": {"api_key": "", "model": "", "cached_models": []},
-            "Anthropic Claude": {"api_key": "", "model": "", "cached_models": []},
-            "Groq": {"api_key": "", "model": "", "cached_models": []},
-            "Deepseek": {"api_key": "", "model": "", "cached_models": []},
-            "Personalizado": {"api_key": "", "model": "", "base_url": "", "cached_models": []}
-        },
-        "current_provider": "Google Gemini",
-        "free_only": True,
-        "model_train": []
-    }
-    try:
-        if os.path.exists(settings_path):
-            with open(settings_path, "r", encoding="utf-8") as f:
-                saved = json.load(f)
-                if "providers" not in saved:
-                    prov = saved.get("provider", "Google Gemini")
-                    default_settings["current_provider"] = prov
-                    default_settings["providers"][prov]["api_key"] = saved.get("api_key", "")
-                    default_settings["providers"][prov]["model"] = saved.get("model", "")
-                    default_settings["providers"][prov]["cached_models"] = saved.get("cached_models", [])
-                    if "base_url" in saved: default_settings["providers"][prov]["base_url"] = saved["base_url"]
-                    if "free_only" in saved: default_settings["free_only"] = saved["free_only"]
-                else:
-                    for k, v in saved.items():
-                        if k == "providers":
-                            for pk, pv in v.items():
-                                if pk in default_settings["providers"]:
-                                    default_settings["providers"][pk].update(pv)
-                        else:
-                            default_settings[k] = v
-    except Exception:
-        pass
-    return default_settings
 
 class InterpreterApp(ctk.CTkToplevel):
-    def __init__(self, parent, initial_text=""):
+    def __init__(self, parent, initial_text="", domain=None):
         super().__init__(parent)
         self.title("Intérprete Asistido de Reportes (Premium)")
-        center_window(self, 1100, 650)
-        
+        center_window(self, 1120, 660)
+        self._domain = domain
+
         def _set_icon_and_theme():
             try:
                 self.iconbitmap(os.path.join(get_base_path(), "resources", "app_icon.ico"))
-            except Exception: pass
+            except Exception:
+                pass
             if ctk.get_appearance_mode().lower() == "dark":
                 apply_dark_titlebar(self)
+
         self.after(200, _set_icon_and_theme)
-
-
 
         self.grid_rowconfigure(2, weight=1)
         self.grid_columnconfigure(0, weight=1)
         self.grid_columnconfigure(1, weight=1)
 
         self.top_frame = ctk.CTkFrame(self, fg_color="transparent")
-        self.top_frame.grid(row=0, column=0, columnspan=2, padx=15, pady=15, sticky="ew")
+        self.top_frame.grid(row=0, column=0, columnspan=2, padx=15, pady=12, sticky="ew")
 
-        self.btn_load = ctk.CTkButton(self.top_frame, text="Cargar Archivo (.txt/.log)", width=160, fg_color="#2E86C1", hover_color="#21618C", command=self.load_file)
-        self.btn_load.pack(side="left", padx=(0, 10))
+        self.btn_load = ctk.CTkButton(
+            self.top_frame, text="Cargar Archivo (.txt/.log)", width=155,
+            fg_color="#2E86C1", hover_color="#21618C", command=self.load_file,
+        )
+        self.btn_load.pack(side="left", padx=(0, 8))
 
-        self.btn_offline = ctk.CTkButton(self.top_frame, text="Analizar (Básico Offline)", width=160, fg_color="#F39C12", hover_color="#D68910", command=self.run_offline)
-        self.btn_offline.pack(side="left", padx=(0, 10))
+        self.btn_offline = ctk.CTkButton(
+            self.top_frame, text="Analizar (Offline)", width=130,
+            fg_color="#D97706", hover_color="#B45309", command=self.run_offline,
+        )
+        self.btn_offline.pack(side="left", padx=(0, 8))
 
-        self.btn_online = ctk.CTkButton(self.top_frame, text="Analizar con IA (Online)", width=160, fg_color="#8E44AD", hover_color="#9B59B6", command=self.run_online)
-        self.btn_online.pack(side="left", padx=(0, 10))
+        self.btn_online = ctk.CTkButton(
+            self.top_frame, text="Analizar con IA", width=135,
+            fg_color="#8E44AD", hover_color="#9B59B6", command=self.run_online,
+        )
+        self.btn_online.pack(side="left", padx=(0, 8))
 
-        self.var_use_train = ctk.BooleanVar(value=False)
-        self.chk_train = ctk.CTkCheckBox(self.top_frame, text="Usar Tren de Modelos", variable=self.var_use_train)
-        self.chk_train.pack(side="left", padx=(0, 10))
+        self.var_style = ctk.StringVar(value="Técnico")
+        self.opt_style = ctk.CTkOptionMenu(
+            self.top_frame,
+            variable=self.var_style,
+            values=["Técnico", "Simple", "Solo Errores"],
+            width=120,
+        )
+        self.opt_style.pack(side="left", padx=(0, 8))
 
-        self.btn_config = ctk.CTkButton(self.top_frame, text="Configurar API (IA)", width=150, fg_color="#475569", hover_color="#334155", command=self.config_api)
+        self.var_use_train = ctk.BooleanVar(value=True)
+        self.chk_train = ctk.CTkCheckBox(self.top_frame, text="Tren de Modelos", variable=self.var_use_train)
+        self.chk_train.pack(side="left", padx=(0, 8))
+
+        self.btn_config = ctk.CTkButton(
+            self.top_frame, text="Configurar API (IA)", width=145,
+            fg_color="#475569", hover_color="#334155", command=self.config_api,
+        )
         self.btn_config.pack(side="right")
 
         self.lbl_raw = ctk.CTkLabel(self, text="Reporte Original (Consola):", font=("Arial", 14, "bold"))
@@ -131,47 +112,77 @@ class InterpreterApp(ctk.CTkToplevel):
         if initial_text.strip():
             self.txt_raw.insert("1.0", initial_text)
 
-        self.lbl_out = ctk.CTkLabel(self, text="Interpretación en Lenguaje Natural:", font=("Arial", 14, "bold"), text_color=("#1f6aa5", "#3B8ED0"))
+        self.lbl_out = ctk.CTkLabel(
+            self, text="Interpretación en Lenguaje Natural:",
+            font=("Arial", 14, "bold"), text_color=("#1f6aa5", "#3B8ED0"),
+        )
         self.lbl_out.grid(row=1, column=1, padx=15, pady=(0, 5), sticky="nw")
 
-        self.txt_out = ctk.CTkTextbox(self, font=("Arial", 14), wrap="word")
+        self.txt_out = ctk.CTkTextbox(self, font=("Arial", 13), wrap="word")
         self.txt_out.grid(row=2, column=1, padx=15, pady=(0, 15), sticky="nsew")
         self.txt_out.configure(state="disabled")
 
-        # Bottom Frame for Status and Export Buttons
         self.bottom_frame = ctk.CTkFrame(self, fg_color="transparent")
         self.bottom_frame.grid(row=3, column=0, columnspan=2, padx=15, pady=(0, 10), sticky="ew")
-        
+
         self.lbl_status = ctk.CTkLabel(self.bottom_frame, text="Listo.", text_color="gray")
         self.lbl_status.pack(side="left")
 
-        self.btn_export = ctk.CTkButton(self.bottom_frame, text="Exportar Interpretación", width=160, fg_color="#27AE60", hover_color="#2ECC71", command=self.export_interpretation)
-        self.btn_export.pack(side="right", padx=(10, 0))
+        self.btn_export = ctk.CTkButton(
+            self.bottom_frame, text="Exportar Interpretación", width=165,
+            fg_color="#27AE60", hover_color="#2ECC71", command=self.export_interpretation,
+        )
+        self.btn_export.pack(side="right", padx=(8, 0))
 
+        self.btn_copy = ctk.CTkButton(
+            self.bottom_frame, text="Copiar Resultado", width=130,
+            fg_color="#2E86C1", hover_color="#21618C", command=self.copy_interpretation,
+        )
+        self.btn_copy.pack(side="right")
+
+    def copy_interpretation(self):
+        content = self.txt_out.get("1.0", "end").strip()
+        if not content:
+            messagebox.showwarning("Vacío", "No hay texto para copiar.", parent=self)
+            return
+        self.clipboard_clear()
+        self.clipboard_append(content)
+        self.lbl_status.configure(text="Interpretación copiada al portapapeles.")
 
     def export_interpretation(self):
         content = self.txt_out.get("1.0", "end").strip()
         if not content:
-            messagebox.showwarning("Vacío", "No hay nada que exportar.")
+            messagebox.showwarning("Vacío", "No hay nada que exportar.", parent=self)
             return
-        file_path = filedialog.asksaveasfilename(defaultextension=".html", filetypes=[("HTML Document", "*.html"), ("Markdown", "*.md"), ("Texto plano", "*.txt")], title="Guardar Interpretación")
+        file_path = filedialog.asksaveasfilename(
+            defaultextension=".html",
+            filetypes=[("HTML Document", "*.html"), ("Markdown", "*.md"), ("Texto plano", "*.txt")],
+            title="Guardar Interpretación",
+        )
         if file_path:
             try:
                 with open(file_path, "w", encoding="utf-8") as f:
                     if file_path.endswith(".html"):
-                        html = content
-                        html = re.sub(r'\*\*(.*?)\*\*', r'<b>\1</b>', html)
-                        html = re.sub(r'\*(.*?)\*', r'<i>\1</i>', html)
-                        html = html.replace('\n', '<br>')
-                        f.write(f"<!DOCTYPE html><html><head><meta charset='utf-8'><style>body{{font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; line-height: 1.6; color: #eee; background-color: #1e1e1e;}} .container{{max-width: 800px; margin: 0 auto; background: #2d2d2d; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.3);}} h2{{color: #4da6ff;}}</style></head><body><div class='container'><h2>Reporte Interpretado</h2>{html}</div></body></html>")
+                        safe_html = content.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+                        safe_html = re.sub(r"\*\*(.*?)\*\*", r"<b>\1</b>", safe_html)
+                        safe_html = safe_html.replace("\n", "<br>")
+                        f.write(
+                            "<!DOCTYPE html><html><head><meta charset='utf-8'>"
+                            "<style>body{font-family:'Segoe UI',sans-serif;padding:20px;line-height:1.6;color:#e6edf3;background:#0d1117;}"
+                            ".container{max-width:860px;margin:0 auto;background:#161b22;padding:28px;border-radius:10px;border:1px solid #30363d;}"
+                            "h2{color:#58a6ff;margin-top:0;}</style></head>"
+                            f"<body><div class='container'><h2>Reporte Interpretado</h2>{safe_html}</div></body></html>"
+                        )
                     else:
                         f.write(content)
-                messagebox.showinfo("Guardado", f"Interpretación exportada exitosamente.\n{file_path}")
+                messagebox.showinfo("Guardado", f"Interpretación exportada exitosamente.\n{file_path}", parent=self)
             except Exception as e:
-                messagebox.showerror("Error", f"No se pudo guardar: {e}")
+                messagebox.showerror("Error", f"No se pudo guardar: {e}", parent=self)
 
     def load_file(self):
-        file_path = filedialog.askopenfilename(filetypes=[("Archivos de texto/log", "*.txt *.log"), ("Todos los archivos", "*.*")])
+        file_path = filedialog.askopenfilename(
+            filetypes=[("Archivos de texto/log", "*.txt *.log"), ("Todos los archivos", "*.*")]
+        )
         if file_path:
             try:
                 with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
@@ -180,125 +191,66 @@ class InterpreterApp(ctk.CTkToplevel):
                 self.txt_raw.insert("1.0", content)
                 self.lbl_status.configure(text=f"Archivo cargado: {os.path.basename(file_path)}")
             except Exception as e:
-                messagebox.showerror("Error", f"No se pudo leer el archivo: {e}")
+                messagebox.showerror("Error", f"No se pudo leer el archivo: {e}", parent=self)
 
     def run_offline(self):
         content = self.txt_raw.get("1.0", "end").strip()
-        if not content: return
+        if not content:
+            return
         self.lbl_status.configure(text="Analizando localmente...")
-        output = []
-        lower_content = content.lower()
-
-        if "ping" in lower_content and "ttl=" in lower_content:
-            output.append("[OK] **Comando Ping Detectado**")
-            perdidos = re.search(r"(?:perdidos|lost)\s*=\s*(\d+)", lower_content)
-            if perdidos:
-                num = int(perdidos.group(1))
-                if num == 0: output.append("[OK] Tu conexión hacia el destino es estable y no hay pérdida de datos.")
-                else: output.append(f"[AVISO] Alerta: Se detectó una pérdida de {num} paquetes.")
-            media = re.search(r"(?:media|average)\s*=\s*(\d+)ms", lower_content)
-            if media:
-                ms = int(media.group(1))
-                if ms < 50: output.append(f"Tu latencia promedio es excelente ({ms} ms).")
-                elif ms < 150: output.append(f"[AVISO] Tu latencia promedio es normal ({ms} ms).")
-                else: output.append(f"[ERROR] Tu latencia es muy alta ({ms} ms).")
-            output.append("\n---\n")
-
-        if "ipconfig" in lower_content or "lan" in lower_content or "ethernet" in lower_content:
-            ip = re.search(r"(?:direcci.n ipv4|ipv4 address)[^:]*: ([\d\.]+)", lower_content)
-            gw = re.search(r"(?:puerta de enlace predeterminada|default gateway)[^:]*: ([\d\.]+)", lower_content)
-            if ip or gw:
-                output.append("[OK] **Configuración de Red (IPConfig) Detectada**")
-                if ip: output.append(f"[OK] Estás conectado correctamente. Tu dirección IP local en esta red es: **{ip.group(1)}**.")
-                if gw: output.append(f"[OK] La dirección de tu router principal (Puerta de enlace) es: **{gw.group(1)}**.")
-                output.append("\n---\n")
-
-        if not output:
-            output.append("[INFO] **Análisis Local Finalizado**\n\nNo se detectó un patrón conocido.")
-
-        self.set_output("\n".join(output))
+        result = ai_engine.analyze_offline(content)
+        self.set_output(result)
         self.lbl_status.configure(text="Análisis offline completado.")
 
     def run_online(self):
         content = self.txt_raw.get("1.0", "end").strip()
-        if not content: return
-        settings = get_api_settings()
-        
-        use_train = self.var_use_train.get()
+        if not content:
+            return
+        settings = ai_engine.load_ai_settings()
+        use_train = bool(self.var_use_train.get())
         train = settings.get("model_train", []) if use_train else []
-        
         if not train:
-            provider = settings.get("current_provider", "Google Gemini")
-            prov_data = settings.get("providers", {}).get(provider, {})
-            if not prov_data.get("api_key") or not prov_data.get("model"):
-                if messagebox.askyesno("API Key", "Falta configurar la API o el modelo. ¿Deseas configurarlos ahora?"):
+            prov = settings.get("current_provider", "Google Gemini")
+            pdata = settings.get("providers", {}).get(prov, {})
+            needs_key = ai_engine.provider_requires_api_key(prov, pdata.get("base_url", ""))
+            if (needs_key and not pdata.get("api_key")) or not pdata.get("model"):
+                if messagebox.askyesno("Configuración IA", "Falta configurar el proveedor o el modelo. ¿Deseas configurarlos ahora?", parent=self):
                     self.config_api()
                 return
-            train = [{"provider": provider, "model": prov_data.get("model")}]
-            
+
+        style_map = {"Técnico": "tecnico", "Simple": "simple", "Solo Errores": "errores"}
+        style_key = style_map.get(self.var_style.get(), "tecnico")
+        prompt = ai_engine.build_analysis_prompt(content, style=style_key, domain=self._domain)
+
+        self.btn_online.configure(state="disabled")
         self.lbl_status.configure(text="Conectando con IA... Por favor espera.")
-        self.set_output("Analizando con IA...\n\nSi el reporte es muy largo, esto puede tomar unos segundos.")
-        threading.Thread(target=self._run_train, args=(settings, train, content, 0), daemon=True).start()
+        self.set_output("Analizando con IA...\n\nSi el reporte es extenso, se aplicó recorte inteligente para optimizar tokens.")
 
-    def _run_train(self, settings, train, content, index):
-        if index >= len(train):
-            msg = "[ERROR] Error de conexión en los modelos.\n\nTodos los intentos fallaron (Verifica tus llaves API o saldo).\n\n[TIP] Consejo: Si estás usando modelos gratuitos, es posible que los servidores estén saturados. ¡Por favor, inténtalo de nuevo en un minuto mientras se liberan!"
-            self.after(0, self.set_output, msg)
-            self.after(0, lambda: self.lbl_status.configure(text="Error fatal en el Tren de Modelos."))
-            return
-            
-        current = train[index]
-        provider = current["provider"]
-        model = current["model"]
-        
-        prov_data = settings.get("providers", {}).get(provider, {})
-        api_key = prov_data.get("api_key", "")
-        base_url = prov_data.get("base_url", "")
-        
-        if not api_key:
-            self._run_train(settings, train, content, index + 1)
-            return
+        def _worker():
+            def on_status(msg):
+                self.after(0, lambda m=msg: self.lbl_status.configure(text=m))
 
-        prompt = "Instrucción estricta: Traduce este resultado crudo de consola a lenguaje natural, indicando proceso, significado y errores. Usa emojis. ESTÁ ESTRICTAMENTE PROHIBIDO usar formato Markdown (sin asteriscos **, sin numerales ##, sin cursivas). Devuelve texto plano totalmente limpio.\n\n" + content
-        
-        try:
-            if provider == "Google Gemini":
-                url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
-                headers = {'Content-Type': 'application/json'}
-                data = {"contents": [{"parts":[{"text": prompt}]}]}
-                req = urllib.request.Request(url, data=json.dumps(data).encode('utf-8'), headers=headers, method='POST')
-                with urllib.request.urlopen(req) as response:
-                    result = json.loads(response.read().decode())
-                    text_response = result['candidates'][0]['content']['parts'][0]['text']
-                    
-            elif provider == "Anthropic Claude":
-                url = "https://api.anthropic.com/v1/messages"
-                headers = {'Content-Type': 'application/json', 'x-api-key': api_key, 'anthropic-version': '2023-06-01'}
-                data = {"model": model, "max_tokens": 1024, "messages": [{"role": "user", "content": prompt}]}
-                req = urllib.request.Request(url, data=json.dumps(data).encode('utf-8'), headers=headers, method='POST')
-                with urllib.request.urlopen(req) as response:
-                    result = json.loads(response.read().decode())
-                    text_response = result['content'][0]['text']
-                    
-            elif provider in ["OpenAI", "Groq", "Deepseek", "Personalizado"]:
-                if provider == "OpenAI": url = "https://api.openai.com/v1/chat/completions"
-                elif provider == "Groq": url = "https://api.groq.com/openai/v1/chat/completions"
-                elif provider == "Deepseek": url = "https://api.deepseek.com/chat/completions"
-                else: url = base_url
-                headers = {'Content-Type': 'application/json', 'Authorization': f'Bearer {api_key}'}
-                data = {"model": model, "messages": [{"role": "user", "content": prompt}]}
-                req = urllib.request.Request(url, data=json.dumps(data).encode('utf-8'), headers=headers, method='POST')
-                with urllib.request.urlopen(req) as response:
-                    result = json.loads(response.read().decode())
-                    text_response = result['choices'][0]['message']['content']
+            res = ai_engine.run_model_train(settings, prompt, use_train=use_train, status_cb=on_status, timeout=25)
 
-            signature = f"[Analizado por {provider} - {model}]\n\n"
-            self.after(0, self.set_output, signature + text_response)
-            self.after(0, lambda: self.lbl_status.configure(text=f"Análisis completado usando {provider} ({model})."))
+            def _finish():
+                self.btn_online.configure(state="normal")
+                if res["ok"]:
+                    signature = f"[Analizado por {res['provider']} - {res['model']}]\n\n"
+                    self.set_output(signature + res["text"])
+                    self.lbl_status.configure(text=f"Análisis completado usando {res['provider']} ({res['model']}).")
+                else:
+                    err_detail = "\n".join(f"- {e}" for e in res.get("errors", []))
+                    msg = (
+                        "[ERROR] No se pudo completar el análisis con IA.\n\n"
+                        f"Detalle de intentos:\n{err_detail}\n\n"
+                        "[TIP] Verifica tus llaves API, la conexión a Ollama/LM Studio local o intenta nuevamente."
+                    )
+                    self.set_output(msg)
+                    self.lbl_status.configure(text="Error en el análisis con IA.")
 
-        except Exception as e:
-            self.after(0, lambda p=provider, m=model: self.lbl_status.configure(text=f"[AVISO] {p} ({m}) falló. Saltando al siguiente..."))
-            self._run_train(settings, train, content, index + 1)
+            self.after(0, _finish)
+
+        threading.Thread(target=_worker, daemon=True).start()
 
     def set_output(self, text):
         self.txt_out.configure(state="normal")
@@ -309,11 +261,12 @@ class InterpreterApp(ctk.CTkToplevel):
     def config_api(self):
         ConfigAPIWindow(self)
 
+
 class ModelTrainWindow(ctk.CTkToplevel):
     def __init__(self, master, settings_ref, save_callback):
         super().__init__(master)
         self.title("Configuración de Tren de Modelos (Fallback)")
-        center_window(self, 700, 450)
+        center_window(self, 720, 460)
         self.attributes("-topmost", True)
         self.grab_set()
         apply_window_theme(self)
@@ -322,7 +275,6 @@ class ModelTrainWindow(ctk.CTkToplevel):
         self.save_callback = save_callback
         self.train_list = list(self.settings.get("model_train", []))
 
-        # Layout
         left_frame = ctk.CTkFrame(self)
         left_frame.pack(side="left", fill="both", expand=True, padx=15, pady=15)
 
@@ -332,29 +284,36 @@ class ModelTrainWindow(ctk.CTkToplevel):
         right_frame = ctk.CTkFrame(self)
         right_frame.pack(side="left", fill="both", expand=True, padx=15, pady=15)
 
-        # Left Column (Available Models)
-        valid_provs = [p for p, d in self.settings.get("providers", {}).items() if d.get("api_key")]
-        if not valid_provs: valid_provs = ["Ninguno"]
-        
+        valid_provs = [
+            p for p, d in self.settings.get("providers", {}).items()
+            if d.get("api_key") or not ai_engine.provider_requires_api_key(p, d.get("base_url", ""))
+        ]
+        if not valid_provs:
+            valid_provs = ["Ninguno"]
+
         self.var_prov = ctk.StringVar(value=valid_provs[0])
         opt_prov = ctk.CTkOptionMenu(left_frame, variable=self.var_prov, values=valid_provs, command=self.load_models)
         opt_prov.pack(fill="x", padx=10, pady=10)
 
-        self.lb_avail = tk.Listbox(left_frame, bg="#1e1e1e", fg="#e0e0e0", selectbackground="#3498db", font=("Segoe UI", 11), highlightthickness=0, borderwidth=0)
-        self.lb_avail.pack(fill="both", expand=True, padx=10, pady=(0,10))
+        self.lb_avail = tk.Listbox(
+            left_frame, bg="#1e1e1e", fg="#e0e0e0", selectbackground="#3498db",
+            font=("Segoe UI", 11), highlightthickness=0, borderwidth=0,
+        )
+        self.lb_avail.pack(fill="both", expand=True, padx=10, pady=(0, 10))
 
-        # Mid Column (Arrows)
-        btn_add = ctk.CTkButton(mid_frame, text="▶ Añadir", width=80, fg_color="#3498DB", hover_color="#2980B9", command=self.add_to_train)
+        btn_add = ctk.CTkButton(mid_frame, text="Añadir >", width=85, fg_color="#3498DB", hover_color="#2980B9", command=self.add_to_train)
         btn_add.pack(pady=10)
-        btn_rem = ctk.CTkButton(mid_frame, text="◀ Quitar", width=80, fg_color="#E74C3C", hover_color="#C0392B", command=self.rem_from_train)
+        btn_rem = ctk.CTkButton(mid_frame, text="< Quitar", width=85, fg_color="#E74C3C", hover_color="#C0392B", command=self.rem_from_train)
         btn_rem.pack(pady=10)
 
-        # Right Column (Train)
         ctk.CTkLabel(right_frame, text="Vagones del Tren (Orden de ejecución):", font=("Arial", 12, "bold")).pack(pady=10)
-        self.lb_train = tk.Listbox(right_frame, bg="#1e1e1e", fg="#e0e0e0", selectbackground="#3498db", font=("Segoe UI", 11), highlightthickness=0, borderwidth=0)
-        self.lb_train.pack(fill="both", expand=True, padx=10, pady=(0,10))
+        self.lb_train = tk.Listbox(
+            right_frame, bg="#1e1e1e", fg="#e0e0e0", selectbackground="#3498db",
+            font=("Segoe UI", 11), highlightthickness=0, borderwidth=0,
+        )
+        self.lb_train.pack(fill="both", expand=True, padx=10, pady=(0, 10))
 
-        btn_test = ctk.CTkButton(right_frame, text=" Testear Tren (Reporte)", fg_color="#F39C12", hover_color="#D68910", command=self.test_train)
+        btn_test = ctk.CTkButton(right_frame, text="Testear Tren (Reporte)", fg_color="#D97706", hover_color="#B45309", command=self.test_train)
         btn_test.pack(pady=5)
 
         btn_save = ctk.CTkButton(self, text="Guardar Tren", fg_color="#27AE60", hover_color="#2ECC71", command=self.save)
@@ -365,7 +324,10 @@ class ModelTrainWindow(ctk.CTkToplevel):
 
     def load_models(self, prov):
         self.lb_avail.delete(0, tk.END)
-        models = self.settings.get("providers", {}).get(prov, {}).get("cached_models", [])
+        pdata = self.settings.get("providers", {}).get(prov, {})
+        models = list(pdata.get("cached_models", []))
+        if pdata.get("model") and pdata["model"] not in models:
+            models.insert(0, pdata["model"])
         for m in models:
             self.lb_avail.insert(tk.END, m)
 
@@ -389,72 +351,67 @@ class ModelTrainWindow(ctk.CTkToplevel):
 
     def test_train(self):
         if not self.train_list:
-            messagebox.showwarning("Tren Vacío", "No hay modelos en el tren para testear.")
+            messagebox.showwarning("Tren Vacío", "No hay modelos en el tren para testear.", parent=self)
             return
 
         test_win = ctk.CTkToplevel(self)
-        test_win.title(" Reporte de Efectividad de Modelos")
-        center_window(test_win, 650, 400)
+        test_win.title("Reporte de Efectividad de Modelos")
+        center_window(test_win, 660, 410)
         test_win.attributes("-topmost", True)
         test_win.grab_set()
         apply_window_theme(test_win)
-        
+
         txt = ctk.CTkTextbox(test_win, font=("Consolas", 12))
         txt.pack(fill="both", expand=True, padx=15, pady=15)
-        txt.insert("end", "Iniciando Test de Conectividad y Cuotas del Tren...\n\n")
+        txt.insert("end", "Iniciando Test de Conectividad y Cuotas del Tren (timeout 15s por modelo)...\n\n")
+
+        def append_safe(msg):
+            try:
+                if test_win.winfo_exists():
+                    txt.insert("end", msg)
+                    txt.see("end")
+            except Exception:
+                pass
 
         def _run_test():
-            import urllib.request, urllib.error
             for idx, item in enumerate(self.train_list):
                 prov = item["provider"]
                 mod = item["model"]
-                prov_data = self.settings.get("providers", {}).get(prov, {})
-                api_key = prov_data.get("api_key", "")
-                base_url = prov_data.get("base_url", "")
-                
-                txt.insert("end", f"[{idx+1}] Probando {prov} ({mod})... ")
-                test_win.update()
-                
-                if not api_key:
-                    txt.insert("end", "[ERROR] SIN LLAVE API\n")
+                pdata = self.settings.get("providers", {}).get(prov, {})
+                api_key = pdata.get("api_key", "")
+                base_url = pdata.get("base_url", "")
+
+                test_win.after(0, append_safe, f"[{idx + 1}] Probando {prov} ({mod})... ")
+                if ai_engine.provider_requires_api_key(prov, base_url) and not api_key:
+                    test_win.after(0, append_safe, "[ERROR] SIN LLAVE API\n")
                     continue
-                    
-                prompt = "Responde únicamente con la palabra 'OK'."
-                status = "[OK] EFECTIVO (Respuesta Exitosa)"
-                
+
                 try:
-                    if prov == "Google Gemini":
-                        url = f"https://generativelanguage.googleapis.com/v1beta/models/{mod}:generateContent?key={api_key}"
-                        req = urllib.request.Request(url, data=json.dumps({"contents": [{"parts":[{"text": prompt}]}]}).encode('utf-8'), headers={'Content-Type': 'application/json'}, method='POST')
-                        urllib.request.urlopen(req)
-                    elif prov == "Anthropic Claude":
-                        url = "https://api.anthropic.com/v1/messages"
-                        req = urllib.request.Request(url, data=json.dumps({"model": mod, "max_tokens": 10, "messages": [{"role": "user", "content": prompt}]}).encode('utf-8'), headers={'Content-Type': 'application/json', 'x-api-key': api_key, 'anthropic-version': '2023-06-01'}, method='POST')
-                        urllib.request.urlopen(req)
-                    elif prov in ["OpenAI", "Groq", "Deepseek", "Personalizado"]:
-                        if prov == "OpenAI": url = "https://api.openai.com/v1/chat/completions"
-                        elif prov == "Groq": url = "https://api.groq.com/openai/v1/chat/completions"
-                        elif prov == "Deepseek": url = "https://api.deepseek.com/chat/completions"
-                        else: url = base_url
-                        req = urllib.request.Request(url, data=json.dumps({"model": mod, "messages": [{"role": "user", "content": prompt}]}).encode('utf-8'), headers={'Content-Type': 'application/json', 'Authorization': f'Bearer {api_key}'}, method='POST')
-                        urllib.request.urlopen(req)
-                        
-                except urllib.error.HTTPError as e:
-                    if e.code == 429:
-                        status = "[AVISO] ERROR 429 (Límite de cuota excedido - No apto)"
-                    elif e.code == 404:
-                        status = "[ERROR] ERROR 404 (El modelo no existe o sin acceso)"
-                    else:
-                        status = f"[ERROR] ERROR HTTP {e.code}"
-                except Exception as e:
-                    status = f"[ERROR] ERROR ({str(e)[:30]})"
-                
-                txt.insert("end", f"{status}\n")
-                test_win.update()
-                
-            txt.insert("end", "\n--- Test Finalizado ---")
-            txt.configure(state="disabled")
-            
+                    ai_engine.call_provider(
+                        provider=prov,
+                        model=mod,
+                        api_key=api_key,
+                        prompt="Responde únicamente con la palabra OK.",
+                        base_url=base_url,
+                        timeout=15,
+                        max_tokens=16,
+                    )
+                    status = "[OK] EFECTIVO (Respuesta Exitosa)"
+                except Exception as exc:
+                    status = f"[ERROR] {ai_engine.classify_http_error(exc)}"
+
+                test_win.after(0, append_safe, f"{status}\n")
+
+            def _finish_test():
+                append_safe("\n--- Test Finalizado ---")
+                try:
+                    if test_win.winfo_exists():
+                        txt.configure(state="disabled")
+                except Exception:
+                    pass
+
+            test_win.after(0, _finish_test)
+
         threading.Thread(target=_run_test, daemon=True).start()
 
     def save(self):
@@ -462,28 +419,31 @@ class ModelTrainWindow(ctk.CTkToplevel):
         self.save_callback()
         self.destroy()
 
+
 class CustomDropdownWindow(ctk.CTkToplevel):
     def __init__(self, master, button, variable, values):
         super().__init__(master)
         self.overrideredirect(True)
-        height = min(len(values) * 32 + 10, 320)  # Max ~10 items
-        
+        height = min(len(values) * 32 + 10, 320)
+
         x = button.winfo_rootx()
         y = button.winfo_rooty() + button.winfo_height()
         width = button.winfo_width()
-        
+
         self.geometry(f"{width}x{height}+{x}+{y}")
         self.attributes("-topmost", True)
         self.grab_set()
-        
+
         frame = ctk.CTkScrollableFrame(self, fg_color=("#e0e0e0", "#2b2b2b"), corner_radius=0)
         frame.pack(fill="both", expand=True)
-        
+
         for val in values:
-            b = ctk.CTkButton(frame, text=val, fg_color="transparent", hover_color=("#c8c8c8", "#334155"), 
-                              text_color=("#111", "#eee"), anchor="w", command=lambda v=val: self.select(v, variable))
+            b = ctk.CTkButton(
+                frame, text=val, fg_color="transparent", hover_color=("#c8c8c8", "#334155"),
+                text_color=("#111", "#eee"), anchor="w", command=lambda v=val: self.select(v, variable),
+            )
             b.pack(fill="x", padx=2, pady=1)
-            
+
         self.bind("<FocusOut>", lambda e: self.destroy())
         self.bind("<Escape>", lambda e: self.destroy())
 
@@ -496,32 +456,33 @@ class ConfigAPIWindow(ctk.CTkToplevel):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.title("Configuración API Avanzada (Bóveda IA)")
-        center_window(self, 700, 550)
-        
+        center_window(self, 730, 610)
         apply_window_theme(self)
 
         if parent:
             self.transient(parent)
         self.grab_set()
 
-        self.settings = get_api_settings()
-        
+        self.settings = ai_engine.load_ai_settings()
         curr_prov = self.settings.get("current_provider", "Google Gemini")
+        if curr_prov not in ai_engine.PROVIDERS_ORDER:
+            curr_prov = "Google Gemini"
         prov_data = self.settings.get("providers", {}).get(curr_prov, {})
         self.cached_models = prov_data.get("cached_models", [])
 
-        lbl1 = ctk.CTkLabel(self, text="Gestor de Modelos de Lenguaje (LLM)", font=("Arial", 18, "bold"))
-        lbl1.pack(pady=(20, 10))
+        ctk.CTkLabel(self, text="Gestor de Modelos de Lenguaje (Bóveda IA + Local)", font=("Arial", 17, "bold")).pack(pady=(16, 8))
 
-        # 1. Provider
+        # 1. Proveedor
         frame_prov = ctk.CTkFrame(self, fg_color="transparent")
-        frame_prov.pack(fill="x", padx=40, pady=10)
+        frame_prov.pack(fill="x", padx=36, pady=8)
         ctk.CTkLabel(frame_prov, text="Proveedor:", width=100, anchor="w").pack(side="left")
         self.var_provider = ctk.StringVar(value=curr_prov)
-        self.menu_provider = ctk.CTkOptionMenu(frame_prov, variable=self.var_provider, values=["Google Gemini", "OpenAI", "Anthropic Claude", "Groq", "Deepseek", "Personalizado"], command=self.on_provider_change)
+        self.menu_provider = ctk.CTkOptionMenu(
+            frame_prov, variable=self.var_provider, values=ai_engine.PROVIDERS_ORDER, command=self.on_provider_change
+        )
         self.menu_provider.pack(side="left", fill="x", expand=True)
 
-        # Base URL (Hidden by default)
+        # URL Base (visible en Ollama, LM Studio y Personalizado)
         self.frame_url = ctk.CTkFrame(self, fg_color="transparent")
         ctk.CTkLabel(self.frame_url, text="URL Base:", width=100, anchor="w").pack(side="left")
         self.var_url = ctk.StringVar(value=prov_data.get("base_url", ""))
@@ -530,195 +491,248 @@ class ConfigAPIWindow(ctk.CTkToplevel):
 
         # 2. API Key
         frame_key = ctk.CTkFrame(self, fg_color="transparent")
-        frame_key.pack(fill="x", padx=40, pady=10)
+        frame_key.pack(fill="x", padx=36, pady=8)
         ctk.CTkLabel(frame_key, text="API Key:", width=100, anchor="w").pack(side="left")
         self.var_key = ctk.StringVar(value=prov_data.get("api_key", ""))
         self.entry_key = ctk.CTkEntry(frame_key, textvariable=self.var_key, show="*")
         self.entry_key.pack(side="left", fill="x", expand=True)
-        
-        self.btn_link = ctk.CTkButton(self, text="Obtener API Key", fg_color="transparent", text_color="#3498DB", hover_color="#2C3E50", command=self.open_link)
-        self.btn_link.pack(pady=(0, 5))
+
+        self.btn_link = ctk.CTkButton(
+            self, text="Obtener API Key", fg_color="transparent", text_color="#3498DB",
+            hover_color="#2C3E50", command=self.open_link,
+        )
+        self.btn_link.pack(pady=(0, 4))
 
         self.var_free_only = ctk.BooleanVar(value=self.settings.get("free_only", True))
-        self.chk_free = ctk.CTkCheckBox(self, text="Solo mostrar modelos gratuitos/ligeros (evitar Error 429)", variable=self.var_free_only, text_color="gray")
-        self.chk_free.pack(pady=5)
+        self.chk_free = ctk.CTkCheckBox(
+            self, text="Solo mostrar modelos gratuitos/ligeros (evitar Error 429)",
+            variable=self.var_free_only, text_color="gray",
+        )
+        self.chk_free.pack(pady=4)
 
-        # 3. Load Models Button
-        self.btn_fetch = ctk.CTkButton(self, text="Cargar Modelos Disponibles", fg_color="#F39C12", hover_color="#D68910", command=self.fetch_models)
-        self.btn_fetch.pack(pady=(10, 20))
-        
-        self.lbl_verify = ctk.CTkLabel(self, text="Ingresa tu API Key y carga los modelos para verificar.", text_color="gray")
-        self.lbl_verify.pack(pady=5)
+        # 3. Cargar modelos
+        self.btn_fetch = ctk.CTkButton(
+            self, text="Cargar Modelos Disponibles", fg_color="#D97706", hover_color="#B45309",
+            command=self.fetch_models,
+        )
+        self.btn_fetch.pack(pady=(8, 8))
 
-        # 4. Model Dropdown
+        self.lbl_verify = ctk.CTkLabel(
+            self, text="Ingresa tu API Key (o inicia Ollama/LM Studio local) y carga los modelos.",
+            text_color="gray",
+        )
+        self.lbl_verify.pack(pady=4)
+
+        # 4. Modelo
         self.frame_mod = ctk.CTkFrame(self, fg_color="transparent")
-        self.frame_mod.pack(fill="x", padx=40, pady=10)
+        self.frame_mod.pack(fill="x", padx=36, pady=8)
         ctk.CTkLabel(self.frame_mod, text="Modelo:", width=100, anchor="w").pack(side="left")
         self.var_model = ctk.StringVar(value=prov_data.get("model", ""))
-        
+
         initial_vals = self.cached_models if self.cached_models else (
             [self.var_model.get()] if self.var_model.get() else ["--- Carga los modelos primero ---"]
         )
-        if not self.var_model.get(): self.var_model.set(initial_vals[0])
-        
-        self.menu_model = ctk.CTkButton(self.frame_mod, textvariable=self.var_model, fg_color=("#d9d9d9", "#34495e"), 
-                                        text_color=("#111", "#eee"), hover_color=("#c8c8c8", "#2c3e50"), 
-                                        anchor="w", command=self.open_model_dropdown)
+        if not self.var_model.get():
+            self.var_model.set(initial_vals[0])
+
+        self.menu_model = ctk.CTkButton(
+            self.frame_mod, textvariable=self.var_model, fg_color=("#d5dfeb", "#34495e"),
+            text_color=("#1e293b", "#eee"), hover_color=("#c2d0e0", "#2c3e50"),
+            anchor="w", command=self.open_model_dropdown,
+        )
         self.menu_model.pack(side="left", fill="x", expand=True)
-        
         self.entry_model = ctk.CTkEntry(self.frame_mod, textvariable=self.var_model)
 
-        # Buttons
+        # Botones principales
         frame_btns = ctk.CTkFrame(self, fg_color="transparent")
-        frame_btns.pack(pady=20)
+        frame_btns.pack(pady=(14, 6))
 
-        btn_save = ctk.CTkButton(frame_btns, text="Guardar en Bóveda Local", fg_color="#27AE60", hover_color="#2ECC71", command=self.save)
-        btn_save.pack(side="left", padx=10)
+        ctk.CTkButton(frame_btns, text="Guardar en Bóveda (DPAPI)", fg_color="#27AE60", hover_color="#2ECC71", command=self.save).pack(side="left", padx=8)
+        ctk.CTkButton(frame_btns, text="Configurar Tren de Modelos", fg_color="#8E44AD", hover_color="#9B59B6", command=self.open_train).pack(side="left", padx=8)
 
-        btn_train = ctk.CTkButton(frame_btns, text="Configurar Tren de Modelos", fg_color="#8E44AD", hover_color="#9B59B6", command=self.open_train)
-        btn_train.pack(side="left", padx=10)
+        # Respaldo portátil cifrado (.aivault)
+        frame_backup = ctk.CTkFrame(self, fg_color="transparent")
+        frame_backup.pack(pady=(4, 14))
+        ctk.CTkButton(frame_backup, text="Exportar Respaldo (.aivault)", width=190, fg_color="#2E86C1", hover_color="#21618C", command=self.export_vault_backup).pack(side="left", padx=8)
+        ctk.CTkButton(frame_backup, text="Importar Respaldo (.aivault)", width=190, fg_color="#475569", hover_color="#334155", command=self.import_vault_backup).pack(side="left", padx=8)
 
         self.on_provider_change(self.var_provider.get(), initial_load=True)
 
     def on_provider_change(self, val, initial_load=False):
         prov_data = self.settings.get("providers", {}).get(val, {})
-        
+        default_url = ai_engine.DEFAULT_ENDPOINTS.get(val, "")
+
         if not initial_load:
             self.var_key.set(prov_data.get("api_key", ""))
-            self.var_url.set(prov_data.get("base_url", ""))
+            self.var_url.set(prov_data.get("base_url") or default_url)
             self.cached_models = prov_data.get("cached_models", [])
             initial_vals = self.cached_models if self.cached_models else ["--- Carga los modelos primero ---"]
-            self.var_model.set(prov_data.get("model", initial_vals[0] if initial_vals else ""))
-            
-        if val == "Personalizado":
-            self.frame_url.pack(fill="x", padx=40, pady=5, after=self.menu_provider.master)
-            self.btn_fetch.pack_forget()
-            self.lbl_verify.pack_forget()
-            self.btn_link.configure(text="Escribe tu modelo de forma manual", command=lambda: None)
-            self.menu_model.pack_forget()
-            self.entry_model.pack(side="left", fill="x", expand=True)
-            if not initial_load: self.var_model.set("")
+            self.var_model.set(prov_data.get("model") or (initial_vals[0] if initial_vals else ""))
+        elif val in ai_engine.LOCAL_PROVIDERS and not self.var_url.get():
+            self.var_url.set(default_url)
+
+        if val in ai_engine.LOCAL_PROVIDERS or val == "Personalizado":
+            self.frame_url.pack(fill="x", padx=36, pady=5, after=self.menu_provider.master)
         else:
             self.frame_url.pack_forget()
-            self.btn_fetch.pack(pady=(10, 20), before=self.lbl_verify)
-            self.lbl_verify.pack(pady=5, before=self.frame_mod)
+
+        if val == "Personalizado":
+            self.menu_model.pack_forget()
+            self.entry_model.pack(side="left", fill="x", expand=True)
+            self.btn_link.configure(text="Endpoint OpenAI-compatible (API Key opcional en localhost)", command=lambda: None)
+        else:
             self.entry_model.pack_forget()
             self.menu_model.pack(side="left", fill="x", expand=True)
 
             if val == "Google Gemini":
-                self.btn_link.configure(text="Obtener API Key Gratuita (Google AI Studio)", command=lambda: __import__('webbrowser').open("https://aistudio.google.com/app/apikey"))
+                self.btn_link.configure(text="Obtener API Key Gratuita (Google AI Studio)", command=lambda: __import__("webbrowser").open("https://aistudio.google.com/app/apikey"))
             elif val == "OpenAI":
-                self.btn_link.configure(text="Obtener API Key (Plataforma OpenAI)", command=lambda: __import__('webbrowser').open("https://platform.openai.com/api-keys"))
+                self.btn_link.configure(text="Obtener API Key (Plataforma OpenAI)", command=lambda: __import__("webbrowser").open("https://platform.openai.com/api-keys"))
             elif val == "Anthropic Claude":
-                self.btn_link.configure(text="Obtener API Key (Anthropic Console)", command=lambda: __import__('webbrowser').open("https://console.anthropic.com/settings/keys"))
+                self.btn_link.configure(text="Obtener API Key (Anthropic Console)", command=lambda: __import__("webbrowser").open("https://console.anthropic.com/settings/keys"))
             elif val == "Groq":
-                self.btn_link.configure(text="Obtener API Key Gratuita (Groq Cloud)", command=lambda: __import__('webbrowser').open("https://console.groq.com/keys"))
+                self.btn_link.configure(text="Obtener API Key Gratuita (Groq Cloud)", command=lambda: __import__("webbrowser").open("https://console.groq.com/keys"))
             elif val == "Deepseek":
-                self.btn_link.configure(text="Obtener API Key (Deepseek Platform)", command=lambda: __import__('webbrowser').open("https://platform.deepseek.com/api_keys"))
+                self.btn_link.configure(text="Obtener API Key (Deepseek Platform)", command=lambda: __import__("webbrowser").open("https://platform.deepseek.com/api_keys"))
+            elif val == "Ollama (Local)":
+                self.btn_link.configure(text="IA Local Ollama (sin API Key — usa http://localhost:11434)", command=lambda: __import__("webbrowser").open("https://ollama.com"))
+            elif val == "LM Studio (Local)":
+                self.btn_link.configure(text="IA Local LM Studio (sin API Key — usa http://localhost:1234)", command=lambda: __import__("webbrowser").open("https://lmstudio.ai"))
 
     def open_model_dropdown(self):
         vals = self.cached_models if self.cached_models else ["--- Carga los modelos primero ---"]
         CustomDropdownWindow(self, self.menu_model, self.var_model, vals)
 
     def open_link(self):
-        __import__('webbrowser').open("https://aistudio.google.com/app/apikey")
+        __import__("webbrowser").open("https://aistudio.google.com/app/apikey")
 
     def fetch_models(self):
         provider = self.var_provider.get()
         api_key = self.var_key.get().strip()
+        base_url = self.var_url.get().strip()
 
-        if not api_key:
+        if ai_engine.provider_requires_api_key(provider, base_url) and not api_key:
             self.lbl_verify.configure(text="[AVISO] Por favor ingresa tu API Key primero.", text_color="#E74C3C")
             return
 
-        self.lbl_verify.configure(text="Obteniendo modelos oficiales...", text_color="#F39C12")
+        self.lbl_verify.configure(text="Obteniendo modelos disponibles...", text_color="#D97706")
         self.btn_fetch.configure(state="disabled")
-        
-        def _fetch():
-            models = []
-            try:
-                if provider == "Google Gemini":
-                    url = f"https://generativelanguage.googleapis.com/v1beta/models?key={api_key}"
-                    req = urllib.request.Request(url)
-                    with urllib.request.urlopen(req) as response:
-                        res = json.loads(response.read().decode())
-                        for m in res.get("models", []):
-                            name = m.get("name", "").replace("models/", "")
-                            if "vision" not in name and "embedding" not in name:
-                                models.append(name)
-                                
-                elif provider in ["OpenAI", "Groq", "Deepseek"]:
-                    if provider == "OpenAI": url = "https://api.openai.com/v1/models"
-                    elif provider == "Groq": url = "https://api.groq.com/openai/v1/models"
-                    else: url = "https://api.deepseek.com/models"
-                    req = urllib.request.Request(url, headers={'Authorization': f'Bearer {api_key}'})
-                    with urllib.request.urlopen(req) as response:
-                        res = json.loads(response.read().decode())
-                        for m in res.get("data", []):
-                            models.append(m.get("id", ""))
-                            
-                elif provider == "Anthropic Claude":
-                    models = ["claude-3-5-sonnet-20240620", "claude-3-opus-20240229", "claude-3-haiku-20240307", "claude-2.1"]
-                    # Anthropic doesn't have a public models list endpoint natively accessible without specific headers that might block.
-                    # Hardcoded fallback list if successful API key.
-                    url = "https://api.anthropic.com/v1/messages"
-                    data = {"model": "claude-3-haiku-20240307", "max_tokens": 1, "messages": [{"role": "user", "content": "hi"}]}
-                    req = urllib.request.Request(url, data=json.dumps(data).encode('utf-8'), headers={'x-api-key': api_key, 'anthropic-version': '2023-06-01'})
-                    urllib.request.urlopen(req)
 
+        def _fetch():
+            try:
+                models = ai_engine.fetch_provider_models(
+                    provider=provider,
+                    api_key=api_key,
+                    base_url=base_url,
+                    free_only=bool(self.var_free_only.get()),
+                    timeout=15,
+                )
                 if models:
-                    models = sorted(list(set(models)), reverse=True)
-                    if self.var_free_only.get():
-                        models = [m for m in models if not any(x in m.lower() for x in ["pro", "opus", "gpt-4", "advanced", "sonnet", "image", "video", "veo", "sora", "audio", "whisper", "embedding", "realtime", "tts"])]
-                        
                     self.cached_models = models
                     if self.var_model.get() not in models:
-                        if provider == "Google Gemini" and "gemini-1.5-flash" in models: self.after(0, lambda: self.var_model.set("gemini-1.5-flash"))
-                        else: self.after(0, lambda: self.var_model.set(models[0]))
-                    self.after(0, lambda: self.lbl_verify.configure(text=f"[OK] ¡Éxito! Se cargaron {len(models)} modelos disponibles.", text_color="#2ECC71"))
+                        preferred = "gemini-2.0-flash" if "gemini-2.0-flash" in models else (
+                            "gemini-1.5-flash" if "gemini-1.5-flash" in models else models[0]
+                        )
+                        self.after(0, lambda p=preferred: self.var_model.set(p))
+                    self.after(0, lambda n=len(models): self.lbl_verify.configure(text=f"[OK] Se cargaron {n} modelos disponibles.", text_color="#2ECC71"))
                 else:
-                    self.after(0, lambda: self.lbl_verify.configure(text="[AVISO] No se encontraron modelos.", text_color="#E74C3C"))
-
-            except urllib.error.HTTPError as e:
-                self.after(0, lambda: self.lbl_verify.configure(text=f"[ERROR] Error de clave (HTTP {e.code}): La API Key no es válida.", text_color="#E74C3C"))
-            except Exception as e:
-                self.after(0, lambda: self.lbl_verify.configure(text=f"[ERROR] Error de red: {str(e)[:40]}", text_color="#E74C3C"))
+                    self.after(0, lambda: self.lbl_verify.configure(text="[AVISO] No se encontraron modelos en este servidor.", text_color="#E74C3C"))
+            except Exception as exc:
+                msg = ai_engine.classify_http_error(exc)
+                self.after(0, lambda m=msg: self.lbl_verify.configure(text=f"[ERROR] {m}", text_color="#E74C3C"))
             finally:
                 self.after(0, lambda: self.btn_fetch.configure(state="normal"))
-                
+
         threading.Thread(target=_fetch, daemon=True).start()
 
     def open_train(self):
         ModelTrainWindow(self, self.settings, self.save_silent)
 
     def save_silent(self):
-        settings_path = get_user_data_path(os.path.join("tools", "ai_settings.json"))
         try:
-            with open(settings_path, "w", encoding="utf-8") as f:
-                json.dump(self.settings, f, indent=4)
-        except Exception: pass
+            ai_engine.save_ai_settings(self.settings)
+        except Exception:
+            pass
 
     def save(self):
-        settings_path = get_user_data_path(os.path.join("tools", "ai_settings.json"))
         model = self.var_model.get().strip()
         if not model or model.startswith("---"):
-            messagebox.showwarning("Modelo Inválido", "Por favor carga y selecciona un modelo válido.")
+            messagebox.showwarning("Modelo Inválido", "Por favor carga o escribe un modelo válido.", parent=self)
             return
 
         prov = self.var_provider.get()
         self.settings["current_provider"] = prov
-        self.settings["free_only"] = self.var_free_only.get()
+        self.settings["free_only"] = bool(self.var_free_only.get())
         if prov not in self.settings["providers"]:
             self.settings["providers"][prov] = {}
-        
+
         self.settings["providers"][prov]["api_key"] = self.var_key.get().strip()
         self.settings["providers"][prov]["base_url"] = self.var_url.get().strip()
         self.settings["providers"][prov]["model"] = model
         self.settings["providers"][prov]["cached_models"] = self.cached_models
 
         try:
-            with open(settings_path, "w", encoding="utf-8") as f:
-                json.dump(self.settings, f, indent=4)
-            messagebox.showinfo("Bóveda IA", "Clave y configuración guardadas correctamente en la bóveda local.")
+            ai_engine.save_ai_settings(self.settings)
+            messagebox.showinfo(
+                "Bóveda IA",
+                "Configuración guardada y protegida con Windows DPAPI en tu bóveda local.",
+                parent=self,
+            )
         except Exception as e:
-            messagebox.showerror("Error", f"No se pudo guardar la configuración: {e}")
+            messagebox.showerror("Error", f"No se pudo guardar la configuración: {e}", parent=self)
+
+    def export_vault_backup(self):
+        pw1 = simpledialog.askstring("Exportar Respaldo (.aivault)", "Crea una contraseña maestra (mín. 4 caracteres):", show="*", parent=self)
+        if not pw1:
+            return
+        pw2 = simpledialog.askstring("Confirmar Contraseña", "Repite la contraseña maestra:", show="*", parent=self)
+        if pw1 != pw2:
+            messagebox.showerror("Error", "Las contraseñas no coinciden.", parent=self)
+            return
+        out_path = filedialog.asksaveasfilename(
+            defaultextension=".aivault",
+            filetypes=[("Respaldo Bóveda IA", "*.aivault")],
+            initialfile="respaldo_boveda_ia.aivault",
+            title="Guardar Respaldo Cifrado de Bóveda IA",
+        )
+        if not out_path:
+            return
+        try:
+            blob = ai_engine.export_encrypted_vault(self.settings, pw1)
+            with open(out_path, "w", encoding="utf-8") as f:
+                f.write(blob)
+            messagebox.showinfo(
+                "Respaldo Exportado",
+                f"Bóveda cifrada exportada correctamente:\n{out_path}\n\nGuarda tu contraseña maestra para importarla en cualquier otra PC.",
+                parent=self,
+            )
+        except Exception as exc:
+            messagebox.showerror("Error", f"No se pudo exportar: {exc}", parent=self)
+
+    def import_vault_backup(self):
+        in_path = filedialog.askopenfilename(
+            filetypes=[("Respaldo Bóveda IA", "*.aivault"), ("Todos los archivos", "*.*")],
+            title="Seleccionar Respaldo Cifrado (.aivault)",
+        )
+        if not in_path:
+            return
+        pw = simpledialog.askstring("Importar Respaldo (.aivault)", "Ingresa la contraseña maestra del respaldo:", show="*", parent=self)
+        if not pw:
+            return
+        try:
+            with open(in_path, "r", encoding="utf-8") as f:
+                raw = f.read()
+            imported = ai_engine.import_encrypted_vault(raw, pw)
+            ai_engine.save_ai_settings(imported)
+            self.settings = ai_engine.load_ai_settings()
+            curr = self.settings.get("current_provider", "Google Gemini")
+            if curr in ai_engine.PROVIDERS_ORDER:
+                self.var_provider.set(curr)
+                self.on_provider_change(curr, initial_load=False)
+            messagebox.showinfo(
+                "Respaldo Importado",
+                "Bóveda IA restaurada y re-protegida con DPAPI en este equipo.",
+                parent=self,
+            )
+        except Exception as exc:
+            messagebox.showerror("Error al Importar", str(exc), parent=self)

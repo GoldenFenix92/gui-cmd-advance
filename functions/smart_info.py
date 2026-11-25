@@ -68,9 +68,20 @@ class SmartInfoApp(ctk.CTk):
         
         self.btn_refresh = ctk.CTkButton(top, text="Analizar Discos", command=self.analyze, fg_color="#27AE60", hover_color="#1E8449")
         self.btn_refresh.pack(side="left")
-        
+
+        self.btn_ai_smart = ctk.CTkButton(
+            top,
+            text="Interpretar SMART con IA",
+            command=self.interpret_with_ai,
+            fg_color="#8E44AD",
+            hover_color="#9B59B6",
+            state="disabled",
+        )
+        self.btn_ai_smart.pack(side="right")
+
         self.lbl_status = ctk.CTkLabel(top, text="Presiona Analizar para leer datos SMART...", font=("Arial", 12))
         self.lbl_status.pack(side="left", padx=20)
+        self._last_disks_info = []
         
         self.scroll = ctk.CTkScrollableFrame(self, fg_color="transparent")
         self.scroll.grid(row=1, column=0, padx=20, pady=10, sticky="nsew")
@@ -172,10 +183,13 @@ class SmartInfoApp(ctk.CTk):
 
     def done(self, disks_info):
         self.btn_refresh.configure(state="normal")
+        self._last_disks_info = disks_info or []
         if not disks_info:
+            self.btn_ai_smart.configure(state="disabled")
             self.lbl_status.configure(text="No se pudo obtener información SMART. Asegúrate de ejecutar como Administrador.")
             return
-            
+
+        self.btn_ai_smart.configure(state="normal")
         self.lbl_status.configure(text="Análisis completado.")
         
         for disk in disks_info:
@@ -230,6 +244,20 @@ class SmartInfoApp(ctk.CTk):
                     row_idx += 1
             else:
                 ctk.CTkLabel(f, text="Detalles SMART no disponibles para esta unidad.", font=("Arial", 12), text_color="gray").pack(pady=(0, 10))
+
+    def interpret_with_ai(self):
+        if not self._last_disks_info:
+            return
+        lines = ["REPORTE DE SALUD SMART DE DISCOS", "=" * 50]
+        for disk in self._last_disks_info:
+            lines.append(f"Disco: {disk['name']} | Tipo: {disk['media']} | Salud: {disk['status']} | Temp: {disk.get('temp') or 'N/A'} C")
+            for attr in disk.get("smart", []):
+                a_id = attr["id"]
+                aname = KNOWN_ATTRIBUTES.get(a_id, f"Atributo ({a_id})")
+                lines.append(f"  - ID {a_id:02X} ({aname}): Actual={attr['current']}, Peor={attr['worst']}, Raw={attr['raw']}")
+            lines.append("")
+        from functions.interpreter_addon import InterpreterApp
+        InterpreterApp(self, initial_text="\n".join(lines), domain="storage")
 
 if __name__ == "__main__":
     app = SmartInfoApp()
