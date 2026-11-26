@@ -387,6 +387,7 @@ def _get_target_output(f_path, output_dir, suffix, base_dir):
 def main(argv=None):
     parser = argparse.ArgumentParser(description="Compresor de Video e Imágenes")
     parser.add_argument("--input", action="append", help="Archivo o carpeta de entrada")
+    parser.add_argument("--input-list", default="", help="Archivo JSON con lista de archivos multimedia a comprimir")
     parser.add_argument("--output", default="", help="Carpeta de salida (opcional)")
     parser.add_argument("--suffix", default="", help="Sufijo para archivos comprimidos")
     parser.add_argument("--quality", type=int, default=75, help="Calidad de imagen (0-100)")
@@ -397,9 +398,13 @@ def main(argv=None):
     parser.add_argument("--delete-original", action="store_true", help="Eliminar archivos originales procesados con éxito")
 
     args = parser.parse_args(argv)
-    resolved_inputs = _resolve_inputs(args.input)
+    raw_inputs = list(args.input or [])
+    if args.input_list:
+        from functions.drag_drop import load_input_list_file
+        raw_inputs.extend(load_input_list_file(args.input_list))
+    resolved_inputs = _resolve_inputs(raw_inputs)
     if not resolved_inputs:
-        safe_print("[ERROR] Debes seleccionar una carpeta o un archivo de entrada (--input).")
+        safe_print("[ERROR] Debes seleccionar una carpeta o un archivo de entrada (--input o --input-list).")
         sys.exit(1)
 
     ensure_requirements()

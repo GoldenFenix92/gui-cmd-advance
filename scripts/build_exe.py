@@ -60,6 +60,7 @@ HIDDEN_IMPORTS = [
     "functions.compressor",
     "functions.credentials_vault_cli",
     "functions.disk_attributes",
+    "functions.drag_drop",
     "functions.duplicate_finder",
     "functions.health_analyzer",
     "functions.interpreter_addon",

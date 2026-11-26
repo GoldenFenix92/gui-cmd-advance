@@ -392,6 +392,7 @@ def filter_corrupt_files_and_save_manifest(candidate_files, source_folder, recur
 def main(argv=None):
     parser = argparse.ArgumentParser(description="Reparador Avanzado de Multimedia (Fotos y Videos)")
     parser.add_argument("--input", nargs="+", help="Archivo o carpeta de origen")
+    parser.add_argument("--input-list", default="", help="Archivo JSON con lista de archivos multimedia a reparar")
     parser.add_argument("--output", help="Carpeta de destino (opcional)")
     parser.add_argument("--media-type", choices=["all", "videos", "images"], default="all", help="Tipo de archivos a reparar")
     parser.add_argument("--recursive", action="store_true", help="Incluir subcarpetas al escanear sin análisis previo")
@@ -404,6 +405,10 @@ def main(argv=None):
     parser.add_argument("--suffix", default="_reparado", help="Sufijo para archivos reparados")
 
     args = parser.parse_args(argv)
+    combined_inputs = list(args.input or [])
+    if args.input_list:
+        from functions.drag_drop import load_input_list_file
+        combined_inputs.extend(load_input_list_file(args.input_list))
 
     base_root = None
     active_manifest_path = None
@@ -423,11 +428,11 @@ def main(argv=None):
             safe_print(f"[LIMPIEZA] Manifiesto temporal eliminado: {active_manifest_path}")
             sys.exit(0)
     else:
-        if not args.input:
-            safe_print("[ERROR] Debes indicar --input o --from-manifest.")
+        if not combined_inputs:
+            safe_print("[ERROR] Debes indicar --input, --input-list o --from-manifest.")
             sys.exit(1)
         candidates = collect_target_files(
-            args.input,
+            combined_inputs,
             media_type=args.media_type,
             recursive=args.recursive,
             output_dir=args.output,
@@ -437,9 +442,9 @@ def main(argv=None):
             safe_print("No se encontraron archivos multimedia para procesar.")
             sys.exit(1)
 
-        has_directory_input = any(os.path.isdir(inp) for inp in args.input)
-        if len(args.input) == 1 and os.path.isdir(args.input[0]):
-            base_root = args.input[0]
+        has_directory_input = any(os.path.isdir(inp) for inp in combined_inputs)
+        if len(combined_inputs) == 1 and os.path.isdir(combined_inputs[0]):
+            base_root = combined_inputs[0]
 
         if has_directory_input and not args.force_all:
             src_folder = base_root or os.path.dirname(os.path.abspath(str(candidates[0])))

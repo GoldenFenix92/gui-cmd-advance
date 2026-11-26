@@ -142,11 +142,17 @@ class App(tb.Window):
         # Tarjeta redondeada (12px): Parámetros y Argumentos
         args_card_wrap = ui_theme.RoundedCard(self.left_frame, title="Parámetros y Opciones", padding=(2, 2))
         args_card_wrap.grid(row=2, column=0, pady=(0, 10), sticky="nsew")
-        args_card_wrap.body.grid_rowconfigure(0, weight=1)
+        args_card_wrap.body.grid_rowconfigure(1, weight=1)
         args_card_wrap.body.grid_columnconfigure(0, weight=1)
 
+        self._drop_handler = None
+        self._dropped_batch_state = None
+        self.dropped_batch_frame = tb.Frame(args_card_wrap.body, style="PulseCardInner.TFrame")
+        self.dropped_batch_frame.grid(row=0, column=0, sticky="ew", padx=4, pady=(0, 4))
+        self.dropped_batch_frame.grid_remove()
+
         self.args_frame = ScrolledFrame(args_card_wrap.body, auto_hide=False, padding=4)
-        self.args_frame.grid(row=0, column=0, sticky="nsew")
+        self.args_frame.grid(row=1, column=0, sticky="nsew")
 
         # Botonera de ejecución
         self.btn_frame = tb.Frame(self.left_frame)
@@ -355,6 +361,7 @@ class App(tb.Window):
 
         self.on_category_change(self.cat_var.get())
 
+        self.after(200, self._init_drag_and_drop)
         self.after(500, lambda: check_dependencies(self))
         from functions.telemetry import check_for_crashes, check_for_updates
         self.after(1500, lambda: check_for_crashes(self))
@@ -660,6 +667,7 @@ class App(tb.Window):
             self.on_command_change("")
 
     def on_command_change(self, selected_command):
+        self._clear_dropped_batch(refresh_preview=False)
         if self.cat_var.get() == FAVORITES_CATEGORY_NAME:
             self.fav_btn.configure(image=self._icons["trash"], bootstyle="danger", command=self.remove_favorite)
         else:
@@ -1042,6 +1050,16 @@ class App(tb.Window):
         self._refresh_conditional_args()
 
         command_list = [cmd_data.get("command", "")]
+        batch_active = (
+            isinstance(self._dropped_batch_state, dict)
+            and self._dropped_batch_state.get("command_name") == selected_command
+            and bool(self._dropped_batch_state.get("list_path"))
+        )
+        if batch_active:
+            list_path = str(self._dropped_batch_state["list_path"]).replace("/", "\\")
+            command_list.append("--input-list")
+            command_list.append(f'"{list_path}"')
+
         for _arg_name, arg_data in self.current_args_vars.items():
             if not arg_data.get("is_visible", True):
                 continue
@@ -1089,7 +1107,9 @@ class App(tb.Window):
             if not out_val and input_val:
                 out_val = os.path.dirname(input_val) if os.path.isfile(input_val) else input_val
 
-            if input_val and out_val and input_val.lower() == out_val.lower() and not suffix:
+            same_dir_overwrite = bool(input_val and out_val and input_val.lower() == out_val.lower() and not suffix)
+            batch_overwrite = bool(batch_active and not out_val and not suffix)
+            if same_dir_overwrite or batch_overwrite:
                 self.execute_btn.configure(state="disabled", text=" Falta sufijo (Evitará sobrescribir originales)")
             elif not self.is_running:
                 self.execute_btn.configure(state="normal", text=" Ejecutar Comando")
@@ -1190,6 +1210,11 @@ class App(tb.Window):
         return result["proceed"]
 
     def _on_app_close(self):
+        if getattr(self, "_drop_handler", None) is not None:
+            try:
+                self._drop_handler.detach()
+            except Exception:
+                pass
         try:
             from functions import power_manager
             power_manager.allow_sleep()
@@ -1201,6 +1226,272 @@ class App(tb.Window):
             except Exception:
                 pass
         self.destroy()
+
+    # ------------------------------------------------------------------
+    # Drag & Drop nativo de archivos multimedia (uno o varios archivos)
+    # ------------------------------------------------------------------
+    def _init_drag_and_drop(self):
+        try:
+            from functions.drag_drop import WindowsFileDropHandler
+            self._drop_handler = WindowsFileDropHandler(self, self._on_files_dropped)
+            self._drop_handler.attach()
+        except Exception:
+            self._drop_handler = None
+
+    def _clear_dropped_batch(self, refresh_preview=True):
+        self._dropped_batch_state = None
+        if hasattr(self, "dropped_batch_frame") and self.dropped_batch_frame.winfo_exists():
+            for child in self.dropped_batch_frame.winfo_children():
+                child.destroy()
+            self.dropped_batch_frame.grid_remove()
+        if refresh_preview:
+            self.update_preview()
+
+    def _show_dropped_batch_banner(self, summary_text):
+        if not hasattr(self, "dropped_batch_frame") or not self.dropped_batch_frame.winfo_exists():
+            return
+        for child in self.dropped_batch_frame.winfo_children():
+            child.destroy()
+
+        banner = tb.Frame(self.dropped_batch_frame, bootstyle="info", padding=(8, 6))
+        banner.pack(fill="x", expand=True)
+
+        tb.Label(
+            banner,
+            text=summary_text,
+            bootstyle="inverse-info",
+            font=("Segoe UI", 9, "bold"),
+            wraplength=300,
+            justify="left",
+        ).pack(side="left", fill="x", expand=True, padx=(0, 6))
+
+        tb.Button(
+            banner,
+            text="Quitar lote",
+            bootstyle="light",
+            command=lambda: self._clear_dropped_batch(refresh_preview=True),
+        ).pack(side="right")
+
+        self.dropped_batch_frame.grid()
+
+    def _on_files_dropped(self, paths):
+        from functions.drag_drop import get_compatible_services, inspect_dropped_batch
+
+        batch_info = inspect_dropped_batch(paths)
+        if batch_info["total_count"] == 0:
+            return
+        services = get_compatible_services(batch_info)
+        self._open_dropped_file_modal(batch_info, services)
+
+    def _open_dropped_file_modal(self, batch_info, services):
+        from functions.drag_drop import UNSUPPORTED_SERVICE_MESSAGE
+
+        win = tb.Toplevel(self)
+        is_multi = batch_info["total_count"] > 1
+        win.title("Archivos Detectados" if is_multi else "Archivo Detectado")
+        win.geometry("640x430" if is_multi else "580x360")
+        win.minsize(520, 320)
+        win.transient(self)
+        win.grab_set()
+        ui_theme.apply_window_chrome(win, self.current_theme)
+        win.update_idletasks()
+        w_modal = 640 if is_multi else 580
+        h_modal = 430 if is_multi else 360
+        x_pos = max(0, int(self.winfo_x() + (self.winfo_width() / 2) - (w_modal / 2)))
+        y_pos = max(0, int(self.winfo_y() + (self.winfo_height() / 2) - (h_modal / 2)))
+        win.geometry(f"{w_modal}x{h_modal}+{x_pos}+{y_pos}")
+
+        outer = tb.Frame(win, padding=16)
+        outer.pack(fill="both", expand=True)
+
+        header_title = (
+            f"Se detectaron {batch_info['total_count']} elementos arrastrados"
+            if is_multi
+            else "Archivo detectado en GUI CMD Advance"
+        )
+        tb.Label(outer, text=header_title, font=("Segoe UI", 12, "bold")).pack(anchor="w", pady=(0, 10))
+
+        info_card = ui_theme.RoundedCard(outer, title="Información Detectada", padding=(10, 8))
+        info_card.pack(fill="both", expand=is_multi, pady=(0, 12))
+        body = info_card.body
+
+        if not is_multi:
+            item = batch_info["items"][0]
+            rows = [
+                ("Nombre:", item["name"]),
+                ("Ruta:", item["path"]),
+                (
+                    "Tipo de archivo:",
+                    f"{item['file_type_label']} ({item['size_human']})"
+                    if not item["is_dir"]
+                    else item["file_type_label"],
+                ),
+            ]
+            for label_txt, value_txt in rows:
+                r = tb.Frame(body, style="PulseCardInner.TFrame")
+                r.pack(fill="x", pady=2)
+                tb.Label(
+                    r, text=label_txt, width=16, anchor="w",
+                    font=("Segoe UI", 9, "bold"), style="PulseCard.TLabel",
+                ).pack(side="left", anchor="n")
+                tb.Label(
+                    r, text=value_txt, anchor="w", justify="left",
+                    wraplength=390, font=("Segoe UI", 9), style="PulseCard.TLabel",
+                ).pack(side="left", fill="x", expand=True)
+        else:
+            parts = []
+            if batch_info["video_count"]:
+                parts.append(f"{batch_info['video_count']} video(s)")
+            if batch_info["image_count"]:
+                parts.append(f"{batch_info['image_count']} imagen(es)")
+            if batch_info["unsupported_count"]:
+                parts.append(f"{batch_info['unsupported_count']} no compatible(s)")
+            summary_line = "Resumen: " + (", ".join(parts) if parts else "Sin elementos válidos")
+            tb.Label(
+                body, text=summary_line, font=("Segoe UI", 9, "bold"),
+                style="PulseCard.TLabel", anchor="w",
+            ).pack(fill="x", pady=(0, 6))
+
+            tree_wrap = tb.Frame(body, style="PulseCardInner.TFrame")
+            tree_wrap.pack(fill="both", expand=True)
+
+            cols = ("nombre", "tipo", "estado", "ruta")
+            tree = tb.Treeview(tree_wrap, columns=cols, show="headings", height=6)
+            tree.heading("nombre", text="Nombre")
+            tree.heading("tipo", text="Tipo")
+            tree.heading("estado", text="Estado")
+            tree.heading("ruta", text="Ruta")
+            tree.column("nombre", width=150, anchor="w")
+            tree.column("tipo", width=140, anchor="w")
+            tree.column("estado", width=95, anchor="center")
+            tree.column("ruta", width=210, anchor="w")
+
+            vsb = tb.Scrollbar(tree_wrap, orient="vertical", command=tree.yview)
+            tree.configure(yscrollcommand=vsb.set)
+            tree.pack(side="left", fill="both", expand=True)
+            vsb.pack(side="right", fill="y")
+
+            for it in batch_info["items"]:
+                estado = "Compatible" if it["is_compatible"] else "No compatible"
+                tree.insert("", "end", values=(it["name"], it["file_type_label"], estado, it["path"]))
+
+        if services:
+            if batch_info["unsupported_count"] > 0:
+                tb.Label(
+                    outer,
+                    text=(
+                        f"Aviso: {batch_info['unsupported_count']} elemento(s) no son imagen/video "
+                        "y se omitirán automáticamente."
+                    ),
+                    bootstyle="warning",
+                    font=("Segoe UI", 9),
+                    wraplength=580,
+                    justify="left",
+                ).pack(anchor="w", pady=(0, 8))
+
+            prompt_txt = (
+                "¿Qué deseas realizar con estos archivos multimedia?"
+                if batch_info["compatible_count"] > 1
+                else "¿Qué deseas realizar con este archivo?"
+            )
+            tb.Label(outer, text=prompt_txt, font=("Segoe UI", 10, "bold")).pack(anchor="w", pady=(0, 6))
+
+            svc_map = {svc["command_name"]: svc for svc in services}
+            svc_names = list(svc_map.keys())
+            selected_svc_var = tk.StringVar(value=svc_names[0])
+
+            svc_combo = tb.Combobox(outer, values=svc_names, textvariable=selected_svc_var, state="readonly")
+            svc_combo.pack(fill="x", pady=(0, 6))
+
+            desc_var = tk.StringVar(value=services[0]["description"])
+            tb.Label(
+                outer, textvariable=desc_var, font=("Segoe UI", 9),
+                bootstyle="secondary", wraplength=580, justify="left",
+            ).pack(anchor="w", pady=(0, 12))
+
+            def _on_svc_change(_evt=None):
+                chosen = svc_map.get(selected_svc_var.get())
+                if chosen:
+                    desc_var.set(chosen["description"])
+
+            svc_combo.bind("<<ComboboxSelected>>", _on_svc_change)
+
+            btn_row = tb.Frame(outer)
+            btn_row.pack(fill="x", pady=(4, 0))
+
+            def _confirm():
+                chosen = svc_map.get(selected_svc_var.get())
+                win.destroy()
+                if chosen:
+                    self._apply_dropped_service(batch_info, chosen)
+
+            tb.Button(btn_row, text="Cancelar", bootstyle="secondary", command=win.destroy).pack(side="left")
+            tb.Button(btn_row, text="Continuar con Servicio", bootstyle="success", command=_confirm).pack(side="right")
+        else:
+            tb.Label(
+                outer,
+                text=UNSUPPORTED_SERVICE_MESSAGE,
+                bootstyle="warning",
+                font=("Segoe UI", 10, "bold"),
+                wraplength=560,
+                justify="left",
+            ).pack(anchor="w", pady=(4, 14))
+
+            btn_row = tb.Frame(outer)
+            btn_row.pack(fill="x")
+            tb.Button(btn_row, text="Entendido", bootstyle="primary", command=win.destroy).pack(side="right")
+
+        win.bind("<Escape>", lambda _e: win.destroy())
+        win.protocol("WM_DELETE_WINDOW", win.destroy)
+        ui_theme.bring_to_front(win)
+        return win
+
+    def _apply_dropped_service(self, batch_info, service):
+        from functions.drag_drop import save_dropped_batch_file
+
+        if self.search_var.get().strip():
+            self.search_var.set("")
+
+        target_cat = service["category"]
+        target_cmd = service["command_name"]
+        self.cat_var.set(target_cat)
+        self.on_category_change(target_cat)
+        self.cmd_var.set(target_cmd)
+        self.on_command_change(target_cmd)
+
+        for preset_arg, preset_val in (service.get("presets") or {}).items():
+            if preset_arg in self.current_args_vars:
+                self.current_args_vars[preset_arg]["var"].set(preset_val)
+
+        compat_paths = [it["path"] for it in batch_info.get("compatible_items", [])]
+        if len(compat_paths) == 1:
+            single_arg = service.get("single_arg", "")
+            if single_arg in self.current_args_vars:
+                self.current_args_vars[single_arg]["var"].set(compat_paths[0])
+            self.append_output(
+                f"\n[DRAG & DROP] Archivo cargado en '{target_cmd}': {compat_paths[0]}\n"
+            )
+        elif len(compat_paths) > 1:
+            list_path = save_dropped_batch_file(compat_paths)
+            parts = []
+            if batch_info.get("video_count"):
+                parts.append(f"{batch_info['video_count']} video(s)")
+            if batch_info.get("image_count"):
+                parts.append(f"{batch_info['image_count']} imagen(es)")
+            detail = ", ".join(parts)
+            summary = f"Lote arrastrado: {len(compat_paths)} archivos ({detail})"
+            self._dropped_batch_state = {
+                "command_name": target_cmd,
+                "list_path": list_path,
+                "paths": compat_paths,
+                "summary": summary,
+            }
+            self._show_dropped_batch_banner(summary)
+            self.append_output(
+                f"\n[DRAG & DROP] {summary} cargados en '{target_cmd}'.\n"
+            )
+
+        self.update_preview()
 
     def _save_error_report_to_desktop(self, cmd_name, command_str):
         from functions import power_manager
