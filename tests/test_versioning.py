@@ -75,9 +75,31 @@ class TestVersioningSystem(unittest.TestCase):
         self.assertEqual(meta_stable["exe_name"], "Gui Cmd Advance")
         self.assertEqual(meta_stable["file_version"], "2.0.0.140")
 
-        # Resolución por defecto debe coincidir exactamente con VERSION
-        meta_default = build_exe.resolve_build_metadata(commit_count=136)
-        self.assertEqual(meta_default["version"], versioning.read_canonical_version())
+        # Resolución por defecto debe coincidir con la versión activa detectada
+        meta_default = build_exe.resolve_build_metadata(commit_count=139)
+        self.assertEqual(meta_default["version"], versioning.get_app_version())
+
+    def test_classify_commit_impact_and_bump_semver(self):
+        self.assertEqual(versioning.classify_commit_impact(["docs: update README", "test: add cases"]), "none")
+        self.assertEqual(versioning.classify_commit_impact(["fix(ui): center modal"]), "patch")
+        self.assertEqual(versioning.classify_commit_impact(["fix(ui): minor", "feat(drag-drop): native drop"]), "minor")
+        self.assertEqual(versioning.classify_commit_impact(["feat(ui)!: new framework"]), "major")
+        self.assertEqual(
+            versioning.classify_commit_impact(["refactor: core\n\nBREAKING CHANGE: config schema"]),
+            "major",
+        )
+
+        # Estables
+        self.assertEqual(versioning.bump_semver("2.0.0", "none"), "2.0.0")
+        self.assertEqual(versioning.bump_semver("2.0.0", "patch"), "2.0.1")
+        self.assertEqual(versioning.bump_semver("2.0.0", "minor"), "2.1.0")
+        self.assertEqual(versioning.bump_semver("2.0.0", "major"), "3.0.0")
+
+        # Pre-releases
+        self.assertEqual(versioning.bump_semver("2.0.0-beta", "minor"), "2.0.0-beta.1")
+        self.assertEqual(versioning.bump_semver("2.0.0-beta.1", "patch"), "2.0.0-beta.2")
+        self.assertEqual(versioning.bump_semver("2.0.0-beta.2", "none"), "2.0.0-beta.2")
+        self.assertEqual(versioning.bump_semver("2.1.0-beta.1", "major"), "3.0.0-beta")
 
     def test_telemetry_uses_semantic_comparator_and_rule_exists(self):
         telemetry_path = os.path.join(PROJECT_ROOT, "functions", "telemetry.py")

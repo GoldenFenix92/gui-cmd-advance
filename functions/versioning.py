@@ -1,5 +1,6 @@
 import os
 import re
+import subprocess
 import sys
 
 # Patrón SemVer estricto para el archivo canónico VERSION:
@@ -105,11 +106,168 @@ def read_canonical_version(version_file=None):
     return raw
 
 
+def classify_commit_impact(commit_messages):
+    """Clasifica el impacto SemVer ('major', 'minor', 'patch', 'none') desde mensajes Conventional Commits."""
+    impact_rank = {"none": 0, "patch": 1, "minor": 2, "major": 3}
+    best = "none"
+
+    breaking_re = re.compile(r"^[a-zA-Z]+(?:\([^)]+\))?!:", re.MULTILINE)
+    feat_re = re.compile(r"^feat(?:\([^)]+\))?:", re.IGNORECASE)
+    patch_re = re.compile(r"^(?:fix|perf|security|refactor|style)(?:\([^)]+\))?:", re.IGNORECASE)
+
+    for raw_msg in commit_messages or []:
+        msg = str(raw_msg or "").strip()
+        if not msg:
+            continue
+        first_line = msg.splitlines()[0].strip()
+        if "BREAKING CHANGE:" in msg or "BREAKING-CHANGE:" in msg or breaking_re.search(first_line):
+            candidate = "major"
+        elif feat_re.match(first_line):
+            candidate = "minor"
+        elif patch_re.match(first_line):
+            candidate = "patch"
+        else:
+            candidate = "none"
+        if impact_rank[candidate] > impact_rank[best]:
+            best = candidate
+            if best == "major":
+                break
+    return best
+
+
+def bump_semver(base_version, impact):
+    """Calcula la siguiente versión SemVer canónica según el impacto ('major', 'minor', 'patch', 'none').
+
+    - En versiones estables ('2.0.0'):
+      - major -> '3.0.0'
+      - minor -> '2.1.0'
+      - patch -> '2.0.1'
+    - En pre-releases ('2.0.0-beta', '2.0.0-beta.1', '2.1.0-rc.1'):
+      - Incrementa la iteración pre-release ('.1', '.2', ...) ante cambios funcionales/fixes,
+        o sube MAJOR si impact == 'major' y la versión ya avanzó más allá de X.0.0.
+    """
+    cleaned = str(base_version or "").strip()
+    if not is_valid_canonical_semver(cleaned):
+        raise ValueError(f"Versión SemVer base inválida: {base_version!r}")
+    if impact not in ("major", "minor", "patch", "none"):
+        raise ValueError(f"Impacto SemVer inválido: {impact!r}")
+    if impact == "none":
+        return cleaned
+
+    m = CANONICAL_SEMVER_RE.match(cleaned)
+    major = int(m.group(1))
+    minor = int(m.group(2))
+    patch = int(m.group(3))
+    pre_label = m.group(4)
+    pre_num = int(m.group(5)) if m.group(5) else 0
+
+    if pre_label:
+        if impact == "major" and (minor > 0 or patch > 0):
+            return f"{major + 1}.0.0-{pre_label}"
+        next_pre = pre_num + 1 if pre_num > 0 else 1
+        return f"{major}.{minor}.{patch}-{pre_label}.{next_pre}"
+
+    if impact == "major":
+        return f"{major + 1}.0.0"
+    if impact == "minor":
+        return f"{major}.{minor + 1}.0"
+    return f"{major}.{minor}.{patch + 1}"
+
+
+def _run_git(args, repo_root=None):
+    cwd = repo_root or PROJECT_ROOT
+    try:
+        proc = subprocess.run(
+            ["git", *args],
+            cwd=cwd,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+            timeout=5,
+        )
+        if proc.returncode != 0:
+            return None
+        return proc.stdout
+    except Exception:
+        return None
+
+
+def is_version_file_dirty(repo_root=None):
+    """Retorna True si el archivo VERSION tiene cambios sin commitear en el working tree."""
+    out = _run_git(["status", "--porcelain", "--", "VERSION"], repo_root=repo_root)
+    return bool(out and out.strip())
+
+
+def get_commits_since_last_version_update(repo_root=None):
+    """Obtiene los mensajes de commits posteriores al último commit que modificó VERSION."""
+    last_ver_hash = _run_git(["log", "-n", "1", "--format=%H", "--", "VERSION"], repo_root=repo_root)
+    if not last_ver_hash or not last_ver_hash.strip():
+        return []
+    commit_hash = last_ver_hash.strip()
+    raw = _run_git(["log", f"{commit_hash}..HEAD", "--format=%s%n%b%x1e"], repo_root=repo_root)
+    if not raw:
+        return []
+    return [entry.strip() for entry in raw.split("\x1e") if entry.strip()]
+
+
+def detect_version_from_git(version_file=None, repo_root=None):
+    """Detecta la versión activa combinando VERSION y el impacto de commits posteriores en Git."""
+    root = repo_root or PROJECT_ROOT
+    vpath = version_file or os.path.join(root, "VERSION")
+    base_version = read_canonical_version(vpath)
+
+    if not os.path.isdir(os.path.join(root, ".git")):
+        return {
+            "base_version": base_version,
+            "detected_version": base_version,
+            "impact": "none",
+            "commits_since": 0,
+            "auto_bumped": False,
+        }
+
+    # Si VERSION ya fue ajustado manualmente en el working tree, respetar ese valor sin doble incremento
+    if is_version_file_dirty(repo_root=root):
+        return {
+            "base_version": base_version,
+            "detected_version": base_version,
+            "impact": "none",
+            "commits_since": 0,
+            "auto_bumped": False,
+        }
+
+    commits = get_commits_since_last_version_update(repo_root=root)
+    impact = classify_commit_impact(commits)
+    detected = bump_semver(base_version, impact)
+    return {
+        "base_version": base_version,
+        "detected_version": detected,
+        "impact": impact,
+        "commits_since": len(commits),
+        "auto_bumped": detected != base_version,
+    }
+
+
+def sync_version_files(version_str, build_number=None, repo_root=None):
+    """Sincroniza VERSION y version.py con la versión SemVer canónica indicada."""
+    cleaned = str(version_str or "").strip()
+    if not is_valid_canonical_semver(cleaned):
+        raise ValueError(f"Versión SemVer inválida: {version_str!r}")
+    root = repo_root or PROJECT_ROOT
+    with open(os.path.join(root, "VERSION"), "w", encoding="utf-8") as f:
+        f.write(f"{cleaned}\n")
+    if build_number is not None:
+        with open(os.path.join(root, "version.py"), "w", encoding="utf-8") as vf:
+            vf.write(f'__version__ = "{cleaned}"\n')
+            vf.write(f"__build__ = {int(build_number)}\n")
+
+
 def get_app_version():
     """Obtiene la versión activa de la aplicación de forma unificada.
 
     - En entorno compilado (PyInstaller): prioriza version.py empaquetado.
-    - En desarrollo desde código fuente: prioriza el archivo canónico VERSION.
+    - En desarrollo desde código fuente: detecta automáticamente desde VERSION + commits Git.
     """
     if getattr(sys, "frozen", False):
         try:
@@ -121,9 +279,12 @@ def get_app_version():
 
     if os.path.isfile(VERSION_FILE_PATH):
         try:
-            return read_canonical_version(VERSION_FILE_PATH)
+            return detect_version_from_git(VERSION_FILE_PATH, PROJECT_ROOT)["detected_version"]
         except Exception:
-            pass
+            try:
+                return read_canonical_version(VERSION_FILE_PATH)
+            except Exception:
+                pass
 
     try:
         from version import __version__ as fallback_ver

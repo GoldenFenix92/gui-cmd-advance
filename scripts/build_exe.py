@@ -7,10 +7,12 @@ if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
 from functions.versioning import (
+    detect_version_from_git,
     format_git_tag,
     is_prerelease,
     is_valid_canonical_semver,
     read_canonical_version,
+    sync_version_files,
     to_windows_version_tuple,
 )
 
@@ -98,18 +100,32 @@ def get_git_commit_count():
         return 0
 
 
-def resolve_build_metadata(version_override=None, commit_count=None):
-    """Resuelve toda la metadata de compilación desde la fuente única de verdad (VERSION).
+def resolve_build_metadata(version_override=None, commit_count=None, auto_detect=True):
+    """Resuelve toda la metadata de compilación desde VERSION + detección automática de commits Git.
 
     Garantiza coherencia automática entre versión SemVer, canal Beta/Estable,
     nombre del ejecutable y tupla FileVersion de Windows (MAJOR.MINOR.PATCH.BUILD).
     """
+    detection = {
+        "base_version": None,
+        "detected_version": None,
+        "impact": "none",
+        "commits_since": 0,
+        "auto_bumped": False,
+    }
     if version_override is not None:
         canonical = str(version_override).strip()
         if not is_valid_canonical_semver(canonical):
             raise ValueError(f"Versión SemVer inválida: {canonical!r}")
+        detection["base_version"] = canonical
+        detection["detected_version"] = canonical
+    elif auto_detect:
+        detection = detect_version_from_git(os.path.join(PROJECT_ROOT, "VERSION"), PROJECT_ROOT)
+        canonical = detection["detected_version"]
     else:
         canonical = read_canonical_version(os.path.join(PROJECT_ROOT, "VERSION"))
+        detection["base_version"] = canonical
+        detection["detected_version"] = canonical
 
     build_num = get_git_commit_count() if commit_count is None else int(commit_count)
     v1, v2, v3, v4 = to_windows_version_tuple(canonical, build_number=build_num)
@@ -120,6 +136,10 @@ def resolve_build_metadata(version_override=None, commit_count=None):
 
     return {
         "version": canonical,
+        "base_version": detection["base_version"],
+        "impact": detection["impact"],
+        "commits_since": detection["commits_since"],
+        "auto_bumped": detection["auto_bumped"],
         "git_tag": format_git_tag(canonical),
         "build": v4,
         "is_prerelease": prerelease,
@@ -164,16 +184,21 @@ def main():
     copyright_txt = "© 2026 GoldenFenix Todos los derechos reservados."
     icon = "resources/app_icon.ico"
 
-    print(f"[*] Versión canónica (VERSION) : {version_ui}")
+    print(f"[*] Versión base (VERSION)     : {meta['base_version']}")
+    if meta["auto_bumped"]:
+        print(
+            f"[*] Versión auto-detectada     : {version_ui} "
+            f"(impacto: {meta['impact']} | {meta['commits_since']} commit(s) nuevos)"
+        )
+    else:
+        print(f"[*] Versión activa             : {version_ui}")
     print(f"[*] Canal detectado            : {channel}")
     print(f"[*] FileVersion Windows        : {meta['file_version']} (build Git #{meta['build']})")
     print(f"[*] Tag Git recomendado        : {meta['git_tag']}")
     print(f"[*] Ejecutable destino         : dist/{name}.exe")
 
-    with open("version.py", "w", encoding="utf-8") as vf:
-        vf.write(f'__version__ = "{version_ui}"\n')
-        vf.write(f"__build__ = {meta['build']}\n")
-    print("[+] Archivo 'version.py' sincronizado con VERSION.")
+    sync_version_files(version_ui, build_number=meta["build"], repo_root=PROJECT_ROOT)
+    print("[+] Archivos 'VERSION' y 'version.py' sincronizados automáticamente.")
 
     version_content = VERSION_FILE_TEMPLATE.format(
         v1=v1,
