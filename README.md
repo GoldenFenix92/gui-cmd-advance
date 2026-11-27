@@ -1,15 +1,40 @@
 # GUI CMD ADVANCE
 
-**GUI CMD ADVANCE** es una aplicación de escritorio para Windows desarrollada en Python (`CustomTkinter`) que ofrece una interfaz gráfica moderna, segura y portable para ejecutar operaciones avanzadas de administración de sistemas, diagnóstico de almacenamiento, redes, seguridad, recuperación de datos y procesamiento multimedia sin depender de la línea de comandos.
+**GUI CMD ADVANCE** (`v2.3.0-beta`) es una aplicación de escritorio portable para Windows desarrollada en Python (**`ttkbootstrap 2.2.7`**) con temas oficiales **Pulse Dark / Pulse Light** y diseño moderno redondeado 9-slice. Ofrece una interfaz gráfica rápida, segura y sin consola externa para ejecutar operaciones avanzadas de administración de sistemas, auditoría de memoria RAM, diagnóstico de almacenamiento, redes, seguridad, recuperación de datos y edición/procesamiento multimedia con **FFmpeg**.
 
-![Interfaz Principal de GUI CMD Advance](docs/images/01_main_interface.png)
+![Interfaz Principal Pulse Dark de GUI CMD Advance](docs/images/01_main_interface.png)
 
 ---
 
-## Galería de Vistas Principales
+## Galería de Vistas Principales (v2.3.0-beta)
+
+### Tema Claro Pulse Light (Alternancia Instantánea Oscuro ↔ Claro)
+Interruptor nativo en la barra superior para cambiar al instante entre **Pulse Dark** y **Pulse Light** sin lag ni reacomodo de contenedores, conservando tarjetas, botones y barras redondeadas de alto contraste.
+
+![Tema Claro Pulse Light](docs/images/10_pulse_light_theme.png)
+
+### Auditor y Optimizador Profesional de Memoria RAM
+Herramienta nativa Win32/NT (`EmptyWorkingSet`, `NtSetSystemInformation` para Standby/Modified List, `SetSystemFileCacheSize` y `GetPerformanceInfo`) con auditoría de módulos físicos DIMM, telemetría de *Kernel Pools*, ranking de procesos agrupados por aplicación, perfiles **Seguro / Profundo / Personalizado**, **auto-limpieza opcional por umbral** y exportación a **Reporte HTML**.
+
+![Auditor y Optimizador Profesional de Memoria RAM](docs/images/11_ram_auditor.png)
+
+### Recortador Visual de Video (Línea de Tiempo Interactiva)
+Editor visual interactivo con monitor de vista previa en vivo, tira automática de 10 miniaturas (*filmstrip*), doble tirador arrastrable (`IN` / `OUT`), navegación precisa (`±0.1s`, `±1s`, `±5s` y teclas `I`/`O`) y exportación a **MP4 sin pérdida (`-c copy`)**, **MP4 preciso (`H.264`)** o **GIF Animado** sin sobrescribir jamás el original.
+
+![Recortador Visual de Video con Línea de Tiempo](docs/images/12_video_trimmer.png)
+
+### Arrastrar y Soltar (Drag & Drop) Nativo Multi-Archivo
+Arrastra uno o varios archivos directamente desde el Explorador de Windows sobre la ventana principal (compatible incluso con sesiones de Administrador vía UIPI). Detecta nombre, ruta y tipo, filtra archivos multimedia compatibles, avisa cuando el servicio elegido es exclusivo para video y carga lotes grandes vía `--input-list`.
+
+![Modal de Arrastrar y Soltar Multi-Archivo](docs/images/13_drag_drop_modal.png)
+
+### Estudio de Video y Audio (FFmpeg) + Complemento FFmpeg Skill
+Comando unificado con campos dinámicos (`visible_when`) para inspeccionar metadatos (`ffprobe`, VFR/HDR), recortar, extraer/normalizar audio (`-14 LUFS`), quitar sonido sin recodificar, adaptar a `9:16` / `16:9` / `1:1`, crear GIFs, cambiar velocidad, convertir **HDR -> SDR** y ejecutar operaciones avanzadas del complemento descargable **FFmpeg Skill** (quitar silencios, estabilizar, subtítulos `.srt` y plantillas TikTok/Reels/Shorts/YouTube).
+
+![Estudio de Video y Audio FFmpeg](docs/images/14_media_studio.png)
 
 ### Combos Inteligentes (Antes / Después) y Cola Encadenada
-32 comandos del catálogo sugieren flujos recomendados antes (*Protocolo Seguro*) y después (*Continuación*), con herencia automática de disco/unidad/ruta, advertencia unificada y ejecución continua en un solo clic.
+32+ comandos del catálogo sugieren flujos recomendados antes (*Protocolo Seguro*) y después (*Continuación*), con herencia automática de disco/unidad/ruta/tipo multimedia, advertencia unificada y ejecución continua en un solo clic.
 
 ![Modal de Combos Inteligentes](docs/images/07_smart_combos.png)
 
@@ -23,31 +48,6 @@ Integración bajo demanda de Sysinternals SDelete para destrucción irreversible
 
 ![Borrado Seguro Irreversible con SDelete](docs/images/09_sdelete_secure_erase.png)
 
-### Tema Claro Soft Slate y CHKDSK Avanzado (`/b`, `/scan`)
-Tema claro rediseñado (*Soft Slate*) de alto contraste, botón sólido ámbar **Limpiar**, contadores dinámicos de progreso y ETA por color, y soporte ampliado en CHKDSK (`/r`, `/b`, `/scan`, `/x` y detección `RAW`).
-
-![Tema Claro Soft Slate y CHKDSK Avanzado](docs/images/10_light_theme_soft_slate.png)
-
-### Formateo Avanzado estilo Rufus y Controles de Energía
-Incluye selector de esquema GPT/MBR, recomendaciones de uso por capacidad en NTFS/FAT32/exFAT y casillas debajo de la consola para evitar suspensión/hibernación o apagar el equipo al finalizar.
-
-![Formatear Disco Avanzado estilo Rufus](docs/images/02_rufus_format.png)
-
-### Sistema de Advertencias Pre-Ejecución
-Antes de ejecutar cualquier operación modificadora o destructiva, la aplicación muestra un diálogo modal con el nivel de severidad, detalle de los cambios y vista previa del comando.
-
-![Diálogo de Advertencia Pre-Ejecución](docs/images/03_execution_warning.png)
-
-### Administrador de Apagado Programado (hasta 10 horas)
-Selector desplegable con 16 tiempos sugeridos (desde inmediato hasta 10 horas) y cancelación limpia (`shutdown /a`).
-
-![Administrador de Apagado Programado](docs/images/04_scheduled_shutdown.png)
-
-### Auditor de Autenticidad de Unidades (USB / SSD / HDD)
-Inspección de VID/PID, serie y firmware más pruebas de velocidad y capacidad real estilo H2testw.
-
-![Auditor de Autenticidad de Unidades](docs/images/05_usb_auditor.png)
-
 ### Reportes HTML Interactivos por Dominio
 Exportación autocontenida con perfil visual automático, métricas extraídas, filtros por severidad, buscador en vivo y soporte de modo claro/oscuro.
 
@@ -57,68 +57,64 @@ Exportación autocontenida con perfil visual automático, métricas extraídas, 
 
 ## Características Principales
 
-### 1. Diagnóstico y Gestión Avanzada de Almacenamiento
-- **Escáner de Superficie y Sectores (HDD / SSD / USB):** Evalúa la salud física de cada bloque mediante acceso directo Win32 (`CreateFileW`) clasificando latencias (`Excelente`, `Normal`, `Lento`, `Crítico` y `Dañado`). Incluye *Muestreo Rápido*, *Escaneo Completo* (0 escritura) y *Reasignación de Sectores Pendientes (Remap con ceros)* con bloqueo automático para discos del sistema/arranque y unidades SSD/NVMe.
-- **Reparar Sistema de Archivos y Sectores (`chkdsk`):** Soporte completo para reparación de sectores (`/r`), re-evaluación de clústeres malos en NTFS (`/b`), escaneo en línea sin desmontar (`/scan`), desmontaje forzado (`/x`) y detección de volúmenes `RAW`.
-- **Formatear Disco (Avanzado estilo Rufus):** Limpieza, inicialización (GPT/MBR), particionado y formateo (NTFS, FAT32, exFAT) en un solo paso. Incluye protección contra borrado de discos de sistema/arranque, manejo automático de discos ya inicializados o `RAW`, respaldo con `diskpart` para unidades USB híbridas, validación del límite de 32 GB en FAT32 y recomendaciones de uso según capacidad directamente en la interfaz.
-- **Auditor de Autenticidad de Unidades (USB / SSD / HDD):** Detecta memorias falsificadas o alteradas inspeccionando VID/PID real, fabricante, número de serie y firmware (modo hardware sin escritura), además de pruebas de velocidad y capacidad real estilo H2testw sobre espacio libre con limpieza automática.
-- **Gestor de Atributos de Discos (HDD / SSD / USB):** Inspecciona y administra atributos de disco y volumen mediante `Diskpart` (quitar/aplicar `readonly`, `hidden`, etc.) con bloqueo de seguridad para la unidad del sistema.
-- **Estado de Salud S.M.A.R.T. Avanzado:** Visor estilo CrystalDiskInfo conectado a WMI/CIM para evaluar salud física, temperatura y atributos de discos SATA y SSD NVMe.
-- **Monitoreo en Vivo de Tareas de Almacenamiento:** Consulta `Get-StorageJob` en segundo plano para mostrar barra de progreso determinista en formateos y optimizaciones.
+### 1. Suite Multimedia Profesional + Drag & Drop Nativo
+- **Arrastrar y Soltar (Drag & Drop) Multi-Archivo:** Motor nativo Win32 (`SetWindowSubclass` + `WM_DROPFILES` + `ChangeWindowMessageFilterEx` para sesiones elevadas como Administrador) sin librerías externas. Detecta 1 o múltiples archivos, muestra Nombre, Ruta y Tipo en un modal moderno, filtra imágenes/videos compatibles y muestra confirmación explícita para servicios exclusivos de video.
+- **Recortador Visual de Video (Línea de Tiempo):** Vista previa de fotogramas en vivo, tira de miniaturas (*filmstrip*), doble tirador `IN`/`OUT`, soporte de cola multi-video y exportación a MP4 sin pérdida, MP4 preciso o GIF.
+- **Estudio de Video y Audio (FFmpeg):** 14 operaciones unificadas (9 nativas + 5 avanzadas bajo demanda con el complemento **FFmpeg Skill**): `ffprobe`, recorte, extracción MP3/M4A/WAV, normalización `-14 LUFS`, mute sin pérdida, reencuadre `9:16`/`16:9`/`1:1`, GIF Lanczos, velocidad sincronizada, HDR -> SDR, eliminación de silencios, estabilización, subtítulos SRT y plantillas sociales.
+- **Compresor de Multimedia:** Compresión individual o por lotes (`--input-list`) con aceleración GPU (NVENC, AMF, QSV o CPU), **peso objetivo opcional (`--max-mb`)**, corrección automática de dimensiones pares, preservación EXIF y envío seguro a Papelera de Reciclaje.
+- **Reparador y Analizador de Salud Multimedia:** Escaneo previo automático que guarda un **manifiesto atómico incremental** para reparar exclusivamente archivos corruptos (sin tocar archivos sanos), filtros separados (`Solo Videos` / `Solo Imágenes` / `Todos`), referencias independientes para video/imagen, reanudación tras interrupciones y limpieza automática del manifiesto al concluir.
+- **Buscador de Duplicados:** Localiza archivos repetidos o dañados mediante hashing y vista previa.
 
-### 2. Seguridad Operativa, Combos Inteligentes y Control de Energía
-- **Combos Inteligentes (Antes / Después) y Cola Encadenada:** 32 comandos integran 62 sugerencias contextuales organizadas en *Protocolo Seguro (Antes)* y *Continuación (Después)*. Permite autoejecutar toda la cola en un solo clic, hereda automáticamente parámetros de contexto (`{disk}`, `{drive}`, `{path}`) y muestra una advertencia unificada antes de iniciar el servicio completo.
-- **Borrado Seguro Irreversible (Sysinternals SDelete):** Plugin oficial descargable bajo demanda (`sdelete64.exe`) para destruir archivos/carpetas o sobrescribir espacio libre (`-z` / `-c`) con pasadas configurables, advertencia automática en unidades SSD, guardia contra rutas críticas del sistema (`Windows`, `Program Files`, `Users`, raíces de unidad) y progreso en tiempo real.
-- **Sistema de Advertencias Pre-Ejecución:** Diálogo modal de confirmación en dos niveles (**Crítico** y **Precaución**) en 37 comandos que modifican el sistema, red, permisos o eliminan datos, con vista previa del comando y exclusión automática en modos de solo lectura (`inspect` / `hardware`).
-- **Controles de Energía Integrados (debajo de la consola):**
-  - **Evitar suspensión / hibernación:** Utiliza `SetThreadExecutionState` (`ES_CONTINUOUS | ES_SYSTEM_REQUIRED`) para mantener el equipo activo durante tareas largas permitiendo que el monitor se apague normalmente para ahorrar energía.
-  - **Apagar PC al finalizar:** Al terminar la ejecución inicia una cuenta regresiva cancelable de 60 segundos. Si la tarea finalizó con error, genera y guarda automáticamente un **reporte HTML en el Escritorio** antes de apagar para que el usuario pueda revisar el diagnóstico al encender el equipo.
-- **Administrador de Apagado Programado:** Selector de 16 tiempos sugeridos (desde inmediato hasta 10 horas) y cancelación limpia (`shutdown /a`).
+### 2. Auditoría y Optimización Profesional de Memoria RAM
+- **Auditoría Física y de Kernel:** Consulta módulos DIMM/SODIMM (ranuras, fabricante, tipo DDR, velocidad real vs. nominal, detección Single-Channel) vía WMI/CIM y contadores de kernel (`Paged` / `Non-Paged Pool`, `Commit Charge`, caché del sistema) vía `GetPerformanceInfo`.
+- **Liberación Nativa Medible (Antes vs. Después):** Habilita `SeProfileSingleProcessPrivilege` y `SeIncreaseQuotaPrivilege` para ejecutar `EmptyWorkingSet` (excluyendo procesos críticos del kernel), purga de Standby/Modified List (`NtSetSystemInformation`) y vaciado de caché de archivos (`SetSystemFileCacheSize`), con historial persistente, **auto-limpieza opcional por umbral** y exportación a **Reporte HTML**.
 
-### 3. Motor de Reportes HTML Dinámicos por Dominio
-- Exporta la salida de consola a reportes `.html` interactivos y autocontenidos con **5 perfiles visuales automáticos** (`multimedia`, `storage`, `network`, `security` y `system`).
-- Incluye modo oscuro/claro, tarjetas de métricas extraídas por dominio, filtros por severidad (Éxitos, Avisos, Errores), buscador en tiempo real, salto al primer error, copia de vista, descarga en `.txt` e impresión/PDF.
+### 3. Diagnóstico y Gestión Avanzada de Almacenamiento
+- **Escáner de Superficie y Sectores (HDD / SSD / USB):** Acceso directo Win32 (`CreateFileW`) con clasificación de latencias y *Remap* protegido contra SSD/NVMe y discos de sistema.
+- **Reparar Sistema de Archivos y Sectores (`chkdsk`):** Soporte para `/r`, `/b`, `/scan`, `/x` y detección `RAW`.
+- **Formatear Disco (Avanzado estilo Rufus):** Limpieza, GPT/MBR, NTFS/FAT32/exFAT con protección de discos de sistema y progreso real vía `Get-StorageJob`.
+- **Auditor de Autenticidad de Unidades (USB / SSD / HDD):** Inspección de VID/PID, serie y firmware más prueba de capacidad real estilo H2testw.
+- **Gestor de Atributos de Discos (Diskpart) y Visor S.M.A.R.T. Avanzado:** Gestión de `readonly`/`hidden` con diagnóstico de bloqueo por hardware y visor de salud física estilo CrystalDiskInfo.
 
-### 4. Procesamiento Multimedia y Memoria de Tareas
-- **Compresor de Multimedia:** Compresión por lotes o individual de imágenes y videos (Pillow + FFmpeg) con aceleración por hardware (NVENC, AMF, QSV o CPU), preservación de orientación EXIF y envío seguro a Papelera de Reciclaje.
-- **Reparador y Analizador de Salud Multimedia:** Detecta y rescata imágenes truncadas y videos corruptos con control de hilos de CPU.
-- **Buscador de Duplicados:** Localiza duplicados mediante hashing con vista previa.
-- **Memoria de Tareas Persistente (Posponer / Reanudar):** Guarda el progreso por lotes para pausar tareas largas y reanudarlas omitiendo archivos ya procesados.
+### 4. Seguridad Operativa, Combos Inteligentes y Control de Energía
+- **Combos Inteligentes (Antes / Después) y Cola Encadenada:** Sugerencias contextuales con herencia de parámetros (`{disk}`, `{drive}`, `{path}`, `{recursive_flag}`, `{media_type}`), advertencia unificada y ejecución encadenada en 1 clic.
+- **Borrado Seguro Irreversible (Sysinternals SDelete):** Plugin descargable bajo demanda con guardia de rutas críticas y aviso para SSD.
+- **Controles de Energía Integrados:** Anti-suspensión (`SetThreadExecutionState`) y apagado automático al finalizar con cuenta regresiva cancelable de 60 s y reporte HTML automático si hubo error.
 
-### 5. Bóveda IA, Productividad y Portabilidad
-- **Intérprete de Reportes y Bóveda IA (Tren de Modelos):** Soporta Google Gemini, OpenAI, Anthropic Claude, Deepseek y Groq con conmutación automática ante errores de cuota (HTTP 429) y analizador local offline.
-- **Herramientas Internas Adicionales:** Gestor de Procesos y Servicios (con detector de bloatware e historial), Bóveda de Credenciales (`cmdkey`), Limpieza Selectiva de Temporales, Búsqueda Avanzada de Texto (`findstr` con regex), Sanitizador de Nombres, Compresión/Verificación 7-Zip y Despliegue de Microsoft Office (ODT LTSC 2019/2021/2024).
-- **Interfaz Moderna y Portable:** CustomTkinter con tema oscuro y tema claro **Soft Slate**, nombres amigables con comando entre paréntesis, contadores dinámicos de progreso y ETA por color, botón sólido ámbar **Limpiar**, búsqueda global instantánea, sistema de `⭐ Favoritos`, monitoreo en vivo de CPU/RAM, gestor de complementos bajo demanda y persistencia aislada en `C:\GuiCmdAdvance`.
+### 5. Bóveda IA, Complementos Bajo Demanda y Versionado SemVer
+- **Intérprete de Reportes y Bóveda IA (DPAPI + `.aivault`):** Soporta Google Gemini, OpenAI, Anthropic Claude, Deepseek, Groq y modelos locales (**Ollama / LM Studio**) con respaldo cifrado y analizador offline.
+- **Gestor de Complementos Bajo Demanda:** Instala en 1 clic `FFmpeg (ffmpeg.exe + ffprobe.exe)`, `FFmpeg Skill (42 Herramientas Avanzadas)`, `7-Zip`, `Sysinternals SDelete` y `Office Deployment Tool (ODT)` en `C:\GuiCmdAdvance\tools\`.
+- **Versionado Canónico SemVer y Auto-Actualizador Markdown:** Fuente única de verdad en `VERSION`, detección automática de incrementos por commits Git (`feat:`/`fix:`/`BREAKING`), selección interactiva Beta/Estable en el compilador y notas de versión renderizadas en Markdown nativo.
 
 ---
 
-## Catálogo de Funciones (10 Categorías — 72 Comandos)
+## Catálogo de Funciones (10 Categorías — 75 Comandos)
 
 | # | Categoría | Comandos | Perfil de Reporte |
 |---:|---|---:|---|
 | 1 | **Redes y Conectividad** | 13 | `network` |
-| 2 | **Sistema y Procesos** | 6 | `system` |
+| 2 | **Sistema y Procesos** | 7 | `system` |
 | 3 | **Reparación y Mantenimiento** | 5 | `system` |
 | 4 | **Seguridad y Permisos** | 8 | `security` |
 | 5 | **Archivos y Compresión** | 10 | `system` |
 | 6 | **Almacenamiento: Formateo y Gestión** | 12 | `storage` |
 | 7 | **Almacenamiento: Diagnóstico y Salud** | 7 | `storage` |
 | 8 | **Recuperación de Datos** | 4 | `storage` |
-| 9 | **Multimedia** | 4 | `multimedia` |
+| 9 | **Multimedia** | 6 | `multimedia` |
 | 10 | **Instaladores Oficiales (Microsoft)** | 3 | `system` |
 
 <details>
-<summary>Ver listado completo de los 72 comandos por categoría</summary>
+<summary>Ver listado completo de los 75 comandos por categoría</summary>
 
 1. **Redes y Conectividad (13):** `Configuración de Red IP (ipconfig)`, `Probar Conectividad y Latencia (ping)`, `Rastrear Ruta de Red (tracert)`, `Diagnóstico de Ruta y Pérdida de Paquetes (pathping)`, `Estadísticas y Conexiones de Red (netstat)`, `Conexiones TCP en Vivo`, `Tabla de Enrutamiento`, `Ver Direcciones MAC de Red (getmac)`, `Tabla de Direcciones IP a MAC (arp)`, `Consultar DNS (nslookup)`, `Limpiar Caché DNS (Flush DNS)`, `Gestor Adaptador de Red`, `Contraseñas WiFi Guardadas`.
-2. **Sistema y Procesos (6):** `Información Detallada del Equipo (systeminfo)`, `Listar Procesos en Ejecución (tasklist)`, `Finalizar / Cerrar Proceso (taskkill)`, `Administrador de Apagado Programado`, `Visor de Eventos del Sistema (Errores/Avisos)`, `Reporte de Batería (Laptops)`.
+2. **Sistema y Procesos (7):** `Información Detallada del Equipo (systeminfo)`, `Listar Procesos en Ejecución (tasklist)`, `Finalizar / Cerrar Proceso (taskkill)`, `Administrador de Apagado Programado`, `Visor de Eventos del Sistema (Errores/Avisos)`, `Reporte de Batería (Laptops)`, `Auditor y Optimizador de Memoria RAM`.
 3. **Reparación y Mantenimiento (5):** `Reparar Archivos de Sistema Windows (sfc)`, `Reparar Imagen del Sistema Windows (DISM)`, `Reparar Windows Update`, `Reiniciar Explorador de Windows`, `Limpieza Selectiva de Temporales`.
 4. **Seguridad y Permisos (8):** `Credenciales de Red (Bóveda)`, `Borrado Seguro Irreversible (SDelete)`, `Gestor de Firewall`, `Verificar Permisos de Archivo/Carpeta (icacls)`, `Conceder Control Total (icacls)`, `Tomar Posesión (takeown)`, `Quitar Solo Lectura (attrib)`, `Forzar Desbloqueo de Archivos`.
 5. **Archivos y Compresión (10):** `Sanitizador de Nombres`, `Búsqueda Avanzada de Texto`, `Comprimir Archivos (7-Zip)`, `Descomprimir Archivo (7-Zip)`, `Analizar Integridad de Archivo`, `Clonado/Copia Segura (Robocopy)`, `Copiar Archivos y Carpetas (xcopy)`, `Listar Archivos y Carpetas (dir)`, `Ver Árbol de Directorios (tree)`, `Gestor de Atributos de Archivos (Ocultar/Sistema)`.
 6. **Almacenamiento: Formateo y Gestión (12):** `Formatear Disco (Avanzado estilo Rufus)`, `Inicializar Disco Nuevo en GPT (Initialize-Disk)`, `Crear Partición y Formatear NTFS (New-Partition)`, `Borrar Todas las Particiones del Disco (Clear-Disk)`, `Optimizar / TRIM / Desfragmentar Discos`, `Gestor de Atributos de Discos (HDD/SSD/USB)`, `Explorar Disco (Abrir Carpeta)`, `Asignar Letra (Montar)`, `Quitar Letra (Desmontar)`, `Desconectar Disco (Offline)`, `Conectar Disco (Online)`, `Expulsar Unidad Seguramente`.
 7. **Almacenamiento: Diagnóstico y Salud (7):** `Auditor de Autenticidad de Unidades (USB / SSD / HDD)`, `Escáner de Superficie y Sectores (HDD / SSD / USB)`, `Estado de Salud SMART Avanzado`, `Listar Discos Físicos y Salud (Get-PhysicalDisk)`, `Ver Discos Lógicos y Esquema GPT/MBR (Get-Disk)`, `Listar Volúmenes y Letras de Unidad (Get-Volume)`, `Info Discos Físicos`.
 8. **Recuperación de Datos (4):** `Reparar Sistema de Archivos y Sectores (chkdsk)`, `Recuperación de Archivos (WINFR)`, `PhotoRec Código Abierto (Descargar y Abrir)`, `PhotoRec Código Abierto (Desinstalar)`.
-9. **Multimedia (4):** `Compresor de Multimedia`, `Reparador de Multimedia`, `Analizador de Salud Multimedia`, `Buscador de Duplicados`.
+9. **Multimedia (6):** `Compresor de Multimedia`, `Recortador Visual de Video (Línea de Tiempo)`, `Estudio de Video y Audio (FFmpeg)`, `Reparador de Multimedia`, `Analizador de Salud Multimedia`, `Buscador de Duplicados`.
 10. **Instaladores Oficiales (Microsoft) (3):** `Desplegar Microsoft Office (ODT)`, `Descargar ISO Windows 11`, `Descargar ISO Windows 10`.
 
 </details>
@@ -127,10 +123,10 @@ Exportación autocontenida con perfil visual automático, métricas extraídas, 
 
 ## Instalación y Uso (Ejecutable Portable)
 
-Si solo deseas usar la aplicación, no necesitas instalar Python:
-1. Descarga `Gui Cmd Advance.exe` o `Gui Cmd Advance Beta.exe` desde **Releases** (o desde `dist/` tras compilar localmente).
-2. Ejecuta el archivo en Windows 10 / 11 (solicitará permisos de Administrador cuando se requieran operaciones de disco, red o sistema).
-3. Los datos de usuario, favoritos, reportes y herramientas descargadas se almacenan automáticamente en `C:\GuiCmdAdvance`.
+Si solo deseas usar la aplicación, no necesitas instalar Python, Git ni Node.js:
+1. Descarga `Gui Cmd Advance Beta.exe` (o `Gui Cmd Advance.exe`) desde **Releases**.
+2. Ejecuta el archivo en Windows 10 / 11 (solicitará permisos de Administrador cuando se requieran operaciones de disco, RAM, red o sistema).
+3. Los datos de usuario, favoritos, reportes y complementos descargados (`FFmpeg`, `FFmpeg Skill`, `7-Zip`, `SDelete`, `ODT`) se almacenan automáticamente en `C:\GuiCmdAdvance`.
 
 ---
 
@@ -152,25 +148,22 @@ python main.py
 ```
 
 ### Pruebas Automatizadas
-El proyecto cuenta con una suite de **55 pruebas unitarias** en `tests/` que validan:
-- Integridad de módulos, `HIDDEN_IMPORTS` de PyInstaller y compatibilidad con `sys.frozen=True` / `sys.stdout=None`.
-- Ausencia de comandos duplicados y validez de sintaxis AST de todos los scripts PowerShell en `resources/commands_config.json`.
-- Mapeo de perfiles de reportes HTML, esquema de advertencias pre-ejecución, paleta del tema claro *Soft Slate* y controles de energía (`power_manager`).
-- Higiene de código (sin emojis decorativos, sin `except:` desnudos y `CREATE_NO_WINDOW` en todos los subprocesos).
-- Módulos críticos: motor de combos inteligentes (`combo_engine`), escáner de superficie (`surface_scanner`), borrado seguro (`sdelete_runner`), compresor multimedia, atributos de disco (`Diskpart`) y auditor de autenticidad USB.
+El proyecto cuenta con una suite de **101 pruebas unitarias** en `tests/` que validan:
+- Integridad de módulos, `HIDDEN_IMPORTS` de PyInstaller, flags `--run-*` en `main.py` y compatibilidad con `sys.frozen=True` / `sys.stdout=None`.
+- Validez JSON, desplegables, reglas `visible_when`, combos y sintaxis AST de todos los scripts PowerShell en `resources/commands_config.json`.
+- Higiene de código (cero emojis decorativos, cero `except:` desnudos y `CREATE_NO_WINDOW` en todos los subprocesos).
+- Módulos clave: `drag_drop`, `video_trimmer`, `media_studio`, `ffmpeg_skill_runner`, `ram_auditor`, `compressor`, `media_repair` (manifiesto atómico reanudable), `versioning`, `ui_theme`, `combo_engine`, `surface_scanner`, `sdelete_runner`, `disk_attributes`, `usb_auditor` y `ai_engine`.
 
 ```powershell
 .\.venv\Scripts\python.exe -m unittest discover -s tests -v
 ```
 
 ### Compilación del Ejecutable (`.exe` Portable)
-El script `scripts/build_exe.py` calcula automáticamente la versión desde el historial de Git (`1.0.<commits>`), genera `version.py` y `version_info.txt`, y empaqueta la app con PyInstaller (`--onefile --windowed`):
+El script `scripts/build_exe.py` detecta automáticamente la versión SemVer desde `VERSION` + commits Git, pregunta si la compilación continúa en **Beta** o pasa a **Estable** (también soporta `--beta` / `--stable`), sincroniza `VERSION`, `version.py` y `version_info.txt`, y empaqueta con PyInstaller (`--onefile --windowed`):
 
 ```powershell
 .\.venv\Scripts\python.exe scripts\build_exe.py
 ```
-
-El ejecutable resultante se genera en `dist/Gui Cmd Advance Beta.exe` (o `dist/Gui Cmd Advance.exe`).
 
 ---
 
@@ -178,73 +171,35 @@ El ejecutable resultante se genera en `dist/Gui Cmd Advance Beta.exe` (o `dist/G
 
 ```text
 gui-cmd-advance/
+├── VERSION                      # Fuente única de verdad SemVer (ej. 2.3.0-beta)
 ├── main.py                      # Punto de entrada y enrutador CLI (--run-*)
-├── gui_app.py                   # Interfaz principal CustomTkinter, combos, alertas y energía
+├── gui_app.py                   # Interfaz principal ttkbootstrap Pulse, Drag & Drop, combos y energía
 ├── docs/
-│   └── images/                  # Capturas de pantalla reales de la UI y reportes HTML
-├── functions/                   # Módulos internos (almacenamiento, multimedia, red, IA, energía, reportes)
-│   ├── cmd_executor.py          # Ejecución asíncrona de comandos y resolución __INTERNAL__
+│   └── images/                  # Capturas reales de la UI Pulse Dark/Light y herramientas
+├── functions/                   # Módulos internos (RAM, multimedia, almacenamiento, red, IA, UI)
+│   ├── ui_theme.py              # Temas Pulse Dark/Light, estilos redondeados 9-slice e iconos vectoriales
+│   ├── drag_drop.py             # Motor nativo Win32 Drag & Drop multi-archivo (SetWindowSubclass + UIPI)
+│   ├── video_trimmer.py         # Recortador visual de video con línea de tiempo y tira de miniaturas
+│   ├── media_studio.py          # Estudio unificado de Video y Audio (FFmpeg / ffprobe)
+│   ├── ffmpeg_skill_runner.py   # Lanzador portable (runpy) del complemento FFmpeg Skill
+│   ├── ram_auditor.py           # Auditor y optimizador nativo Win32/NT de memoria RAM
+│   ├── media_repair.py          # Reparador multimedia con manifiesto atómico incremental reanudable
+│   ├── compressor.py            # Compresor multimedia con GPU, --max-mb y memoria de tareas
+│   ├── versioning.py            # Motor SemVer canónico y auto-detección por commits Git
+│   ├── setup_manager.py         # Gestor de complementos bajo demanda (FFmpeg, FFmpeg Skill, 7-Zip, SDelete, ODT)
 │   ├── combo_engine.py          # Motor de combos inteligentes, herencia de contexto y cola encadenada
 │   ├── surface_scanner.py       # Escáner de superficie/sectores Win32 y reasignación segura (Remap)
 │   ├── sdelete_runner.py        # Integración Sysinternals SDelete con guardia de rutas y aviso SSD
-│   ├── power_manager.py         # Anti-suspensión (Win32) y apagado programado
-│   ├── report_generator.py      # Motor de reportes HTML por dominio
-│   ├── usb_auditor.py           # Auditoría de autenticidad y capacidad real (USB/SSD/HDD)
-│   ├── disk_attributes.py       # Gestor de atributos de discos/volúmenes vía Diskpart
-│   ├── compressor.py            # Compresor multimedia con memoria de tareas
+│   ├── report_generator.py      # Motor de reportes HTML interactivos por dominio
 │   └── ...
 ├── resources/
-│   ├── commands_config.json     # Catálogo declarativo de categorías, comandos, args, warnings y combos
-│   ├── custom_github_theme.json # Tema visual CustomTkinter (Oscuro + Soft Slate Claro)
+│   ├── commands_config.json     # Catálogo declarativo de 75 comandos, args dinámicos, warnings y combos
 │   └── templates/
 │       └── base_report.html     # Plantilla HTML interactiva de reportes
 ├── scripts/
-│   └── build_exe.py             # Automatización de compilación PyInstaller
-└── tests/                       # Suite de pruebas unitarias e integridad (55 tests)
+│   └── build_exe.py             # Automatización de compilación PyInstaller + SemVer
+└── tests/                       # Suite de pruebas unitarias e integridad (101 tests)
 ```
-
----
-
-## Cómo Agregar Nuevos Comandos
-
-Los comandos se declaran en `resources/commands_config.json`. Cada entrada soporta argumentos dinámicos (`checkbox`, `entry`, `dropdown` con strings o pares `{"name", "value"}`, `radio_group`, `disk_dropdown`, `drive_dropdown`, etc.), un bloque opcional `"warning"` para confirmación previa y un bloque opcional `"combos"` para sugerir pasos antes o después:
-
-```json
-{
-    "name": "Ejemplo de Comando",
-    "description": "Descripción visible en el botón de información.",
-    "command": "powershell -Command \"...\"",
-    "warning": {
-        "level": "caution",
-        "title": "Confirmación de operación",
-        "message": "Explica claramente qué cambios se aplicarán al sistema.",
-        "skip_if_flag_in": ["--mode readonly"]
-    },
-    "combos": [
-        {
-            "command": "Ver Discos Lógicos y Esquema GPT/MBR (Get-Disk)",
-            "when": "before",
-            "reason": "Verifica el número y estado de los discos antes de continuar.",
-            "auto_command": "powershell -Command \"Get-Disk | Format-Table -AutoSize\""
-        }
-    ],
-    "args": [
-        {
-            "name": "Tiempo de Espera",
-            "flag": "/t",
-            "type": "dropdown",
-            "options": [
-                { "name": "15 minutos", "value": "900" },
-                { "name": "1 hora", "value": "3600" }
-            ],
-            "value": "1 hora",
-            "description": "Tiempo sugerido antes de ejecutar la acción."
-        }
-    ]
-}
-```
-
-- **Scripts internos de Python:** usa `__INTERNAL__ --run-tu-modulo`, registra el flag en `main.py` y agrega el módulo a `HIDDEN_IMPORTS` en `scripts/build_exe.py`.
 
 ---
 
