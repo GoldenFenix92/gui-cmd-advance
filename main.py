@@ -196,6 +196,14 @@ if __name__ == "__main__":
             from functions import media_studio
             sys.argv.pop(1)
             sys.exit(media_studio.main())
+        elif sys.argv[1] == "--run-ffmpeg-skill":
+            from functions import ffmpeg_skill_runner
+            sys.argv.pop(1)
+            sys.exit(ffmpeg_skill_runner.main())
+        elif sys.argv[1] == "--run-video-trimmer":
+            from functions import video_trimmer
+            sys.argv.pop(1)
+            sys.exit(video_trimmer.main())
             
     if is_admin():
         hwnd = ctypes.windll.kernel32.GetConsoleWindow()

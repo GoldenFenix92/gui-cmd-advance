@@ -868,7 +868,7 @@ class RamAuditorApp:
     def __init__(self, master=None):
         self._owns_root = master is None
         if master is None:
-            theme = ui_theme.load_saved_theme()
+            theme = ui_theme.get_saved_theme()
             self.win = tb.Window(themename=theme)
         else:
             self.win = tb.Toplevel(master)

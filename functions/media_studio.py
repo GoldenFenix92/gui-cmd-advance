@@ -20,6 +20,11 @@ VALID_OPS = (
     "gif",
     "speed",
     "hdr-to-sdr",
+    "skill-silence",
+    "skill-stabilize",
+    "skill-caption",
+    "skill-template",
+    "skill-doctor",
 )
 
 
@@ -187,6 +192,10 @@ def _resolve_output_path(input_path, output_dir, op, audio_format="mp3"):
         "gif": "_preview",
         "speed": "_vel",
         "hdr-to-sdr": "_sdr",
+        "skill-silence": "_sin_silencios",
+        "skill-stabilize": "_estabilizado",
+        "skill-caption": "_subtitulado",
+        "skill-template": "_plantilla",
     }
     target_ext = ext_map.get(op, ".mp4")
     suffix = suffix_map.get(op, f"_{op}")
@@ -388,18 +397,62 @@ def main(argv=None):
     parser.add_argument("--fit", choices=["crop", "pad", "blur"], default="crop", help="Modo de encuadre.")
     parser.add_argument("--height", default="1080", help="Altura objetivo (1080, 720, original).")
     parser.add_argument("--speed", type=float, default=1.5, help="Factor de velocidad (ej. 0.5, 1.5, 2.0).")
+    parser.add_argument("--srt", default="", help="Archivo de subtítulos .srt (para skill-caption).")
+    parser.add_argument("--template", default="tiktok", help="Plantilla de plataforma (tiktok, reels, shorts, youtube, x, linkedin).")
 
     args, _ = parser.parse_known_args(argv)
+
+    if args.op == "skill-doctor":
+        from functions.ffmpeg_skill_runner import run_skill_script
+        safe_print("Progreso Total: 25%")
+        rc = run_skill_script("doctor", ["doctor"])
+        safe_print("Progreso Total: 100%")
+        return rc
+
     files = _collect_inputs(args.input, args.input_list)
     if not files:
         safe_print("[ERROR] Debes seleccionar al menos un archivo o carpeta multimedia (--input o --input-list).")
         return 1
+
+    if args.op.startswith("skill-"):
+        from functions.ffmpeg_skill_runner import is_ffmpeg_skill_installed, run_skill_script
+        if not is_ffmpeg_skill_installed():
+            safe_print(
+                "[AVISO] Esta operación avanzada requiere el complemento 'FFmpeg Skill (42 Herramientas Avanzadas)'.\n"
+                "        Abre el botón 'Complementos' en la barra superior de GUI CMD Advance y pulsa 'Instalar' (~3MB)."
+            )
+            return 1
 
     total = len(files)
     ok_count = 0
     fail_count = 0
 
     for idx, fp in enumerate(files, 1):
+        if args.op.startswith("skill-"):
+            from functions.ffmpeg_skill_runner import run_skill_script
+            out_path = _resolve_output_path(fp, args.output, args.op)
+            safe_print(f"\n[{idx}/{total}] FFmpeg Skill '{args.op}' -> {os.path.basename(fp)}")
+            if args.op == "skill-silence":
+                rc = run_skill_script("silence", [fp, "-o", out_path])
+            elif args.op == "skill-stabilize":
+                rc = run_skill_script("stabilize", [fp, "-o", out_path])
+            elif args.op == "skill-caption":
+                if not args.srt or not os.path.isfile(args.srt):
+                    safe_print("[ERROR] Debes seleccionar un archivo de subtítulos .srt válido (--srt).")
+                    fail_count += 1
+                    continue
+                rc = run_skill_script("caption", [fp, "--srt", args.srt, "-o", out_path])
+            elif args.op == "skill-template":
+                rc = run_skill_script("render", [fp, "--template", args.template, "-o", out_path])
+            else:
+                rc = 1
+
+            if rc == 0:
+                ok_count += 1
+            else:
+                fail_count += 1
+            safe_print(f"Progreso Total: {int(idx / total * 100)}%")
+            continue
         info = probe_media(fp)
         if args.op == "probe":
             if info:

@@ -66,6 +66,7 @@ HIDDEN_IMPORTS = [
     "functions.disk_attributes",
     "functions.drag_drop",
     "functions.duplicate_finder",
+    "functions.ffmpeg_skill_runner",
     "functions.health_analyzer",
     "functions.interpreter_addon",
     "functions.media_repair",
@@ -88,6 +89,7 @@ HIDDEN_IMPORTS = [
     "functions.usb_auditor",
     "functions.utils",
     "functions.versioning",
+    "functions.video_trimmer",
 ]
 
 

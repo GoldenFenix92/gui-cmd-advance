@@ -27,8 +27,16 @@ class TestDragAndDrop(unittest.TestCase):
             vid_services = drag_drop.get_compatible_services(vid_batch)
             self.assertEqual(
                 [s["command_name"] for s in vid_services],
-                ["Compresor de Multimedia", "Reparador de Multimedia", "Estudio de Video y Audio (FFmpeg)"],
+                [
+                    "Compresor de Multimedia",
+                    "Reparador de Multimedia",
+                    "Recortador Visual de Video (Línea de Tiempo)",
+                    "Estudio de Video y Audio (FFmpeg)",
+                ],
             )
+            self.assertTrue(vid_services[2].get("video_only"))
+            self.assertEqual(vid_services[2].get("launch_direct"), "video_trimmer")
+            self.assertTrue(vid_services[3].get("video_only"))
             repair_svc = vid_services[1]
             self.assertEqual(repair_svc["presets"]["Tipo de Archivos a Reparar"], "Solo Videos")
 
@@ -62,7 +70,7 @@ class TestDragAndDrop(unittest.TestCase):
             self.assertEqual(batch["detected_media_type"], "all")
 
             services = drag_drop.get_compatible_services(batch)
-            self.assertEqual(len(services), 3)
+            self.assertEqual(len(services), 4)
             self.assertEqual(
                 services[1]["presets"]["Tipo de Archivos a Reparar"],
                 "Videos e Imágenes (Todos)",

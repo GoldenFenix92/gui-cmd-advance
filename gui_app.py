@@ -1421,9 +1421,33 @@ class App(tb.Window):
 
             def _confirm():
                 chosen = svc_map.get(selected_svc_var.get())
+                if not chosen:
+                    win.destroy()
+                    return
+                if chosen.get("video_only"):
+                    v_count = batch_info.get("video_count", 0)
+                    non_video = batch_info.get("total_count", 0) - v_count
+                    if non_video > 0:
+                        msg = (
+                            f"La función '{chosen['command_name']}' trabaja EXCLUSIVAMENTE con archivos de video.\n\n"
+                            f"Se procesarán únicamente {v_count} archivo(s) de video y se omitirán {non_video} archivo(s) de otro tipo.\n\n"
+                            "¿Deseas continuar?"
+                        )
+                    else:
+                        extra = (
+                            "Se abrirá la interfaz visual de recorte con el video seleccionado."
+                            if chosen.get("launch_direct") == "video_trimmer"
+                            else "Se cargarán los archivos de video en el servicio seleccionado."
+                        )
+                        msg = (
+                            f"La función '{chosen['command_name']}' trabaja EXCLUSIVAMENTE con archivos de video.\n\n"
+                            f"{extra}\n\n"
+                            "¿Deseas continuar?"
+                        )
+                    if not messagebox.askokcancel("Función Exclusiva para Videos", msg, parent=win):
+                        return
                 win.destroy()
-                if chosen:
-                    self._apply_dropped_service(batch_info, chosen)
+                self._apply_dropped_service(batch_info, chosen)
 
             tb.Button(btn_row, text="Cancelar", bootstyle="secondary", command=win.destroy).pack(side="left")
             tb.Button(btn_row, text="Continuar con Servicio", bootstyle="success", command=_confirm).pack(side="right")
@@ -1449,6 +1473,24 @@ class App(tb.Window):
     def _apply_dropped_service(self, batch_info, service):
         from functions.drag_drop import save_dropped_batch_file
 
+        if service.get("video_only"):
+            compat_items = [it for it in batch_info.get("compatible_items", []) if it.get("media_kind") == "video"]
+        else:
+            compat_items = list(batch_info.get("compatible_items", []))
+        compat_paths = [it["path"] for it in compat_items]
+
+        if service.get("launch_direct") == "video_trimmer":
+            if not compat_paths:
+                return
+            from functions.video_trimmer import VideoTrimmerApp
+            self._video_trimmer_app = VideoTrimmerApp(
+                master=self, video_path=compat_paths[0], video_queue=compat_paths
+            )
+            self.append_output(
+                f"\n[DRAG & DROP] Recortador Visual de Video abierto con {len(compat_paths)} video(s).\n"
+            )
+            return
+
         if self.search_var.get().strip():
             self.search_var.set("")
 
@@ -1463,7 +1505,6 @@ class App(tb.Window):
             if preset_arg in self.current_args_vars:
                 self.current_args_vars[preset_arg]["var"].set(preset_val)
 
-        compat_paths = [it["path"] for it in batch_info.get("compatible_items", [])]
         if len(compat_paths) == 1:
             single_arg = service.get("single_arg", "")
             if single_arg in self.current_args_vars:
@@ -1473,11 +1514,13 @@ class App(tb.Window):
             )
         elif len(compat_paths) > 1:
             list_path = save_dropped_batch_file(compat_paths)
+            v_cnt = sum(1 for it in compat_items if it.get("media_kind") == "video")
+            i_cnt = sum(1 for it in compat_items if it.get("media_kind") == "image")
             parts = []
-            if batch_info.get("video_count"):
-                parts.append(f"{batch_info['video_count']} video(s)")
-            if batch_info.get("image_count"):
-                parts.append(f"{batch_info['image_count']} imagen(es)")
+            if v_cnt:
+                parts.append(f"{v_cnt} video(s)")
+            if i_cnt:
+                parts.append(f"{i_cnt} imagen(es)")
             detail = ", ".join(parts)
             summary = f"Lote arrastrado: {len(compat_paths)} archivos ({detail})"
             self._dropped_batch_state = {

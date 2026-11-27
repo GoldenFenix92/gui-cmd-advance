@@ -222,11 +222,23 @@ def get_compatible_services(batch_info):
     if batch_info.get("video_count", 0) > 0:
         services.append(
             {
+                "command_name": "Recortador Visual de Video (Línea de Tiempo)",
+                "category": "Multimedia",
+                "description": "Abre el editor visual interactivo con vista previa y línea de tiempo para recortar videos en MP4 o GIF (exclusivo para videos).",
+                "single_arg": "Video Inicial (Opcional)",
+                "presets": {},
+                "video_only": True,
+                "launch_direct": "video_trimmer",
+            }
+        )
+        services.append(
+            {
                 "command_name": "Estudio de Video y Audio (FFmpeg)",
                 "category": "Multimedia",
-                "description": "Recorta, extrae o normaliza audio (-14 LUFS), adapta a 9:16/16:9/GIF, cambia velocidad o inspecciona videos con FFmpeg.",
+                "description": "Recorta, extrae o normaliza audio (-14 LUFS), adapta a 9:16/16:9/GIF, cambia velocidad o inspecciona videos con FFmpeg (exclusivo para videos).",
                 "single_arg": "Archivo o Carpeta Origen",
                 "presets": {},
+                "video_only": True,
             }
         )
 

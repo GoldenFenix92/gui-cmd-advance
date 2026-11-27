@@ -2260,6 +2260,19 @@
                     ]
                 },
                 {
+                    "name": "Recortador Visual de Video (Línea de Tiempo)",
+                    "description": "Abre una interfaz gráfica interactiva con vista previa de fotogramas en vivo, tira de miniaturas y doble tirador Inicio/Fin para recortar videos en MP4 (sin pérdida o preciso) o GIF animado sin sobrescribir el original.",
+                    "command": "__INTERNAL__ --run-video-trimmer",
+                    "args": [
+                        {
+                            "name": "Video Inicial (Opcional)",
+                            "flag": "--input",
+                            "type": "file_entry",
+                            "description": "Opcional: selecciona un video para cargarlo automáticamente al abrir el recortador visual."
+                        }
+                    ]
+                },
+                {
                     "name": "Estudio de Video y Audio (FFmpeg)",
                     "description": "Herramienta unificada basada en FFmpeg para inspeccionar videos (ffprobe), recortar sin pérdida, extraer o normalizar audio (-14 LUFS), quitar sonido, adaptar a 9:16/16:9/1:1, crear GIFs, cambiar velocidad o convertir HDR a SDR conservando siempre los originales.",
                     "command": "__INTERNAL__ --run-media-studio",
@@ -2311,6 +2324,26 @@
                                 {
                                     "name": "Convertir HDR / iPhone a SDR (BT.709)",
                                     "value": "hdr-to-sdr"
+                                },
+                                {
+                                    "name": "[Complemento] Quitar Silencios Automáticamente (FFmpeg Skill)",
+                                    "value": "skill-silence"
+                                },
+                                {
+                                    "name": "[Complemento] Estabilizar Video Movido (FFmpeg Skill)",
+                                    "value": "skill-stabilize"
+                                },
+                                {
+                                    "name": "[Complemento] Quemar Subtítulos SRT (FFmpeg Skill)",
+                                    "value": "skill-caption"
+                                },
+                                {
+                                    "name": "[Complemento] Exportar por Plantilla Social (FFmpeg Skill)",
+                                    "value": "skill-template"
+                                },
+                                {
+                                    "name": "[Complemento] Diagnóstico de Capacidades FFmpeg (Doctor)",
+                                    "value": "skill-doctor"
                                 }
                             ],
                             "description": "Elige la transformación o inspección multimedia a ejecutar."
@@ -2495,6 +2528,57 @@
                                 ]
                             },
                             "description": "Factor de velocidad aplicado a video y audio sincronizados."
+                        },
+                        {
+                            "name": "Archivo de Subtítulos (.srt)",
+                            "flag": "--srt",
+                            "type": "file_entry",
+                            "visible_when": {
+                                "arg": "Operación",
+                                "values": [
+                                    "skill-caption"
+                                ]
+                            },
+                            "description": "Archivo de subtítulos SRT a incrustar en el video (requiere complemento FFmpeg Skill)."
+                        },
+                        {
+                            "name": "Plantilla de Plataforma",
+                            "flag": "--template",
+                            "type": "dropdown",
+                            "value": "TikTok (9:16, -14 LUFS)",
+                            "options": [
+                                {
+                                    "name": "TikTok (9:16, -14 LUFS)",
+                                    "value": "tiktok"
+                                },
+                                {
+                                    "name": "Instagram Reels (9:16, -14 LUFS)",
+                                    "value": "reels"
+                                },
+                                {
+                                    "name": "YouTube Shorts (9:16, -14 LUFS)",
+                                    "value": "shorts"
+                                },
+                                {
+                                    "name": "YouTube Horizontal (16:9)",
+                                    "value": "youtube"
+                                },
+                                {
+                                    "name": "X / Twitter",
+                                    "value": "x"
+                                },
+                                {
+                                    "name": "LinkedIn",
+                                    "value": "linkedin"
+                                }
+                            ],
+                            "visible_when": {
+                                "arg": "Operación",
+                                "values": [
+                                    "skill-template"
+                                ]
+                            },
+                            "description": "Plantilla oficial de entrega con zonas seguras y sonoridad normalizada (requiere complemento FFmpeg Skill)."
                         },
                         {
                             "name": "Carpeta de Salida (Opcional)",

@@ -27,12 +27,32 @@ PLUGINS = {
         "id": "ffmpeg",
         "name": "FFmpeg (Motor Multimedia)",
         "filename": "ffmpeg.exe",
-        "desc": "Habilita: Compresor, Reparador y Buscador de duplicados (video).",
+        "desc": "Habilita: Compresor, Reparador, Estudio de Video/Audio y Buscador de duplicados (incluye ffmpeg.exe y ffprobe.exe).",
         "url": "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip",
         "is_zip": True,
         "zip_target": "ffmpeg.exe",
+        "zip_targets": ["ffmpeg.exe", "ffprobe.exe"],
         "size_str": "~35MB",
-        "cmds": ["__INTERNAL__ --run-compressor", "__INTERNAL__ --run-duplicate-finder", "__INTERNAL__ --run-media-repair"],
+        "cmds": [
+            "__INTERNAL__ --run-compressor",
+            "__INTERNAL__ --run-duplicate-finder",
+            "__INTERNAL__ --run-media-repair",
+            "__INTERNAL__ --run-media-studio",
+            "__INTERNAL__ --run-video-trimmer",
+        ],
+    },
+    "ffmpeg_skill": {
+        "id": "ffmpeg_skill",
+        "name": "FFmpeg Skill (42 Herramientas Avanzadas)",
+        "filename": os.path.join("ffmpeg-skill", "scripts", "_contract.py"),
+        "desc": "Complemento avanzado bajo demanda (kajisho5/ffmpeg-skill, MIT): quitar silencios, estabilizar video, quemar subtítulos SRT y exportar por plantillas (TikTok, Reels, Shorts, YouTube).",
+        "url": "https://github.com/kajisho5/ffmpeg-skill/archive/refs/heads/main.zip",
+        "is_zip": True,
+        "is_zip_bundle": True,
+        "bundle_dir": "ffmpeg-skill",
+        "bundle_include": ("scripts/", "templates/", "references/", "SKILL.md", "LICENSE"),
+        "size_str": "~3MB",
+        "cmds": ["__INTERNAL__ --run-ffmpeg-skill"],
     },
     "odt": {
         "id": "odt",
@@ -66,6 +86,61 @@ PLUGINS = {
         "cmds": ["__INTERNAL__ --run-sdelete"],
     },
 }
+
+
+def extract_plugin_zip(zip_path, plugin, tools_dir):
+    """Extrae uno o varios binarios o un paquete filtrado (zip_bundle) de forma segura sin path traversal."""
+    os.makedirs(tools_dir, exist_ok=True)
+    with zipfile.ZipFile(zip_path, "r") as zip_ref:
+        if plugin.get("is_zip_bundle"):
+            bundle_root = os.path.abspath(os.path.join(tools_dir, plugin["bundle_dir"]))
+            if os.path.isdir(bundle_root):
+                shutil.rmtree(bundle_root, ignore_errors=True)
+            os.makedirs(bundle_root, exist_ok=True)
+            allowed = tuple(plugin.get("bundle_include") or ())
+            extracted = 0
+
+            for info in zip_ref.infolist():
+                if info.is_dir():
+                    continue
+                norm_name = info.filename.replace("\\", "/").lstrip("/")
+                # Quitar la carpeta raíz del archivo ZIP de GitHub (ej. ffmpeg-skill-main/)
+                parts = norm_name.split("/", 1)
+                rel = parts[1] if len(parts) == 2 else parts[0]
+                if not rel or ".." in rel.split("/"):
+                    continue
+                if allowed and not any(rel == item or rel.startswith(item) for item in allowed):
+                    continue
+
+                dest_path = os.path.abspath(os.path.join(bundle_root, *rel.split("/")))
+                if not dest_path.startswith(bundle_root + os.sep):
+                    continue
+                os.makedirs(os.path.dirname(dest_path), exist_ok=True)
+                with zip_ref.open(info, "r") as src_f, open(dest_path, "wb") as dst_f:
+                    shutil.copyfileobj(src_f, dst_f)
+                extracted += 1
+            return extracted
+
+        targets = list(plugin.get("zip_targets") or [])
+        if not targets and plugin.get("zip_target"):
+            targets = [plugin["zip_target"]]
+
+        extracted = 0
+        remaining = set(targets)
+        for info in zip_ref.infolist():
+            if info.is_dir():
+                continue
+            base = os.path.basename(info.filename.replace("\\", "/"))
+            if base in remaining:
+                out_name = plugin["filename"] if len(targets) == 1 else base
+                dest_path = os.path.join(tools_dir, out_name)
+                with zip_ref.open(info, "r") as src_f, open(dest_path, "wb") as dst_f:
+                    shutil.copyfileobj(src_f, dst_f)
+                remaining.discard(base)
+                extracted += 1
+                if not remaining:
+                    break
+        return extracted
 
 
 class PluginInstaller(tb.Toplevel):
@@ -150,13 +225,10 @@ class PluginInstaller(tb.Toplevel):
 
             if self.plugin["is_zip"]:
                 self._safe_ui(lambda: self.lbl_status.configure(text="Extrayendo archivos..."))
-                with zipfile.ZipFile(temp_file, "r") as zip_ref:
-                    for file_info in zip_ref.infolist():
-                        if file_info.filename.endswith(self.plugin["zip_target"]):
-                            file_info.filename = self.plugin["filename"]
-                            zip_ref.extract(file_info, tools_dir)
-                            break
+                count = extract_plugin_zip(temp_file, self.plugin, tools_dir)
                 os.remove(temp_file)
+                if count <= 0:
+                    raise RuntimeError("No se encontraron los archivos esperados dentro del paquete ZIP.")
             else:
                 shutil.move(temp_file, final_file)
 
