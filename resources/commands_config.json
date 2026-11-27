@@ -474,6 +474,59 @@
                     "description": "Genera un informe detallado de la salud, ciclos e historial de la batería en C:\\GuiCmdAdvance\\reports\\battery-report.html.",
                     "command": "powershell -Command \"& { try { $dir = 'C:\\GuiCmdAdvance\\reports'; if(!(Test-Path $dir)){ New-Item -ItemType Directory -Path $dir -Force | Out-Null }; $out = Join-Path $dir 'battery-report.html'; powercfg /batteryreport /output $out; if($LASTEXITCODE -ne 0 -or !(Test-Path $out)){ throw 'No se pudo generar el reporte de bateria (puede que el equipo no tenga bateria).' }; Write-Host ('Reporte generado en: ' + $out); Start-Process $out } catch { Write-Host ('Error: ' + $_.Exception.Message); exit 1 } }\"",
                     "args": []
+                },
+                {
+                    "name": "Auditor y Optimizador de Memoria RAM",
+                    "description": "Audita módulos físicos DIMM, telemetría de Kernel Pools y procesos consumidores, y libera memoria RAM inactiva (Working Sets, Standby List y caché del sistema) usando APIs nativas de Windows.",
+                    "command": "__INTERNAL__ --run-ram-auditor",
+                    "args": [
+                        {
+                            "name": "Modo de Operación",
+                            "type": "radio_group",
+                            "options": [
+                                {
+                                    "name": "Abrir Panel Visual Completo (Recomendado)",
+                                    "flag": "--gui"
+                                },
+                                {
+                                    "name": "Auditoría Completa en Consola (Solo lectura)",
+                                    "flag": "--mode audit"
+                                },
+                                {
+                                    "name": "Liberación Segura / Sin Lag (Working Sets + Standby baja)",
+                                    "flag": "--mode clean-safe"
+                                },
+                                {
+                                    "name": "Liberación Profunda (Working Sets + Standby + Caché)",
+                                    "flag": "--mode clean-deep"
+                                }
+                            ],
+                            "description": "Elige si deseas abrir el panel interactivo o ejecutar la auditoría/limpieza directamente en la consola."
+                        }
+                    ],
+                    "warning": {
+                        "level": "caution",
+                        "title": "Liberación de Memoria RAM",
+                        "message": "Se recortarán Working Sets inactivos de aplicaciones de usuario (protegiendo el kernel) y se purgará la caché en espera (Standby List).",
+                        "skip_if_flag_in": [
+                            "--gui",
+                            "--mode audit"
+                        ]
+                    },
+                    "combos": [
+                        {
+                            "command": "Listar Procesos en Ejecución (tasklist)",
+                            "when": "after",
+                            "reason": "Consulta el listado completo de procesos tras auditar u optimizar la RAM.",
+                            "auto_command": "tasklist"
+                        },
+                        {
+                            "command": "Información Detallada del Equipo (systeminfo)",
+                            "when": "after",
+                            "reason": "Complementa la auditoría de RAM con el resumen general del hardware y sistema.",
+                            "auto_command": "systeminfo"
+                        }
+                    ]
                 }
             ]
         },

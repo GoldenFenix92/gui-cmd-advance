@@ -18,7 +18,7 @@ This file tracks the commands that are planned, in progress, and completed for t
 - [x] Gestor Adaptador de Red
 - [x] Contraseñas WiFi Guardadas
 
-## Sistema y Procesos (6)
+## Sistema y Procesos (7)
 
 - [x] Información Detallada del Equipo (systeminfo)
 - [x] Listar Procesos en Ejecución (tasklist)
@@ -26,6 +26,7 @@ This file tracks the commands that are planned, in progress, and completed for t
 - [x] Administrador de Apagado Programado
 - [x] Visor de Eventos del Sistema (Errores/Avisos)
 - [x] Reporte de Batería (Laptops)
+- [x] Auditor y Optimizador de Memoria RAM
 
 ## Reparación y Mantenimiento (5)
 

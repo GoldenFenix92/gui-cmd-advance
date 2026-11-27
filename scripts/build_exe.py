@@ -73,6 +73,7 @@ HIDDEN_IMPORTS = [
     "functions.office_deploy",
     "functions.power_manager",
     "functions.process_manager",
+    "functions.ram_auditor",
     "functions.report_generator",
     "functions.sdelete_runner",
     "functions.setup_manager",

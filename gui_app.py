@@ -97,7 +97,7 @@ class App(tb.Window):
 
         self.ram_btn = tb.Button(self.top_bar, text="RAM", bootstyle="warning", command=self.optimize_ram)
         self.ram_btn.pack(side="right", padx=(0, 6))
-        ui_theme.add_tooltip(self.ram_btn, "Liberar memoria inactiva (RAM)")
+        ui_theme.add_tooltip(self.ram_btn, "Auditor y Optimizador de Memoria RAM")
 
         # Tarjeta redondeada (12px): Selección de Comando
         cmd_card_wrap = ui_theme.RoundedCard(self.left_frame, title="Selección de Comando", padding=(4, 2))
@@ -2545,19 +2545,12 @@ class App(tb.Window):
             messagebox.showerror("Error", f"No se pudo abrir el Gestor de Procesos:\n{e}", parent=self)
 
     def optimize_ram(self):
-        vbs_path = None
         try:
-            gc.collect()
-            vbs_path = get_user_data_path("liberar_ram.vbs")
-            with open(vbs_path, "w", encoding="utf-8") as f:
-                f.write("FreeMem=Space(100000000)")
-            subprocess.run(["cscript", "//nologo", vbs_path], creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
-            messagebox.showinfo("RAM Optimizada", "Memoria inactiva liberada y procesos de fondo limpios correctamente.", parent=self)
+            existing = getattr(self, "_ram_auditor_app", None)
+            if existing is not None and existing.win.winfo_exists():
+                ui_theme.bring_to_front(existing.win)
+                return
+            from functions.ram_auditor import RamAuditorApp
+            self._ram_auditor_app = RamAuditorApp(master=self)
         except Exception as e:
-            messagebox.showerror("Error", f"Ocurrió un error al intentar optimizar la RAM:\n{e}", parent=self)
-        finally:
-            if vbs_path and os.path.exists(vbs_path):
-                try:
-                    os.remove(vbs_path)
-                except Exception:
-                    pass
+            messagebox.showerror("Error", f"No se pudo abrir el Auditor de Memoria RAM:\n{e}", parent=self)
