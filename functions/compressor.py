@@ -159,7 +159,25 @@ def detect_best_encoder():
     return "libx264"
 
 
-def _build_ffmpeg_command(ffmpeg_exe, input_path, output_path, encoder, crf, preset, threads, attempt):
+def _calculate_target_video_bitrate_kbps(input_path, max_mb, audio_kbps=128):
+    """Calcula el bitrate de video (kbps) para que el archivo final quede bajo max_mb."""
+    try:
+        target_mb = float(max_mb)
+        if target_mb <= 0:
+            return None
+        from functions.media_studio import probe_media
+        info = probe_media(input_path)
+        if not info or info.get("duration_s", 0) <= 0:
+            return None
+        # Margen de seguridad del 92% para overhead del contenedor MP4
+        total_kbps = (target_mb * 8192.0 * 0.92) / float(info["duration_s"])
+        video_kbps = max(250, int(total_kbps - audio_kbps))
+        return video_kbps
+    except Exception:
+        return None
+
+
+def _build_ffmpeg_command(ffmpeg_exe, input_path, output_path, encoder, crf, preset, threads, attempt, target_bitrate_kbps=None):
     cmd = [ffmpeg_exe, "-y", "-nostdin"]
     if attempt == 2:
         cmd.extend(["-fflags", "+genpts"])
@@ -168,7 +186,17 @@ def _build_ffmpeg_command(ffmpeg_exe, input_path, output_path, encoder, crf, pre
 
     cmd.extend(["-i", input_path])
 
-    if encoder == "h264_nvenc":
+    if target_bitrate_kbps:
+        v_br = f"{int(target_bitrate_kbps)}k"
+        max_br = f"{int(target_bitrate_kbps * 1.15)}k"
+        buf_br = f"{int(target_bitrate_kbps * 2)}k"
+        cmd.extend(["-c:v", encoder, "-b:v", v_br, "-maxrate", max_br, "-bufsize", buf_br])
+        if encoder == "libx264":
+            cmd.extend(["-preset", preset])
+            calc_threads = threads if threads > 0 else max(1, multiprocessing.cpu_count() - 2)
+            if calc_threads > 0:
+                cmd.extend(["-threads", str(calc_threads)])
+    elif encoder == "h264_nvenc":
         nv_preset = NVENC_PRESET_MAP.get(preset, "p4")
         cmd.extend(["-c:v", "h264_nvenc", "-cq", str(crf), "-rc", "vbr", "-preset", nv_preset])
     elif encoder == "h264_amf":
@@ -182,8 +210,11 @@ def _build_ffmpeg_command(ffmpeg_exe, input_path, output_path, encoder, crf, pre
         if calc_threads > 0:
             cmd.extend(["-threads", str(calc_threads)])
 
-    # Compatibilidad universal de píxeles, audio y streaming MP4
-    cmd.extend(["-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "128k", "-movflags", "+faststart"])
+    # Garantizar dimensiones pares (evita "height not divisible by 2"), píxeles universales y faststart
+    cmd.extend([
+        "-vf", "scale=trunc(iw/2)*2:trunc(ih/2)*2",
+        "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "128k", "-movflags", "+faststart",
+    ])
 
     # Opciones de compatibilidad para reintentos compatibles con FFmpeg 6/7/8
     if attempt == 2:
@@ -195,7 +226,7 @@ def _build_ffmpeg_command(ffmpeg_exe, input_path, output_path, encoder, crf, pre
     return cmd
 
 
-def compress_video(input_path, output_path, crf=23, hw="auto", preset="fast", threads=0, file_index=0, total_files=1, attempt=1):
+def compress_video(input_path, output_path, crf=23, hw="auto", preset="fast", threads=0, file_index=0, total_files=1, attempt=1, max_mb=0.0):
     if not is_ffmpeg_installed():
         safe_print("[ERROR] FFmpeg no está instalado o no está en el PATH del sistema.")
         safe_print("Por favor, instala FFmpeg desde Complementos o https://ffmpeg.org/download.html.")
@@ -218,9 +249,13 @@ def compress_video(input_path, output_path, crf=23, hw="auto", preset="fast", th
         elif hw == "qsv":
             encoder = "h264_qsv"
 
+        target_bitrate = _calculate_target_video_bitrate_kbps(input_path, max_mb) if max_mb and float(max_mb) > 0 else None
         if attempt == 1:
             safe_print(f"Comprimiendo video: {input_path}")
-            safe_print(f"Hardware Encoder: {encoder} | Preset: {preset} | CRF: {crf}")
+            if target_bitrate:
+                safe_print(f"Hardware Encoder: {encoder} | Preset: {preset} | Peso objetivo: {max_mb} MB (~{target_bitrate} kbps)")
+            else:
+                safe_print(f"Hardware Encoder: {encoder} | Preset: {preset} | CRF: {crf}")
         else:
             safe_print(f"Reintentando video (Intento {attempt}/3): {input_path}")
 
@@ -233,6 +268,7 @@ def compress_video(input_path, output_path, crf=23, hw="auto", preset="fast", th
             preset=preset,
             threads=threads,
             attempt=attempt,
+            target_bitrate_kbps=target_bitrate,
         )
 
         process = subprocess.Popen(
@@ -392,6 +428,7 @@ def main(argv=None):
     parser.add_argument("--suffix", default="", help="Sufijo para archivos comprimidos")
     parser.add_argument("--quality", type=int, default=75, help="Calidad de imagen (0-100)")
     parser.add_argument("--crf", type=int, default=23, help="CRF para video (menor = mejor calidad, 18-28 recomendado)")
+    parser.add_argument("--max-mb", type=float, default=0.0, help="Peso máximo objetivo en MB para video (0 = usar CRF)")
     parser.add_argument("--hw", default="auto", help="Motor de aceleración de hardware")
     parser.add_argument("--preset", default="fast", help="Preset de velocidad y consumo")
     parser.add_argument("--threads", type=int, default=0, help="Hilos de CPU a usar (0 = auto)")
@@ -505,6 +542,7 @@ def main(argv=None):
                 threads=args.threads,
                 file_index=real_index,
                 total_files=total_files,
+                max_mb=args.max_mb,
             )
             if res:
                 results.append(res)

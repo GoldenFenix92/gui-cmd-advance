@@ -202,7 +202,7 @@ def get_compatible_services(batch_info):
     else:
         repair_type_label = "Videos e Imágenes (Todos)"
 
-    return [
+    services = [
         {
             "command_name": "Compresor de Multimedia",
             "category": "Multimedia",
@@ -218,6 +218,19 @@ def get_compatible_services(batch_info):
             "presets": {"Tipo de Archivos a Reparar": repair_type_label},
         },
     ]
+
+    if batch_info.get("video_count", 0) > 0:
+        services.append(
+            {
+                "command_name": "Estudio de Video y Audio (FFmpeg)",
+                "category": "Multimedia",
+                "description": "Recorta, extrae o normaliza audio (-14 LUFS), adapta a 9:16/16:9/GIF, cambia velocidad o inspecciona videos con FFmpeg.",
+                "single_arg": "Archivo o Carpeta Origen",
+                "presets": {},
+            }
+        )
+
+    return services
 
 
 def save_dropped_batch_file(paths, target_path=None):

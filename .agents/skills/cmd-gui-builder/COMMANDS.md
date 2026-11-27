@@ -92,10 +92,11 @@ This file tracks the commands that are planned, in progress, and completed for t
 - [x] PhotoRec Código Abierto (Descargar y Abrir)
 - [x] PhotoRec Código Abierto (Desinstalar)
 
-## Multimedia (4)
+## Multimedia (5)
 
 - [x] Compresor de Multimedia
 - [x] Reparador de Multimedia
+- [x] Estudio de Video y Audio (FFmpeg)
 - [x] Analizador de Salud Multimedia
 - [x] Buscador de Duplicados
 

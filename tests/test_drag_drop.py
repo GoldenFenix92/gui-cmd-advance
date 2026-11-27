@@ -27,7 +27,7 @@ class TestDragAndDrop(unittest.TestCase):
             vid_services = drag_drop.get_compatible_services(vid_batch)
             self.assertEqual(
                 [s["command_name"] for s in vid_services],
-                ["Compresor de Multimedia", "Reparador de Multimedia"],
+                ["Compresor de Multimedia", "Reparador de Multimedia", "Estudio de Video y Audio (FFmpeg)"],
             )
             repair_svc = vid_services[1]
             self.assertEqual(repair_svc["presets"]["Tipo de Archivos a Reparar"], "Solo Videos")
@@ -35,6 +35,10 @@ class TestDragAndDrop(unittest.TestCase):
             img_batch = drag_drop.inspect_dropped_batch([img])
             self.assertEqual(img_batch["detected_media_type"], "images")
             img_services = drag_drop.get_compatible_services(img_batch)
+            self.assertEqual(
+                [s["command_name"] for s in img_services],
+                ["Compresor de Multimedia", "Reparador de Multimedia"],
+            )
             self.assertEqual(img_services[1]["presets"]["Tipo de Archivos a Reparar"], "Solo Imágenes")
 
     def test_multi_file_mixed_batch_filters_non_media(self):
@@ -58,7 +62,7 @@ class TestDragAndDrop(unittest.TestCase):
             self.assertEqual(batch["detected_media_type"], "all")
 
             services = drag_drop.get_compatible_services(batch)
-            self.assertEqual(len(services), 2)
+            self.assertEqual(len(services), 3)
             self.assertEqual(
                 services[1]["presets"]["Tipo de Archivos a Reparar"],
                 "Videos e Imágenes (Todos)",

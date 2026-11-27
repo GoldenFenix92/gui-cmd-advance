@@ -69,6 +69,7 @@ HIDDEN_IMPORTS = [
     "functions.health_analyzer",
     "functions.interpreter_addon",
     "functions.media_repair",
+    "functions.media_studio",
     "functions.name_sanitizer",
     "functions.office_deploy",
     "functions.power_manager",

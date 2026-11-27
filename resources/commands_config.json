@@ -2233,6 +2233,12 @@
                             "flag": "--threads",
                             "type": "threads_dropdown",
                             "description": "Cantidad de hilos a usar."
+                        },
+                        {
+                            "name": "Tamaño Máximo Objetivo MB (Opcional)",
+                            "flag": "--max-mb",
+                            "type": "entry",
+                            "description": "Opcional: peso máximo deseado en MB para videos (ej. 25). Si se deja vacío usa CRF."
                         }
                     ],
                     "warning": {
@@ -2250,6 +2256,258 @@
                             "command": "Buscador de Duplicados",
                             "when": "before",
                             "reason": "Protocolo seguro: elimina duplicados primero para no comprimir el mismo archivo varias veces."
+                        }
+                    ]
+                },
+                {
+                    "name": "Estudio de Video y Audio (FFmpeg)",
+                    "description": "Herramienta unificada basada en FFmpeg para inspeccionar videos (ffprobe), recortar sin pérdida, extraer o normalizar audio (-14 LUFS), quitar sonido, adaptar a 9:16/16:9/1:1, crear GIFs, cambiar velocidad o convertir HDR a SDR conservando siempre los originales.",
+                    "command": "__INTERNAL__ --run-media-studio",
+                    "args": [
+                        {
+                            "name": "Archivo o Carpeta Origen",
+                            "flag": "--input",
+                            "type": "file_entry",
+                            "description": "Selecciona un video/audio o una carpeta completa (también compatible con Arrastrar y Soltar)."
+                        },
+                        {
+                            "name": "Operación",
+                            "flag": "--op",
+                            "type": "dropdown",
+                            "value": "Inspeccionar Metadatos Técnicos (ffprobe)",
+                            "options": [
+                                {
+                                    "name": "Inspeccionar Metadatos Técnicos (ffprobe)",
+                                    "value": "probe"
+                                },
+                                {
+                                    "name": "Recortar Video (Inicio / Fin)",
+                                    "value": "trim"
+                                },
+                                {
+                                    "name": "Extraer / Convertir Audio (MP3 / WAV / M4A)",
+                                    "value": "audio-extract"
+                                },
+                                {
+                                    "name": "Normalizar Volumen de Audio (-14 LUFS)",
+                                    "value": "audio-normalize"
+                                },
+                                {
+                                    "name": "Quitar Audio / Silenciar Video (Sin recodificar)",
+                                    "value": "mute"
+                                },
+                                {
+                                    "name": "Adaptar Formato / Redes (9:16, 16:9, 1:1)",
+                                    "value": "reframe"
+                                },
+                                {
+                                    "name": "Convertir Video a GIF de Alta Calidad",
+                                    "value": "gif"
+                                },
+                                {
+                                    "name": "Cambiar Velocidad de Video y Audio",
+                                    "value": "speed"
+                                },
+                                {
+                                    "name": "Convertir HDR / iPhone a SDR (BT.709)",
+                                    "value": "hdr-to-sdr"
+                                }
+                            ],
+                            "description": "Elige la transformación o inspección multimedia a ejecutar."
+                        },
+                        {
+                            "name": "Tiempo Inicio (ej. 00:00:05)",
+                            "flag": "--start",
+                            "type": "entry",
+                            "visible_when": {
+                                "arg": "Operación",
+                                "values": [
+                                    "trim",
+                                    "gif"
+                                ]
+                            },
+                            "description": "Instante inicial del recorte o GIF (segundos o hh:mm:ss)."
+                        },
+                        {
+                            "name": "Tiempo Fin (ej. 00:00:20)",
+                            "flag": "--end",
+                            "type": "entry",
+                            "visible_when": {
+                                "arg": "Operación",
+                                "values": [
+                                    "trim",
+                                    "gif"
+                                ]
+                            },
+                            "description": "Instante final del recorte o GIF (segundos o hh:mm:ss)."
+                        },
+                        {
+                            "name": "Recorte Preciso por Cuadro (re-codifica)",
+                            "flag": "--accurate",
+                            "type": "checkbox",
+                            "visible_when": {
+                                "arg": "Operación",
+                                "values": [
+                                    "trim"
+                                ]
+                            },
+                            "description": "Si está desmarcado realiza copia instantánea sin pérdida (-c copy). Márcalo para corte exacto al fotograma."
+                        },
+                        {
+                            "name": "Formato de Audio",
+                            "flag": "--audio-format",
+                            "type": "dropdown",
+                            "value": "MP3 (Universal alta calidad)",
+                            "options": [
+                                {
+                                    "name": "MP3 (Universal alta calidad)",
+                                    "value": "mp3"
+                                },
+                                {
+                                    "name": "M4A / AAC (192 kbps)",
+                                    "value": "m4a"
+                                },
+                                {
+                                    "name": "WAV (Sin compresión)",
+                                    "value": "wav"
+                                }
+                            ],
+                            "visible_when": {
+                                "arg": "Operación",
+                                "values": [
+                                    "audio-extract"
+                                ]
+                            },
+                            "description": "Formato destino para la pista de audio extraída."
+                        },
+                        {
+                            "name": "Relación de Aspecto",
+                            "flag": "--aspect",
+                            "type": "dropdown",
+                            "value": "9:16 Vertical (TikTok / Reels / Shorts)",
+                            "options": [
+                                {
+                                    "name": "9:16 Vertical (TikTok / Reels / Shorts)",
+                                    "value": "9:16"
+                                },
+                                {
+                                    "name": "16:9 Horizontal (YouTube / Pantalla)",
+                                    "value": "16:9"
+                                },
+                                {
+                                    "name": "1:1 Cuadrado (Feed)",
+                                    "value": "1:1"
+                                },
+                                {
+                                    "name": "Mantener original (Solo escalar altura)",
+                                    "value": "original"
+                                }
+                            ],
+                            "visible_when": {
+                                "arg": "Operación",
+                                "values": [
+                                    "reframe"
+                                ]
+                            },
+                            "description": "Proporción de salida del video."
+                        },
+                        {
+                            "name": "Modo de Encuadre",
+                            "flag": "--fit",
+                            "type": "dropdown",
+                            "value": "Recortar al centro (Crop)",
+                            "options": [
+                                {
+                                    "name": "Recortar al centro (Crop)",
+                                    "value": "crop"
+                                },
+                                {
+                                    "name": "Fondo difuminado (Blur)",
+                                    "value": "blur"
+                                },
+                                {
+                                    "name": "Barras negras (Pad)",
+                                    "value": "pad"
+                                }
+                            ],
+                            "visible_when": {
+                                "arg": "Operación",
+                                "values": [
+                                    "reframe"
+                                ]
+                            },
+                            "description": "Cómo ajustar la imagen al nuevo formato."
+                        },
+                        {
+                            "name": "Altura Objetivo",
+                            "flag": "--height",
+                            "type": "dropdown",
+                            "value": "1080p (Full HD)",
+                            "options": [
+                                {
+                                    "name": "1080p (Full HD)",
+                                    "value": "1080"
+                                },
+                                {
+                                    "name": "720p (HD ligero)",
+                                    "value": "720"
+                                },
+                                {
+                                    "name": "Original",
+                                    "value": "original"
+                                }
+                            ],
+                            "visible_when": {
+                                "arg": "Operación",
+                                "values": [
+                                    "reframe"
+                                ]
+                            },
+                            "description": "Resolución vertical objetivo."
+                        },
+                        {
+                            "name": "Velocidad",
+                            "flag": "--speed",
+                            "type": "dropdown",
+                            "value": "1.5x (Más rápido)",
+                            "options": [
+                                {
+                                    "name": "1.5x (Más rápido)",
+                                    "value": "1.5"
+                                },
+                                {
+                                    "name": "2.0x (Doble velocidad)",
+                                    "value": "2.0"
+                                },
+                                {
+                                    "name": "0.5x (Cámara lenta)",
+                                    "value": "0.5"
+                                },
+                                {
+                                    "name": "4.0x (Timelapse rápido)",
+                                    "value": "4.0"
+                                }
+                            ],
+                            "visible_when": {
+                                "arg": "Operación",
+                                "values": [
+                                    "speed"
+                                ]
+                            },
+                            "description": "Factor de velocidad aplicado a video y audio sincronizados."
+                        },
+                        {
+                            "name": "Carpeta de Salida (Opcional)",
+                            "flag": "--output",
+                            "type": "directory_entry",
+                            "description": "Carpeta destino. Si se deja vacía, se guarda junto al original sin sobrescribirlo."
+                        }
+                    ],
+                    "combos": [
+                        {
+                            "command": "Compresor de Multimedia",
+                            "when": "after",
+                            "reason": "Comprime el archivo generado para reducir aún más su tamaño."
                         }
                     ]
                 },

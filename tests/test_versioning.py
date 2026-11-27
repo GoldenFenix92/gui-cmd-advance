@@ -14,7 +14,9 @@ class TestVersioningSystem(unittest.TestCase):
         self.assertTrue(os.path.isfile(version_path), "Falta el archivo canónico VERSION en la raíz.")
         ver = versioning.read_canonical_version(version_path)
         self.assertTrue(versioning.is_valid_canonical_semver(ver), f"VERSION inválida: {ver!r}")
-        self.assertEqual(versioning.get_app_version(), ver)
+        detected = versioning.detect_version_from_git(version_path, PROJECT_ROOT)["detected_version"]
+        self.assertTrue(versioning.is_valid_canonical_semver(detected), f"Versión detectada inválida: {detected!r}")
+        self.assertEqual(versioning.get_app_version(), detected)
 
     def test_canonical_semver_validation(self):
         valid = ["2.0.0", "2.0.0-beta", "2.0.0-beta.1", "2.1.3-rc.2", "0.9.1-alpha.3"]

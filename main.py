@@ -192,6 +192,10 @@ if __name__ == "__main__":
             sys.argv.pop(1)
             ram_auditor.main()
             sys.exit(0)
+        elif sys.argv[1] == "--run-media-studio":
+            from functions import media_studio
+            sys.argv.pop(1)
+            sys.exit(media_studio.main())
             
     if is_admin():
         hwnd = ctypes.windll.kernel32.GetConsoleWindow()
