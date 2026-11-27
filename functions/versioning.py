@@ -135,43 +135,52 @@ def classify_commit_impact(commit_messages):
     return best
 
 
+def apply_release_channel(version_str, is_beta):
+    """Devuelve la versión SemVer en canal Beta ('X.Y.Z-beta') o Estable ('X.Y.Z'), sin sufijos .1/.2."""
+    parsed = parse_version(version_str)
+    if parsed is None:
+        raise ValueError(f"Versión SemVer inválida: {version_str!r}")
+    major, minor, patch = parsed[0], parsed[1], parsed[2]
+    if is_beta:
+        return f"{major}.{minor}.{patch}-beta"
+    return f"{major}.{minor}.{patch}"
+
+
 def bump_semver(base_version, impact):
     """Calcula la siguiente versión SemVer canónica según el impacto ('major', 'minor', 'patch', 'none').
 
-    - En versiones estables ('2.0.0'):
-      - major -> '3.0.0'
-      - minor -> '2.1.0'
-      - patch -> '2.0.1'
-    - En pre-releases ('2.0.0-beta', '2.0.0-beta.1', '2.1.0-rc.1'):
-      - Incrementa la iteración pre-release ('.1', '.2', ...) ante cambios funcionales/fixes,
-        o sube MAJOR si impact == 'major' y la versión ya avanzó más allá de X.0.0.
+    - Siempre mantiene el formato limpio sin sufijos numéricos (.1/.2):
+      - Estable: '2.0.0' -> major: '3.0.0', minor: '2.1.0', patch: '2.0.1'
+      - Beta:    '2.0.0-beta' -> major: '3.0.0-beta', minor: '2.1.0-beta', patch: '2.0.1-beta'
     """
     cleaned = str(base_version or "").strip()
     if not is_valid_canonical_semver(cleaned):
         raise ValueError(f"Versión SemVer base inválida: {base_version!r}")
     if impact not in ("major", "minor", "patch", "none"):
         raise ValueError(f"Impacto SemVer inválido: {impact!r}")
-    if impact == "none":
-        return cleaned
 
     m = CANONICAL_SEMVER_RE.match(cleaned)
     major = int(m.group(1))
     minor = int(m.group(2))
     patch = int(m.group(3))
     pre_label = m.group(4)
-    pre_num = int(m.group(5)) if m.group(5) else 0
 
-    if pre_label:
-        if impact == "major" and (minor > 0 or patch > 0):
-            return f"{major + 1}.0.0-{pre_label}"
-        next_pre = pre_num + 1 if pre_num > 0 else 1
-        return f"{major}.{minor}.{patch}-{pre_label}.{next_pre}"
+    if impact == "none":
+        return f"{major}.{minor}.{patch}-beta" if pre_label else f"{major}.{minor}.{patch}"
 
     if impact == "major":
-        return f"{major + 1}.0.0"
-    if impact == "minor":
-        return f"{major}.{minor + 1}.0"
-    return f"{major}.{minor}.{patch + 1}"
+        major += 1
+        minor = 0
+        patch = 0
+    elif impact == "minor":
+        minor += 1
+        patch = 0
+    else:
+        patch += 1
+
+    if pre_label:
+        return f"{major}.{minor}.{patch}-beta"
+    return f"{major}.{minor}.{patch}"
 
 
 def _run_git(args, repo_root=None):

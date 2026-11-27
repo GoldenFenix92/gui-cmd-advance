@@ -1,3 +1,4 @@
+import argparse
 import os
 import subprocess
 import sys
@@ -7,6 +8,7 @@ if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
 from functions.versioning import (
+    apply_release_channel,
     detect_version_from_git,
     format_git_tag,
     is_prerelease,
@@ -100,9 +102,10 @@ def get_git_commit_count():
         return 0
 
 
-def resolve_build_metadata(version_override=None, commit_count=None, auto_detect=True):
+def resolve_build_metadata(version_override=None, commit_count=None, auto_detect=True, is_beta=None):
     """Resuelve toda la metadata de compilación desde VERSION + detección automática de commits Git.
 
+    Si is_beta se especifica (True o False), fuerza el canal a '-beta' o estable sin sufijos .1/.2.
     Garantiza coherencia automática entre versión SemVer, canal Beta/Estable,
     nombre del ejecutable y tupla FileVersion de Windows (MAJOR.MINOR.PATCH.BUILD).
     """
@@ -127,6 +130,12 @@ def resolve_build_metadata(version_override=None, commit_count=None, auto_detect
         detection["base_version"] = canonical
         detection["detected_version"] = canonical
 
+    if is_beta is not None:
+        canonical = apply_release_channel(canonical, bool(is_beta))
+    elif is_prerelease(canonical):
+        # Normalizar siempre pre-releases a '-beta' limpio (sin .1 / .2)
+        canonical = apply_release_channel(canonical, True)
+
     build_num = get_git_commit_count() if commit_count is None else int(commit_count)
     v1, v2, v3, v4 = to_windows_version_tuple(canonical, build_number=build_num)
     prerelease = is_prerelease(canonical)
@@ -139,7 +148,7 @@ def resolve_build_metadata(version_override=None, commit_count=None, auto_detect
         "base_version": detection["base_version"],
         "impact": detection["impact"],
         "commits_since": detection["commits_since"],
-        "auto_bumped": detection["auto_bumped"],
+        "auto_bumped": detection["auto_bumped"] or (canonical != detection["base_version"]),
         "git_tag": format_git_tag(canonical),
         "build": v4,
         "is_prerelease": prerelease,
@@ -166,14 +175,52 @@ def build_pyinstaller_command(name, version_file, icon="resources/app_icon.ico")
     return cmd
 
 
-def main():
+def prompt_beta_channel(default_is_beta=True, input_fn=input):
+    """Pregunta interactivamente si la compilación sigue siendo Beta o pasa a Estable."""
+    default_hint = "S/n" if default_is_beta else "s/N"
+    while True:
+        try:
+            ans = str(input_fn(f"¿Esta compilación continúa siendo BETA? ({default_hint}): ")).strip().lower()
+        except EOFError:
+            return default_is_beta
+        if not ans:
+            return default_is_beta
+        if ans in ("s", "si", "sí", "y", "yes"):
+            return True
+        if ans in ("n", "no"):
+            return False
+        print("  Respuesta no válida. Escribe 's' para Beta o 'n' para Estable.")
+
+
+def main(argv=None):
     os.chdir(PROJECT_ROOT)
+
+    parser = argparse.ArgumentParser(description="Compilador automático (.exe) de GUI CMD Advance.")
+    channel_group = parser.add_mutually_exclusive_group()
+    channel_group.add_argument("--beta", action="store_true", help="Compilar directamente en canal Beta sin preguntar.")
+    channel_group.add_argument("--stable", action="store_true", help="Compilar directamente en canal Estable sin preguntar.")
+    args = parser.parse_args(argv)
 
     print("=" * 60)
     print("  COMPILACIÓN AUTOMÁTICA (.EXE) - GUI CMD ADVANCE")
     print("=" * 60)
 
-    meta = resolve_build_metadata()
+    preview = resolve_build_metadata()
+    print(f"[*] Versión base (VERSION)     : {preview['base_version']}")
+    if preview["commits_since"] > 0 and preview["impact"] != "none":
+        print(
+            f"[*] Cambios detectados en Git  : impacto '{preview['impact']}' "
+            f"({preview['commits_since']} commit(s) nuevos) -> {preview['version']}"
+        )
+
+    if args.beta:
+        chosen_beta = True
+    elif args.stable:
+        chosen_beta = False
+    else:
+        chosen_beta = prompt_beta_channel(default_is_beta=preview["is_prerelease"])
+
+    meta = resolve_build_metadata(is_beta=chosen_beta)
     v1, v2, v3, v4 = meta["win_tuple"]
     name = meta["exe_name"]
     version_ui = meta["version"]

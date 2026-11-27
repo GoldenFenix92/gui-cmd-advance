@@ -15,14 +15,15 @@ Después de **cualquier cambio** funcional, arquitectónico, corrección de erro
 
 Antes de cerrar un cambio o preparar un release, evalúa el alcance de los cambios desde el último tag/release:
 
-| Tipo de cambio | Qué incrementar | Ejemplo |
-|---|---|---|
-| **Arquitectónico / Breaking** (cambio de framework UI, ruptura de esquema de datos/config) | `MAJOR` (reinicia `MINOR` y `PATCH` a `0`) | `1.x.x` -> `2.0.0-beta` o `2.0.0` |
-| **Nueva funcionalidad** (`feat:` — nuevo módulo, comando o capacidad visible retrocompatible) | `MINOR` (reinicia `PATCH` a `0`) | `2.0.0` -> `2.1.0` |
-| **Corrección / ajuste menor** (`fix:`, seguridad, pulido UI sin nuevas funciones) | `PATCH` | `2.1.0` -> `2.1.1` |
-| **Nueva iteración Beta antes de estable** | Sufijo pre-release (`.N`) | `2.0.0-beta` -> `2.0.0-beta.2` |
-| **Paso de Beta a Estable** | Quitar sufijo `-beta` | `2.0.0-beta.2` -> `2.0.0` |
-| **Solo docs / tests / chore interno** | Sin incremento obligatorio (hasta publicar release) | Mantiene `VERSION` |
+| Tipo de cambio | Qué incrementar | Ejemplo (Beta) | Ejemplo (Estable) |
+|---|---|---|---|
+| **Arquitectónico / Breaking** (`BREAKING CHANGE` / `!:`) | `MAJOR` (reinicia `MINOR` y `PATCH` a `0`) | `2.0.0-beta` -> `3.0.0-beta` | `2.0.0` -> `3.0.0` |
+| **Nueva funcionalidad** (`feat:`) | `MINOR` (reinicia `PATCH` a `0`) | `2.0.0-beta` -> `2.1.0-beta` | `2.0.0` -> `2.1.0` |
+| **Corrección / ajuste menor** (`fix:`, `perf:`, `style:`) | `PATCH` | `2.1.0-beta` -> `2.1.1-beta` | `2.1.0` -> `2.1.1` |
+| **Paso de Beta a Estable** | Quitar sufijo `-beta` (confirmado al compilar) | `2.1.0-beta` -> `2.1.0` | — |
+| **Solo docs / tests / chore interno** | Sin incremento obligatorio | Mantiene `VERSION` | Mantiene `VERSION` |
+
+> Nota: Las versiones Beta usan siempre el sufijo limpio `-beta` (sin `.1` / `.2`). Antes de compilar, `scripts/build_exe.py` pregunta si la compilación continúa siendo Beta (`s`) o pasa a Estable (`n`).
 
 ## 3. Reglas del Compilador y Auto-Actualizador
 

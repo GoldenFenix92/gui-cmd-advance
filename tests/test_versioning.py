@@ -95,11 +95,27 @@ class TestVersioningSystem(unittest.TestCase):
         self.assertEqual(versioning.bump_semver("2.0.0", "minor"), "2.1.0")
         self.assertEqual(versioning.bump_semver("2.0.0", "major"), "3.0.0")
 
-        # Pre-releases
-        self.assertEqual(versioning.bump_semver("2.0.0-beta", "minor"), "2.0.0-beta.1")
-        self.assertEqual(versioning.bump_semver("2.0.0-beta.1", "patch"), "2.0.0-beta.2")
-        self.assertEqual(versioning.bump_semver("2.0.0-beta.2", "none"), "2.0.0-beta.2")
-        self.assertEqual(versioning.bump_semver("2.1.0-beta.1", "major"), "3.0.0-beta")
+        # Pre-releases: siempre '-beta' limpio sin sufijos .1 / .2
+        self.assertEqual(versioning.bump_semver("2.0.0-beta", "minor"), "2.1.0-beta")
+        self.assertEqual(versioning.bump_semver("2.1.0-beta", "patch"), "2.1.1-beta")
+        self.assertEqual(versioning.bump_semver("2.1.1-beta", "none"), "2.1.1-beta")
+        self.assertEqual(versioning.bump_semver("2.1.0-beta", "major"), "3.0.0-beta")
+
+        # Cambio de canal Beta <-> Estable y prompt interactivo de build_exe
+        self.assertEqual(versioning.apply_release_channel("2.1.0-beta.2", True), "2.1.0-beta")
+        self.assertEqual(versioning.apply_release_channel("2.1.0-beta", False), "2.1.0")
+
+        meta_forced_beta = build_exe.resolve_build_metadata(version_override="2.1.0-beta.1", commit_count=140, is_beta=True)
+        self.assertEqual(meta_forced_beta["version"], "2.1.0-beta")
+        self.assertEqual(meta_forced_beta["exe_name"], "Gui Cmd Advance Beta")
+
+        meta_forced_stable = build_exe.resolve_build_metadata(version_override="2.1.0-beta", commit_count=140, is_beta=False)
+        self.assertEqual(meta_forced_stable["version"], "2.1.0")
+        self.assertEqual(meta_forced_stable["exe_name"], "Gui Cmd Advance")
+
+        self.assertTrue(build_exe.prompt_beta_channel(default_is_beta=False, input_fn=lambda _p: "s"))
+        self.assertFalse(build_exe.prompt_beta_channel(default_is_beta=True, input_fn=lambda _p: "n"))
+        self.assertTrue(build_exe.prompt_beta_channel(default_is_beta=True, input_fn=lambda _p: ""))
 
     def test_telemetry_uses_semantic_comparator_and_rule_exists(self):
         telemetry_path = os.path.join(PROJECT_ROOT, "functions", "telemetry.py")
